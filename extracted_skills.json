@@ -1,0 +1,754 @@
+[
+    {
+        "skill": "Python",
+        "context": "Develop scalable code and endpoints for processing very large datasets using Python."
+    },
+    {
+        "skill": "SQL",
+        "context": "Fluency in at least 3 years experience writing complex SQL queries for analysis and data correlations required."
+    },
+    {
+        "skill": "AWS",
+        "context": "Fluency in at least 3 years experience with AWS ecosystem, including tools, services, and resources that enable scalable distributed processing required."
+    },
+    {
+        "skill": "PySpark",
+        "context": "Previous experience with PySpark is a plus."
+    },
+    {
+        "skill": "Data Science",
+        "context": "Able to support the data science team in the design, creation, and testing of data science models."
+    },
+    {
+        "skill": "ETL Pipeline",
+        "context": "Support data engineering efforts to create ETL pipelines, APIs, etc."
+    },
+    {
+        "skill": "OpenSearch",
+        "context": "Previous experience with OpenSearch, FastAPI, Docker, Airflow, Terraform is a plus."
+    },
+    {
+        "skill": "FastAPI",
+        "context": "Previous experience with OpenSearch, FastAPI, Docker, Airflow, Terraform is a plus."
+    },
+    {
+        "skill": "Docker",
+        "context": "Previous experience with OpenSearch, FastAPI, Docker, Airflow, Terraform is a plus."
+    },
+    {
+        "skill": "Airflow",
+        "context": "Previous experience with OpenSearch, FastAPI, Docker, Airflow, Terraform is a plus."
+    },
+    {
+        "skill": "Terraform",
+        "context": "Previous experience with OpenSearch, FastAPI, Docker, Airflow, Terraform is a plus."
+    },
+    {
+        "skill": "Machine Learning",
+        "context": "Knowledge of ML fundamentals and familiarity with popular ML libraries; previous experience in modeling is a plus."
+    },
+    {
+        "skill": "CI/CD Best Practices",
+        "context": "Using AWS resources and CI/CD best practices."
+    },
+    {
+        "skill": "Software Best Practices",
+        "context": "Proficiency in software best practices, e.g., using Git/AWS CodeCommit, writing unit tests, maintaining clear documentation, etc."
+    },
+    {
+        "skill": "Project Management",
+        "context": "Proficiency in project management skills, including the ability to scope, timeline, methodology, deliverables for development, testing, and integration of the platform."
+    },
+    {
+        "skill": "Communication Skills",
+        "context": "Given the role, really needs excellent written and verbal communication skills."
+    },
+    {
+        "skill": "Data Engineering",
+        "context": "Familiarity or knowledge in data engineering; previous experience with Airflow, Terraform is an advantage."
+    },
+    {
+        "skill": "GraphDBs",
+        "context": "Experience with GraphDBs is also a plus."
+    },
+    {
+        "skill": "React",
+        "context": "Building a new SaaS platform with a brand new front end and new back end system."
+    },
+    {
+        "skill": "Kubernetes",
+        "context": "Our current stack includes Python, PySpark, React, Kubernetes, EMR, Spark, Elasticsearch, Postgres, FastAPI, Terraform, AWS."
+    },
+    {
+        "skill": "Elasticsearch",
+        "context": "Our current stack includes Python, PySpark, React, Kubernetes, EMR, Spark, Elasticsearch, Postgres, FastAPI, Terraform, AWS."
+    },
+    {
+        "skill": "Postgres",
+        "context": "Our current stack includes Python, PySpark, React, Kubernetes, EMR, Spark, Elasticsearch, Postgres, FastAPI, Terraform, AWS."
+    },
+    {
+        "skill": "Scikit-Learn",
+        "context": "Additional ML and Python libraries experience required, including Scikit-Learn, Spacy, OpenPyXL, Streamlit, Watchdog, SKLearn, Seaborn, NLTK, Matplotlib, Pandas, SQLAlchemy."
+    },
+    {
+        "skill": "Pandas",
+        "context": "Additional ML and Python libraries experience required, including Scikit-Learn, Spacy, OpenPyXL, Streamlit, Watchdog, SKLearn, Seaborn, NLTK, Matplotlib, Pandas, SQLAlchemy."
+    },
+    {
+        "skill": "Python",
+        "context": "ideal candidate strong background creating web applications python"
+    },
+    {
+        "skill": "PySpark",
+        "context": "experience pyspark using aws tools"
+    },
+    {
+        "skill": "AWS Tools",
+        "context": "experience aws cloud using aws tools plus"
+    },
+    {
+        "skill": "Web Development",
+        "context": "strong experience web development python pyspark"
+    },
+    {
+        "skill": "API Design",
+        "context": "responsible for building and maintaining backend and frontend applications and systems responsibilities design develop apis using redshift pyspark"
+    },
+    {
+        "skill": "Redshift",
+        "context": "responsibilities design develop apis using redshift pyspark"
+    },
+    {
+        "skill": "System Design",
+        "context": "collaborate with cross-functional teams to design and launch new features"
+    },
+    {
+        "skill": "Debugging",
+        "context": "debug optimize applications ensure running smoothly"
+    },
+    {
+        "skill": "Optimization",
+        "context": "debug optimize applications ensure running smoothly"
+    },
+    {
+        "skill": "Code Maintenance",
+        "context": "write clean maintainable efficient code"
+    },
+    {
+        "skill": "Problem-Solving",
+        "context": "excellent problem-solving analytical skills"
+    },
+    {
+        "skill": "Analytical Skills",
+        "context": "excellent problem-solving analytical skills"
+    },
+    {
+        "skill": "Communication",
+        "context": "excellent communication skills written verbal"
+    },
+    {
+        "skill": "Teamwork",
+        "context": "comfortable working in a team-oriented environment"
+    },
+    {
+        "skill": "Data integration",
+        "context": "You'll play a crucial role in facilitating communication with customers, negotiating data adjustments, acquiring, and integrating data into software solutions."
+    },
+    {
+        "skill": "Communication",
+        "context": "You'll play a crucial role in facilitating communication with customers, negotiating data adjustments."
+    },
+    {
+        "skill": "Negotiation",
+        "context": "Consult with customers to negotiate data adjustments."
+    },
+    {
+        "skill": "Data acquisition",
+        "context": "Acquire and integrate various data sets into software."
+    },
+    {
+        "skill": "Data management",
+        "context": "Monitor and optimize data usage within software."
+    },
+    {
+        "skill": "Problem-solving",
+        "context": "Ability to work independently with excellent problem-solving and analytical skills."
+    },
+    {
+        "skill": "Analytical skills",
+        "context": "Ability to work independently with excellent problem-solving and analytical skills."
+    },
+    {
+        "skill": "Collaboration",
+        "context": "Collaborate with teams to resolve integration issues promptly."
+    },
+    {
+        "skill": "Scripting",
+        "context": "Scripting knowledge in Python, JavaScript."
+    },
+    {
+        "skill": "Python",
+        "context": "Scripting knowledge in Python, JavaScript."
+    },
+    {
+        "skill": "JavaScript",
+        "context": "Scripting knowledge in Python, JavaScript."
+    },
+    {
+        "skill": "Excel",
+        "context": "Expertise in Excel for managing data."
+    },
+    {
+        "skill": "CSV",
+        "context": "Familiarity with CSV, XML, JSON data formats."
+    },
+    {
+        "skill": "XML",
+        "context": "Familiarity with CSV, XML, JSON data formats."
+    },
+    {
+        "skill": "JSON",
+        "context": "Familiarity with CSV, XML, JSON data formats."
+    },
+    {
+        "skill": "Attention to detail",
+        "context": ""
+    },
+    {
+        "skill": "Independence",
+        "context": "Ability to work independently with excellent problem-solving and analytical skills."
+    },
+    {
+        "skill": "Effective communication",
+        "context": "Effective communication and collaboration skills."
+    },
+    {
+        "skill": "Adaptability",
+        "context": "Ability to adapt to a fast-paced environment."
+    },
+    {
+        "skill": "Python",
+        "context": "Epidemiologist II conduct quality control, database manipulation, perform statistical and epidemiological analyses using Python, R, SAS to support CDC scientists."
+    },
+    {
+        "skill": "R",
+        "context": "Epidemiologist II conduct quality control, database manipulation, perform statistical and epidemiological analyses using Python, R, SAS to support CDC scientists."
+    },
+    {
+        "skill": "SAS",
+        "context": "Epidemiologist II conduct quality control, database manipulation, perform statistical and epidemiological analyses using Python, R, SAS to support CDC scientists."
+    },
+    {
+        "skill": "Data management",
+        "context": "Perform data management, design database structure, guide development of various activities and programs."
+    },
+    {
+        "skill": "Statistical analysis",
+        "context": "Create and submit SAS/R code to conduct statistical and epidemiological analyses in support of CDC scientists, including frequency analyses, chi-square analyses, logistic regression."
+    },
+    {
+        "skill": "Epidemiological analysis",
+        "context": "Create and submit SAS/R code to conduct statistical and epidemiological analyses in support of CDC scientists, including frequency analyses, chi-square analyses, logistic regression."
+    },
+    {
+        "skill": "Database manipulation",
+        "context": "Conduct quality control and manipulation of databases, including merging, managing, updating data, generating standard reports, performing data quality reviews, and data editing/cleaning."
+    },
+    {
+        "skill": "Microsoft Office Suite",
+        "context": "Proficiency in Microsoft Office Suite, including familiarity with Access."
+    },
+    {
+        "skill": "Attention to detail",
+        "context": "Strong attention to detail."
+    },
+    {
+        "skill": "Teamwork",
+        "context": "Ability to work independently and as part of a team in a fast-paced setting."
+    },
+    {
+        "skill": "Written and verbal communication",
+        "context": "Excellent written and verbal communication skills."
+    },
+    {
+        "skill": "Organization skills",
+        "context": "Effective organization skills."
+    },
+    {
+        "skill": "Public health knowledge",
+        "context": "Experience working in a CDC or public health setting preferred."
+    },
+    {
+        "skill": "Government clearance",
+        "context": "Ability to obtain government clearance."
+    },
+    {
+        "skill": "SAS certification",
+        "context": "SAS certification preferred."
+    },
+    {
+        "skill": "SQL",
+        "context": "Collect, analyze, and interpret large data sets using SQL and data analysis tools."
+    },
+    {
+        "skill": "Data Analysis Tools",
+        "context": "Collect, analyze, and interpret large data sets using SQL and data analysis tools."
+    },
+    {
+        "skill": "Tableau",
+        "context": "Develop, maintain data models, dashboards, reports using Tableau, Power BI, or similar visualization tools."
+    },
+    {
+        "skill": "Power BI",
+        "context": "Develop, maintain data models, dashboards, reports using Tableau, Power BI, or similar visualization tools."
+    },
+    {
+        "skill": "Data Visualization",
+        "context": "Proficiency in data visualization tools (Tableau, Power BI)."
+    },
+    {
+        "skill": "Agile Methodologies",
+        "context": "Familiarity with Agile methodologies and project management."
+    },
+    {
+        "skill": "Project Management",
+        "context": "Familiarity with Agile methodologies and project management."
+    },
+    {
+        "skill": "R",
+        "context": "Knowledge of programming languages (R, Python) is a plus."
+    },
+    {
+        "skill": "Python",
+        "context": "Knowledge of programming languages (R, Python) is a plus."
+    },
+    {
+        "skill": "Database Design",
+        "context": "Experience with database design principles and ETL processes."
+    },
+    {
+        "skill": "ETL Processes",
+        "context": "Experience with database design principles and ETL processes."
+    },
+    {
+        "skill": "Data Cleansing",
+        "context": "Perform data cleansing, transformation, and validation to ensure accuracy and reliability of data."
+    },
+    {
+        "skill": "Data Transformation",
+        "context": "Perform data cleansing, transformation, and validation to ensure accuracy and reliability of data."
+    },
+    {
+        "skill": "Data Validation",
+        "context": "Perform data cleansing, transformation, and validation to ensure accuracy and reliability of data."
+    },
+    {
+        "skill": "Statistical Analysis",
+        "context": "Conduct statistical analysis and data mining to uncover trends, patterns, and correlations."
+    },
+    {
+        "skill": "Data Mining",
+        "context": "Conduct statistical analysis and data mining to uncover trends, patterns, and correlations."
+    },
+    {
+        "skill": "Server-based Databases",
+        "context": "Experience working with server-based databases is preferred."
+    },
+    {
+        "skill": "Analytical Skills",
+        "context": "Detail-oriented individual with strong analytical skills and passion for turning data into actionable insights."
+    },
+    {
+        "skill": "BGP",
+        "context": "work on several internet network related software projects involving BGP, BGP Flow Spec."
+    },
+    {
+        "skill": "sFlow",
+        "context": "work on several internet network related software projects involving sFlow, NetFlow."
+    },
+    {
+        "skill": "GeoIP",
+        "context": "processing, creating, or using system-produced GeoIP data."
+    },
+    {
+        "skill": "SSL/TLS",
+        "context": ""
+    },
+    {
+        "skill": "Software Engineering",
+        "context": "must have past software engineering experience."
+    },
+    {
+        "skill": "C",
+        "context": "ideally know suitable low-level backend language such as C, Go, Rust."
+    },
+    {
+        "skill": "Go",
+        "context": "ideally know suitable low-level backend language such as C, Go, Rust."
+    },
+    {
+        "skill": "Rust",
+        "context": "ideally know suitable low-level backend language such as C, Go, Rust."
+    },
+    {
+        "skill": "SQL",
+        "context": "also expected to have working knowledge of SQL as well as other database languages."
+    },
+    {
+        "skill": "Unix",
+        "context": "solid knowledge of Unix, TCP/IP, and network fundamentals."
+    },
+    {
+        "skill": "TCP/IP",
+        "context": "solid knowledge of Unix, TCP/IP, and network fundamentals."
+    },
+    {
+        "skill": "IPv4",
+        "context": "practical knowledge of protocols such as IPv4, ARP, DNS, DHCP, HTTP, SSH, SNMP."
+    },
+    {
+        "skill": "DNS",
+        "context": "practical knowledge of protocols such as IPv4, ARP, DNS, DHCP, HTTP, SSH, SNMP."
+    },
+    {
+        "skill": "DHCP",
+        "context": "practical knowledge of protocols such as IPv4, ARP, DNS, DHCP, HTTP, SSH, SNMP."
+    },
+    {
+        "skill": "HTTP",
+        "context": "practical knowledge of protocols such as IPv4, ARP, DNS, DHCP, HTTP, SSH, SNMP."
+    },
+    {
+        "skill": "SSH",
+        "context": "practical knowledge of protocols such as IPv4, ARP, DNS, DHCP, HTTP, SSH, SNMP."
+    },
+    {
+        "skill": "SNMP",
+        "context": "practical knowledge of protocols such as IPv4, ARP, DNS, DHCP, HTTP, SSH, SNMP."
+    },
+    {
+        "skill": "PHP",
+        "context": "knowledge of PHP, Python, Ruby, Perl, JavaScript is a plus."
+    },
+    {
+        "skill": "Python",
+        "context": "knowledge of PHP, Python, Ruby, Perl, JavaScript is a plus."
+    },
+    {
+        "skill": "Ruby",
+        "context": "knowledge of PHP, Python, Ruby, Perl, JavaScript is a plus."
+    },
+    {
+        "skill": "Perl",
+        "context": "knowledge of PHP, Python, Ruby, Perl, JavaScript is a plus."
+    },
+    {
+        "skill": "JavaScript",
+        "context": "knowledge of PHP, Python, Ruby, Perl, JavaScript is a plus."
+    },
+    {
+        "skill": "Linux",
+        "context": "must have prior work experience using SQL and Linux."
+    },
+    {
+        "skill": "Cisco",
+        "context": "experience working directly or indirectly with Cisco, Juniper, Extreme/Brocade, Arista routers and switches is a plus."
+    },
+    {
+        "skill": "Juniper",
+        "context": "experience working directly or indirectly with Cisco, Juniper, Extreme/Brocade, Arista routers and switches is a plus."
+    },
+    {
+        "skill": "Extreme/Brocade",
+        "context": "experience working directly or indirectly with Cisco, Juniper, Extreme/Brocade, Arista routers and switches is a plus."
+    },
+    {
+        "skill": "Arista",
+        "context": "experience working directly or indirectly with Cisco, Juniper, Extreme/Brocade, Arista routers and switches is a plus."
+    },
+    {
+        "skill": "Network Diagnostic Tools",
+        "context": "hands-on experience with network diagnostic tools such as ping, traceroute, mtr, iperf, dig, whois."
+    },
+    {
+        "skill": "Communication Skills",
+        "context": "possess excellent verbal/written English communication skills."
+    },
+    {
+        "skill": "Kubernetes administration",
+        "context": "deploy, maintain, and scale Kubernetes clusters using GKE."
+    },
+    {
+        "skill": "GKE",
+        "context": "deploy, maintain, and scale Kubernetes clusters using GKE."
+    },
+    {
+        "skill": "Containerization technologies",
+        "context": "assist in deploying and scaling containerized applications on GKE."
+    },
+    {
+        "skill": "Docker",
+        "context": "assist in deploying and scaling containerized applications on GKE."
+    },
+    {
+        "skill": "Google Cloud Platform",
+        "context": "work closely with infrastructure and DevOps teams."
+    },
+    {
+        "skill": "Infrastructure as Code",
+        "context": "Infrastructure as Code (Terraform)."
+    },
+    {
+        "skill": "Terraform",
+        "context": "Infrastructure as Code (Terraform)."
+    },
+    {
+        "skill": "Communication",
+        "context": "excellent communication and collaboration skills."
+    },
+    {
+        "skill": "Collaboration",
+        "context": "excellent communication and collaboration skills."
+    },
+    {
+        "skill": "Problem-solving",
+        "context": "strong problem-solving and troubleshooting skills."
+    },
+    {
+        "skill": "Troubleshooting",
+        "context": "strong problem-solving and troubleshooting skills."
+    },
+    {
+        "skill": "Adaptability",
+        "context": "adaptability to new technologies."
+    },
+    {
+        "skill": "Self-motivation",
+        "context": "self-motivation and a positive attitude."
+    },
+    {
+        "skill": "Teamwork",
+        "context": "self-motivation and a positive attitude."
+    },
+    {
+        "skill": "Scripting",
+        "context": "nice to have scripting and automation skills."
+    },
+    {
+        "skill": "Automation",
+        "context": "nice to have scripting and automation skills."
+    },
+    {
+        "skill": "Python",
+        "context": "nice to have scripting and automation skills (Python, Shell)."
+    },
+    {
+        "skill": "Shell",
+        "context": "nice to have scripting and automation skills (Python, Shell)."
+    },
+    {
+        "skill": "Machine Learning",
+        "context": "collaborate with researchers and data scientists to design sophisticated machine learning models"
+    },
+    {
+        "skill": "Deep Learning",
+        "context": "strong background in machine learning, deep learning, natural language processing"
+    },
+    {
+        "skill": "Natural Language Processing",
+        "context": "strong background in machine learning, deep learning, natural language processing"
+    },
+    {
+        "skill": "Python",
+        "context": "proficiency in Python and relevant machine learning libraries"
+    },
+    {
+        "skill": "Transformer",
+        "context": "implement and finetune neural network architectures, including transformer-based models"
+    },
+    {
+        "skill": "TensorFlow",
+        "context": "proficiency in Python and relevant machine learning libraries (e.g., transformer, TensorFlow, PyTorch)"
+    },
+    {
+        "skill": "PyTorch",
+        "context": "proficiency in Python and relevant machine learning libraries (e.g., transformer, TensorFlow, PyTorch)"
+    },
+    {
+        "skill": "BERT",
+        "context": "experience with transformer-based models (e.g., BERT, GPT, LLaMA)"
+    },
+    {
+        "skill": "GPT",
+        "context": "experience with transformer-based models (e.g., BERT, GPT, LLaMA)"
+    },
+    {
+        "skill": "LLaMA",
+        "context": "experience with transformer-based models (e.g., BERT, GPT, LLaMA)"
+    },
+    {
+        "skill": "Statistics",
+        "context": "solid understanding of statistics, linear algebra, probability theory"
+    },
+    {
+        "skill": "Linear Algebra",
+        "context": "solid understanding of statistics, linear algebra, probability theory"
+    },
+    {
+        "skill": "Probability Theory",
+        "context": "solid understanding of statistics, linear algebra, probability theory"
+    },
+    {
+        "skill": "Data Science",
+        "context": "depth in data science, generative AI, engineering"
+    },
+    {
+        "skill": "Generative AI",
+        "context": "depth in data science, generative AI, engineering"
+    },
+    {
+        "skill": "Data Preprocessing",
+        "context": "work with large-scale datasets, preprocess, and create appropriate data representations"
+    },
+    {
+        "skill": "Feature Selection",
+        "context": "select relevant features to ensure data quality for training and evaluation"
+    },
+    {
+        "skill": "Model Deployment",
+        "context": "deploy trained models into production environments"
+    },
+    {
+        "skill": "Python",
+        "context": "proficiency in programming languages including Python."
+    },
+    {
+        "skill": "C#",
+        "context": "proficiency in programming languages including C#."
+    },
+    {
+        "skill": ".NET",
+        "context": "proficiency in programming languages including .NET."
+    },
+    {
+        "skill": "Node.js",
+        "context": "proficiency in programming languages including Node.js."
+    },
+    {
+        "skill": "Database technologies",
+        "context": "strong understanding of database technologies (e.g., Cosmos DB, Mongo DB, ORM frameworks)."
+    },
+    {
+        "skill": "Cosmos DB",
+        "context": "strong understanding of database technologies (e.g., Cosmos DB, Mongo DB, ORM frameworks)."
+    },
+    {
+        "skill": "Mongo DB",
+        "context": "strong understanding of database technologies (e.g., Cosmos DB, Mongo DB, ORM frameworks)."
+    },
+    {
+        "skill": "ORM frameworks",
+        "context": "strong understanding of database technologies (e.g., Cosmos DB, Mongo DB, ORM frameworks)."
+    },
+    {
+        "skill": "Cloud platforms",
+        "context": "experience with cloud platforms (e.g., Azure, containerization (e.g., Docker, Kubernetes))."
+    },
+    {
+        "skill": "Azure",
+        "context": "experience with cloud platforms (e.g., Azure, containerization (e.g., Docker, Kubernetes))."
+    },
+    {
+        "skill": "Docker",
+        "context": "experience with cloud platforms (e.g., Azure, containerization (e.g., Docker, Kubernetes))."
+    },
+    {
+        "skill": "Kubernetes",
+        "context": "experience with cloud platforms (e.g., Azure, containerization (e.g., Docker, Kubernetes))."
+    },
+    {
+        "skill": "RESTful APIs",
+        "context": "familiarity with RESTful APIs and microservices architecture."
+    },
+    {
+        "skill": "Microservices architecture",
+        "context": "familiarity with RESTful APIs and microservices architecture."
+    },
+    {
+        "skill": "Version control systems",
+        "context": "familiarity with version control systems (e.g., Git)."
+    },
+    {
+        "skill": "Git",
+        "context": "familiarity with version control systems (e.g., Git)."
+    },
+    {
+        "skill": "Problem-solving skills",
+        "context": "excellent problem-solving skills and attention to detail."
+    },
+    {
+        "skill": "Passion for fitness and wellness",
+        "context": "passion for fitness and wellness is a plus."
+    },
+    {
+        "skill": "Python",
+        "context": "entry level python developer experience level years even freshers apply job role opt candidates also apply"
+    },
+    {
+        "skill": "Writing and testing code",
+        "context": "Python developer responsibilities include writing testing code, debugging programs, integrating applications with third-party web services."
+    },
+    {
+        "skill": "Debugging programs",
+        "context": "Python developer responsibilities include writing testing code, debugging programs, integrating applications with third-party web services."
+    },
+    {
+        "skill": "Integrating applications with third-party web services",
+        "context": "Python developer responsibilities include writing testing code, debugging programs, integrating applications with third-party web services."
+    },
+    {
+        "skill": "Server-side logic",
+        "context": "Successful in this role experience using server-side logic and work well in a team."
+    },
+    {
+        "skill": "Teamwork",
+        "context": "Successful in this role experience using server-side logic and work well in a team."
+    },
+    {
+        "skill": "Django",
+        "context": "Good at least one popular python framework like Django, Flask, Pyramid."
+    },
+    {
+        "skill": "Flask",
+        "context": "Good at least one popular python framework like Django, Flask, Pyramid."
+    },
+    {
+        "skill": "Pyramid",
+        "context": "Good at least one popular python framework like Django, Flask, Pyramid."
+    },
+    {
+        "skill": "Object-relational mapping (ORM)",
+        "context": "Knowledge of object-relational mapping (ORM)."
+    },
+    {
+        "skill": "Frontend technologies",
+        "context": "Familiarity with frontend technologies, like JavaScript, HTML."
+    },
+    {
+        "skill": "JavaScript",
+        "context": "Familiarity with frontend technologies, like JavaScript, HTML."
+    },
+    {
+        "skill": "HTML",
+        "context": "Familiarity with frontend technologies, like JavaScript, HTML."
+    },
+    {
+        "skill": "Problem-solving",
+        "context": "Team spirit and good problem-solving skills."
+    },
+    {
+        "skill": "BSc in Computer Science, Engineering or relevant field",
+        "context": "BSc in Computer Science, Engineering or relevant field."
+    }
+]
