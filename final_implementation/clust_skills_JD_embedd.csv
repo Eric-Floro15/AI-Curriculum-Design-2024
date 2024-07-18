@@ -1,0 +1,123 @@
+Skill,Cluster,Frequency
+R,0,8606
+C,0,5126
+Python,0,104
+Stan,0,67
+SQL,0,54
+Scala,0,50
+Benefits,1,134
+AWS,1,129
+Management,1,128
+Communication,1,62
+DevOps,1,56
+Culture,1,53
+Software Development,1,41
+Troubleshooting,1,40
+ProblemSolving,1,39
+Problemsolving,1,39
+Git,1,37
+Networking,1,32
+Machine Learning,2,44
+Java,2,26
+Collaboration,2,24
+Python Programming,2,24
+Azure,2,24
+Integrity,2,24
+PyTorch,2,23
+NumPy,2,23
+Scikitlearn,2,23
+Algorithms,3,37
+Data Analysis,3,37
+Statistics,3,33
+Snowflake,3,33
+Tableau,3,30
+Accuracy,3,26
+Innovation,3,26
+Marketing,3,24
+Business Intelligence,3,24
+Math,3,22
+Leadership,3,20
+DecisionMaking,3,20
+Javascript,4,26
+JavaScript,4,26
+Flask,4,23
+Django,4,19
+Teamwork,4,14
+NoSQL,4,13
+Software Engineering,4,13
+spaCy,4,11
+ArcGIS,4,11
+Optimization,4,11
+Accountability,4,11
+NLTK,4,11
+Pandas,4,11
+Machine Learning Algorithms,4,11
+GitHub,5,43
+Docker,5,33
+Kubernetes,5,26
+Databases,5,24
+Deep Learning,5,22
+Transparency,5,22
+Linux,5,22
+Deep learning,5,22
+Express,5,20
+Terraform,5,17
+Stress Management,6,7
+Web Development,6,7
+Human Resources,6,7
+SQLAlchemy,6,7
+Enthusiasm,6,7
+Genetic algorithms,6,0
+Programming Languages,6,0
+Existential risk assessment,6,0
+Metacultural sensitivity,6,0
+Temporal intelligence (understanding and working with different time horizons),6,0
+Regenerative practices implementation,6,0
+Cognitive bias inoculation,6,0
+Macropattern recognition,6,0
+Integrative complexity,6,0
+Constructive uncertainty management,6,0
+Ethical foresight,6,0
+Collective intelligence facilitation,6,0
+Transcontextual thinking,6,0
+Hard/Technical Skills,6,0
+DataRobot,6,0
+Spark,7,10
+PostgreSQL,7,10
+Flexibility,7,9
+Mentoring,7,8
+Data modeling,7,6
+Angular,7,5
+Regression,7,5
+Microsoft Azure,7,5
+Digital Marketing,7,5
+Relational Database,7,5
+Continuous learning,7,5
+GitLab,7,4
+Sales,7,4
+Quality assurance,8,12
+Planning,8,6
+Agile Methodologies,8,5
+EC2,8,4
+Time Management,8,4
+Organizational Skills,8,4
+PyTest,8,4
+Time management,8,4
+Mathematics,8,3
+Root cause analysis,8,3
+Jenkins,8,2
+Project Management,8,2
+Project management,8,2
+Strategy,8,2
+Written communication,9,13
+Writing,9,12
+MySQL,9,9
+Confidence,9,9
+Oracle,9,8
+JSON,9,8
+Pig,9,8
+Alation,9,8
+Ansible,9,7
+Agile development methodologies,9,6
+Google Cloud Platform,9,6
+Prometheus,9,6
