@@ -12,6 +12,7 @@ langchain>=0.2.0
 langchain-community>=0.2.0
 langchain-openai>=0.1.0
 langchain-ollama>=0.2.0
+rank-bm25>=0.2.2          # for BM25 hybrid retrieval in tools/rag_tool.py
 
 # Embeddings (local fallback option)
 sentence-transformers>=3.0.0
