@@ -258,3 +258,12 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **Cluster CSV coverage gap is a known data drift** — the cluster pipeline ran against `V2_Categorized_Skills_and_Descriptions.xlsx` (766 skills, not in repo); the chatbot indexes a different XLSX. If cluster labels become a primary signal, the cleanest fix is to re-run the ensemble clustering against the current XLSX rather than try to harder-fuzzy-match across the gap.
 - **Mac OpenMP workaround:** `faiss-cpu` + `torch` (pulled in by `sentence-transformers`) both load `libomp` and trigger `OMP: Error #15`. Run `build_index.py` / `rag_tool.py` with `KMP_DUPLICATE_LIB_OK=TRUE`. Longer-term, consider dropping `sentence-transformers` from `requirements.txt` — embeddings come from Ollama and the package isn't used elsewhere.
 - **Next step:** Build the Analyst agent (Step 3) — CrewAI agent wired to `skills_rag_tool` and tested standalone before being added to the crew.
+
+### 2026-05-22 — Baseline retrieval eval (Option B before Analyst agent)
+- **Eval set added** in `chatbot/eval/`: `queries.yaml` (10 representative professor queries, each with curated `expected` substrings) + `run_rag_eval.py` (computes precision@5 / recall@5 via normalized-substring match) + dated snapshot `baseline_2026-05-22.md`.
+- **Baseline scores: mean precision@5 = 0.36, mean recall@5 = 0.26.**
+- **Quality pattern is clear:**
+  - **Works well (P@5 ≥ 0.6):** specific named entities — NLP (0.80), cloud-infra (0.80), programming (0.60), data-viz (0.60).
+  - **Fails hard (P@5 = 0.0):** abstract/categorical queries — `data-engineering` (missed Spark/Kafka), `mlops` (returned model concepts, not tools), `stats-math` (embedder latched on "ML" not "statistics"), `soft-skills-ml` (same — "ML" in the query overwhelms "soft skills").
+- **Implication for the Analyst agent (Step 3):** RAG alone is not sufficient. The Analyst MUST also get the CSV tool (Step 4) — categorical filters like *"Level 1 = soft"*, *"top N by Frequency"*, or *"cluster_id = 8"* are deterministic pandas lookups that RAG is structurally bad at. Plan: build the CSV tool *with* the Analyst agent (merge Step 3 and Step 4), rather than separately.
+- **Future-proofing:** If we change embeddings/chunking/search strategy later, re-run `run_rag_eval.py` and diff the new dated snapshot against this baseline.

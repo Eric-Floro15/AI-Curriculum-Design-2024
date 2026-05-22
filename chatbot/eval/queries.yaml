@@ -1,0 +1,49 @@
+# RAG retrieval baseline — 10 representative queries a professor might ask.
+#
+# Each query has an `expected` list of skill substrings. A retrieved canonical
+# skill counts as relevant if any expected substring appears in its normalized
+# name (lowercase, non-alphanumerics stripped). Substrings are intentionally
+# short so they survive XLSX naming variations (e.g. "aws" matches "Aws Ec2").
+#
+# Re-run with:
+#     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_rag_eval.py
+
+- id: cloud-infra
+  query: What cloud infrastructure skills are most in demand?
+  expected: [cloud, aws, azure, gcp, google cloud, kubernetes]
+
+- id: data-engineering
+  query: Data engineering tools like Spark and Kafka
+  expected: [spark, kafka, hadoop, etl, data pipeline, airflow, databricks]
+
+- id: soft-skills-ml
+  query: Soft skills for machine learning practitioners
+  expected: [communication, collaboration, problem solving, leadership, teamwork, critical thinking]
+
+- id: mlops
+  query: MLOps and model deployment skills
+  expected: [mlops, model deployment, docker, kubernetes, ci/cd, model monitoring]
+
+- id: stats-math
+  query: Statistical methods and mathematical foundations for machine learning
+  expected: [statistics, probability, linear algebra, regression, calculus, hypothesis testing]
+
+- id: nlp
+  query: Natural language processing skills
+  expected: [nlp, natural language, llm, transformer, text mining, language model]
+
+- id: computer-vision
+  query: Computer vision and image processing
+  expected: [computer vision, opencv, image processing, image recognition, cnn]
+
+- id: data-viz
+  query: Data visualization and business intelligence tools
+  expected: [tableau, power bi, visualization, dashboard, matplotlib, ggplot]
+
+- id: programming
+  query: Programming languages used in data science
+  expected: [python, r programming, sql, scala, java]
+
+- id: gen-ai
+  query: Generative AI and large language model skills
+  expected: [generative ai, llm, large language, prompt engineering, rag, fine-tuning, gpt]
