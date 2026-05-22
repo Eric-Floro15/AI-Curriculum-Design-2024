@@ -72,9 +72,9 @@ The research pipeline is **complete**. Do not re-run it unless explicitly instru
 
 6. **Security alert:** `clust_skills_embedd.ipynb` contains a hardcoded OpenAI API key in two locations (`AI-driven-course-design-master/final_implementation/` and `AI-driven-course-design-master/final_implementation/kmeans/`). This key must be rotated before the repo is shared with anyone new. Replace with `os.getenv('OPENAI_API_KEY')`.
 
-7. **Embedding provider/model must match between index build and query.** `build_index.py` uses `EMBEDDING_PROVIDER` (default `ollama`, model `nomic-embed-text`). The future `tools/rag_tool.py` MUST use the same provider/model, or FAISS retrieval returns garbage. Plan to factor a shared `chatbot/embeddings.py` helper so both paths can't drift.
+7. **Embedding provider/model must match between index build and query.** Both `build_index.py` and the future `tools/rag_tool.py` MUST import from the shared `chatbot/embeddings.py` helper (`get_embeddings()` / `describe_embeddings_config()`). Do not re-implement provider logic inline — drift between build-time and query-time embeddings makes FAISS retrieval return garbage. Config is read from env vars at call time (`EMBEDDING_PROVIDER`, default `ollama` / `nomic-embed-text`).
 
-8. **`chatbot/data/` is not in git.** The skills XLSX (`Grouped_Skills_Categorized_Updated.xlsx`) and cluster CSV (`clust_ensembled_results.csv`) referenced by `build_index.py` are NOT currently present in the repo — they live outside the working tree and need to be symlinked or copied in by whoever runs the script. Do not commit these data files. Consider adding a `chatbot/.gitignore` covering `data/`, `faiss_index/`, `.env`.
+8. **`chatbot/data/` and `chatbot/faiss_index/` are gitignored.** The skills XLSX (`Grouped_Skills_Categorized_Updated.xlsx`) and cluster CSV (`clust_ensembled_results.csv`) live in `chatbot/data/` locally but are not committed — they need to be symlinked or copied in by whoever runs `build_index.py`. The built index in `chatbot/faiss_index/` is also gitignored (rebuild locally with `python build_index.py`). `chatbot/.gitignore` already covers `.env`, `data/`, `faiss_index/`, `__pycache__/`.
 
 ---
 
@@ -118,23 +118,24 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 
 ```
 /chatbot/
-  main.py                  ← Chainlit entry point
-  crew.py                  ← CrewAI crew definition (agents + tasks + process)
-  agents/
+  main.py                  ← Chainlit entry point                        (not yet built)
+  crew.py                  ← CrewAI crew definition (agents + tasks)     (not yet built)
+  agents/                                                                (not yet built)
     analyst.py             ← Analyst agent definition
     news.py                ← News agent definition
     university_programs.py ← University Programs agent definition
     orchestrator.py        ← Orchestrator agent definition
-  tools/
+  tools/                                                                 (not yet built)
     rag_tool.py            ← FAISS RAG tool (query skills taxonomy)
     csv_tool.py            ← Direct CSV/XLSX query tool for structured lookups
     web_search_tool.py     ← DuckDuckGo web search wrapper
     rss_tool.py            ← RSS feed news tool (script TBD)
-  data/
-    (symlink or copy of skills XLSX and clustering CSV files)
-  faiss_index/             ← Persisted FAISS index (gitignored if large)
-  build_index.py           ← One-time script to build the FAISS index from the skills data
-  requirements.txt
+  data/                    ← Gitignored. Skills XLSX + cluster CSV       ✅ populated locally
+  faiss_index/             ← Gitignored. Persisted FAISS index           ✅ built locally
+  build_index.py           ← One-time script to build the FAISS index    ✅ done
+  embeddings.py            ← Shared embeddings factory — used by both
+                             build_index.py and tools/rag_tool.py        ✅ done
+  requirements.txt                                                       ✅ done
   .env                     ← API keys (NEVER commit — in .gitignore)
   .env.example             ← Template showing required env vars (no actual values)
 ```
@@ -176,10 +177,9 @@ Variants worth considering later:
 
 **Default: Ollama `nomic-embed-text` (local, free, 768-dim).**
 
-- Set up by `build_index.py` (Ollama-first, falls back to OpenAI via `EMBEDDING_PROVIDER=openai`).
+- Provider/model selection lives in `chatbot/embeddings.py` (`get_embeddings()`). Both `build_index.py` and `tools/rag_tool.py` MUST import from this helper so build-time and query-time embeddings can't drift.
 - **One-time setup:** `brew install ollama` → `ollama serve` (background) → `ollama pull nomic-embed-text`.
-- Approx 5–15 min to build the index from `Grouped_Skills_Categorized_Updated.xlsx` on a Mac CPU. One-time cost.
-- **Hard constraint:** `tools/rag_tool.py` MUST instantiate embeddings with the same `EMBEDDING_PROVIDER` and model used at build time. Factor this into a shared `chatbot/embeddings.py` helper when building the RAG tool.
+- Index build runs in a few minutes on a Mac CPU from `Grouped_Skills_Categorized_Updated.xlsx` (~870 canonical skill groups → ~870 chunks at chunk_size=800). One-time cost.
 - **Cloud deployment implication:** Ollama needs to run on the deployment host too. If that's not viable (e.g. lightweight serverless), switch to `EMBEDDING_PROVIDER=openai` and rebuild the index before deploying.
 
 ---
@@ -242,8 +242,11 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - `chatbot/build_index.py` refactored to support multiple embedding providers via `EMBEDDING_PROVIDER` env var. Ollama is the default (`nomic-embed-text`, 768-dim, local, free). OpenAI (`text-embedding-3-small`) selectable as fallback. Provider import is lazy so missing libs only fail at runtime.
 - `langchain-ollama>=0.2.0` added to `chatbot/requirements.txt`.
 - Ollama 0.24.0 already installed on Cassie's Mac; `nomic-embed-text` pulled (274 MB).
-- **Still to do before `python build_index.py` will succeed:**
-  1. Create `chatbot/data/` and place `Grouped_Skills_Categorized_Updated.xlsx` + `clust_ensembled_results.csv` inside (or symlink). These files are NOT currently in the repo.
-  2. `pip install -r chatbot/requirements.txt` (langchain-ollama not yet installed in the active Python env).
-  3. Ensure `ollama serve` is running (default `http://localhost:11434`).
 - **LLM choice for agents documented** in the "LLM Choice" section above. Default: Claude Sonnet 4.6.
+
+### 2026-05-22 — Chatbot Step 1 finished: FAISS index built end-to-end
+- **`chatbot/embeddings.py` added** — shared embeddings factory exporting `get_embeddings()` and `describe_embeddings_config()`. Reads env vars at call time so provider choice can change without code edits. This is the single source of truth that `build_index.py` and the future `tools/rag_tool.py` MUST both import from (resolves the drift risk called out in Critical Rule #7).
+- `build_index.py` refactored to delegate to `embeddings.py` (inline provider logic removed). Date-column lookup also fixed (`Date (2024 or 2025)`).
+- **Data files staged locally** in `chatbot/data/`: `Grouped_Skills_Categorized_Updated.xlsx`, `clust_ensembled_results.csv`, `clust_ensembled_results.xlsx`. Gitignored — not committed.
+- **FAISS index built successfully** with Ollama `nomic-embed-text`. Output in `chatbot/faiss_index/`: `index.faiss` (~2.9 MB) + `index.pkl` (~640 KB). Gitignored.
+- **Next step:** Build `tools/rag_tool.py` — LangChain retrieval wrapper around `chatbot/faiss_index/`. It MUST `from embeddings import get_embeddings` rather than re-instantiating an embeddings client.
