@@ -120,16 +120,18 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 /chatbot/
   main.py                  ← Chainlit entry point                        (not yet built)
   crew.py                  ← CrewAI crew definition (agents + tasks)     (not yet built)
-  agents/                                                                (not yet built)
-    analyst.py             ← Analyst agent definition
-    news.py                ← News agent definition
-    university_programs.py ← University Programs agent definition
-    orchestrator.py        ← Orchestrator agent definition
-  tools/                                                                 (not yet built)
-    rag_tool.py            ← FAISS RAG tool (query skills taxonomy)
-    csv_tool.py            ← Direct CSV/XLSX query tool for structured lookups
-    web_search_tool.py     ← DuckDuckGo web search wrapper
-    rss_tool.py            ← RSS feed news tool (script TBD)
+  llm.py                   ← LLM factory honoring LLM_PROVIDER/MODEL     ✅ done
+  agents/
+    analyst.py             ← Analyst agent definition                    ✅ done
+    test_analyst.py        ← Standalone end-to-end smoke test            ✅ done
+    news.py                ← News agent definition                      (not yet built)
+    university_programs.py ← University Programs agent definition       (not yet built)
+    orchestrator.py        ← Orchestrator agent definition              (not yet built)
+  tools/
+    rag_tool.py            ← FAISS RAG tool (query skills taxonomy)     ✅ done
+    csv_tool.py            ← Pandas filters/aggregations over taxonomy  ✅ done
+    web_search_tool.py     ← DuckDuckGo web search wrapper              (not yet built)
+    rss_tool.py            ← RSS feed news tool (script TBD)            (not yet built)
   eval/                                                                  ✅ done
     queries.yaml           ← 10 baseline retrieval queries + expected skills
     run_rag_eval.py        ← Computes precision@5 / recall@5
@@ -270,4 +272,13 @@ Concrete record of environment + code state so future sessions don't re-do or un
   - **Works well (P@5 ≥ 0.6):** specific named entities — NLP (0.80), cloud-infra (0.80), programming (0.60), data-viz (0.60).
   - **Fails hard (P@5 = 0.0):** abstract/categorical queries — `data-engineering` (missed Spark/Kafka), `mlops` (returned model concepts, not tools), `stats-math` (embedder latched on "ML" not "statistics"), `soft-skills-ml` (same — "ML" in the query overwhelms "soft skills").
 - **Implication for the Analyst agent (Step 3):** RAG alone is not sufficient. The Analyst MUST also get the CSV tool (Step 4) — categorical filters like *"Level 1 = soft"*, *"top N by Frequency"*, or *"cluster_id = 8"* are deterministic pandas lookups that RAG is structurally bad at. Plan: build the CSV tool *with* the Analyst agent (merge Step 3 and Step 4), rather than separately.
-- **Future-proofing:** If we change embeddings/chunking/search strategy later, re-run `run_rag_eval.py` and diff the new dated snapshot against this baseline.
+- **Future-proofing:** If we change embeddings/chunking/search strategy later, re-run `run_rag_eval.py` and diff the new dated snapshot against this baseline. Baseline snapshots now log the embedding provider/model, chunk_size/overlap, doc count, and index build mtime so config changes are attributable.
+
+### 2026-05-22 — Chatbot Step 3 + Step 4 merged: Analyst agent + CSV tool
+- **`chatbot/tools/csv_tool.py` added** — pandas-backed structured queries over the canonical-skill taxonomy. Reuses `load_skills` + `build_cluster_map` from `build_index.py` so cluster matching stays consistent between the FAISS index and structured queries. Functions: `top_skills_by_frequency(n, level1, level2, cluster_id)`, `skills_in_category(level1, level2)`, `skills_in_cluster(cluster_id)`, `category_summary()`. Each exposed as a CrewAI `@tool`.
+- **`chatbot/llm.py` added** — LLM factory honoring `LLM_PROVIDER` / `LLM_MODEL` env vars. Defaults to `anthropic` + `claude-sonnet-4-6` per the LLM Choice section. Providers: anthropic, openai, gemini, ollama.
+- **`chatbot/agents/analyst.py` added** — CrewAI Agent wired to `skills_rag_tool` + the 4 CSV tools. Backstory explicitly instructs the agent to prefer CSV tools for categorical/ranked questions (where RAG was shown to fail in the baseline) and RAG for "what is X" / "skills similar to X" questions.
+- **`chatbot/agents/test_analyst.py`** — standalone end-to-end smoke test that runs one professor query through `Crew.kickoff()`. Hits the live LLM (kept to one query to keep cost low). First run succeeded: query *"What soft skills should I emphasise in an AI/ML Master's curriculum?"* produced 5 grounded recommendations citing specific frequencies (Communication 39,040; Mentoring 7,888; Agile 6,838; Stakeholder Mgmt 3,689; Problem-Solving 1,925). Agent used `top_skills_tool(level1="soft")` correctly instead of RAG, which validates the tool-selection guidance in the backstory.
+- **`chatbot/.env.example` refreshed** to match the env vars documented in this file (LLM_PROVIDER defaults to anthropic, EMBEDDING_PROVIDER defaults to ollama, all listed with their defaults).
+- **Cost note:** test_analyst.py keeps a single-query default so smoke runs cost cents, not dollars. Add more queries to `DEFAULT_QUERIES` deliberately when debugging.
+- **Next step:** Step 5 — web search tool (DuckDuckGo wrapper) for the University Programs agent. After that, Step 6 (University Programs agent), then Step 8 (Orchestrator) — leaving the News agent (Step 7) for whenever Eric's RSS script is ready.
