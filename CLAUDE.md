@@ -130,6 +130,10 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
     csv_tool.py            ← Direct CSV/XLSX query tool for structured lookups
     web_search_tool.py     ← DuckDuckGo web search wrapper
     rss_tool.py            ← RSS feed news tool (script TBD)
+  eval/                                                                  ✅ done
+    queries.yaml           ← 10 baseline retrieval queries + expected skills
+    run_rag_eval.py        ← Computes precision@5 / recall@5
+    baseline_YYYY-MM-DD.md ← Dated snapshot (diff future runs against)
   data/                    ← Gitignored. Skills XLSX + cluster CSV       ✅ populated locally
   faiss_index/             ← Gitignored. Persisted FAISS index           ✅ built locally
   build_index.py           ← One-time script to build the FAISS index    ✅ done
