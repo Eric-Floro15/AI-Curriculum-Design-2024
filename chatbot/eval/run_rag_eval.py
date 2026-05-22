@@ -136,7 +136,18 @@ def main() -> None:
         "",
     ]
 
-    snapshot_path = os.path.join(_HERE, f"baseline_{date.today().isoformat()}.md")
+    # Include the embedding model in the filename so re-running with a
+    # different model doesn't overwrite an earlier snapshot — config A vs B
+    # comparisons should be easy to find on disk.
+    model_slug = (
+        os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+        if os.getenv("EMBEDDING_PROVIDER", "ollama").lower() == "ollama"
+        else os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
+    )
+    safe_slug = re.sub(r"[^A-Za-z0-9._-]+", "-", model_slug)
+    snapshot_path = os.path.join(
+        _HERE, f"baseline_{date.today().isoformat()}_{safe_slug}.md"
+    )
     with open(snapshot_path, "w") as f:
         f.write("\n".join(header + body))
 

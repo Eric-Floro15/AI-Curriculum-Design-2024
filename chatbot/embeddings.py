@@ -7,7 +7,7 @@ FAISS retrieval return garbage — see CLAUDE.md Critical Rule #7.
 
 Configure via env vars (read at call time):
     EMBEDDING_PROVIDER  "ollama" (default) | "openai"
-    OLLAMA_EMBED_MODEL  default "nomic-embed-text"
+    OLLAMA_EMBED_MODEL  default "mxbai-embed-large"  (see eval/ for why)
     OLLAMA_BASE_URL     default "http://localhost:11434"
     OPENAI_EMBED_MODEL  default "text-embedding-3-small"
     OPENAI_API_KEY      required when EMBEDDING_PROVIDER=openai
@@ -32,7 +32,7 @@ def get_embeddings():
                 "langchain-ollama not installed — `pip install langchain-ollama`"
             ) from e
         return OllamaEmbeddings(
-            model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
+            model=os.getenv("OLLAMA_EMBED_MODEL", "mxbai-embed-large"),
             base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         )
 
@@ -60,7 +60,7 @@ def describe_embeddings_config() -> str:
     """One-line summary of the active embedding config — for startup logging."""
     provider = _provider()
     if provider == "ollama":
-        model = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+        model = os.getenv("OLLAMA_EMBED_MODEL", "mxbai-embed-large")
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         return f"Ollama embeddings: model={model}, host={base_url}"
     if provider == "openai":

@@ -107,7 +107,7 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 | Agent framework | **CrewAI** | Multi-agent orchestration |
 | LLM | **Claude Sonnet 4.6** (default) — configurable via `LLM_PROVIDER` | See "LLM Choice" section below for rationale. Provider is swappable (OpenAI / Anthropic / Gemini / local Ollama). LLM calls go through a thin wrapper. |
 | RAG / Vector store | **FAISS + LangChain** | FAISS is lightweight, no server needed. LangChain handles chunking (`RecursiveCharacterTextSplitter`, chunk_size=800, overlap=100) and retrieval. |
-| Embeddings | **Ollama `nomic-embed-text`** (default, local, free) — configurable via `EMBEDDING_PROVIDER` | OpenAI `text-embedding-3-small` available as alternative. **Critical:** the same provider + model must be used at index-build time AND at query time, or FAISS retrieval returns garbage. |
+| Embeddings | **Ollama `mxbai-embed-large`** (default, local, free, 1024-dim) — configurable via `EMBEDDING_PROVIDER` | OpenAI `text-embedding-3-small` available as alternative. **Critical:** the same provider + model must be used at index-build time AND at query time, or FAISS retrieval returns garbage. See `chatbot/eval/` for the head-to-head vs `nomic-embed-text`. |
 | Web search | **DuckDuckGo (`duckduckgo-search`)** | Free, no API key. Used by University Programs agent. |
 | News | **RSS feeds** | Custom script (to be provided). Used by News agent. |
 | Frontend | **Chainlit** | Python-native chat UI, streaming built-in, minimal setup. |
@@ -158,7 +158,7 @@ GEMINI_API_KEY=...
 
 # Embeddings (FAISS index + query)
 EMBEDDING_PROVIDER=ollama          # default; alternative: openai
-OLLAMA_EMBED_MODEL=nomic-embed-text
+OLLAMA_EMBED_MODEL=mxbai-embed-large   # see eval/ for the head-to-head vs nomic-embed-text
 OLLAMA_BASE_URL=http://localhost:11434
 OPENAI_EMBED_MODEL=text-embedding-3-small
 ```
@@ -181,11 +181,12 @@ Variants worth considering later:
 
 ### Embeddings — Current Setup
 
-**Default: Ollama `nomic-embed-text` (local, free, 768-dim).**
+**Default: Ollama `mxbai-embed-large` (local, free, 1024-dim).**
 
 - Provider/model selection lives in `chatbot/embeddings.py` (`get_embeddings()`). Both `build_index.py` and `tools/rag_tool.py` MUST import from this helper so build-time and query-time embeddings can't drift.
-- **One-time setup:** `brew install ollama` → `ollama serve` (background) → `ollama pull nomic-embed-text`.
-- Index build runs in a few minutes on a Mac CPU from `Grouped_Skills_Categorized_Updated.xlsx` (~870 canonical skill groups → ~870 chunks at chunk_size=800). One-time cost.
+- **One-time setup:** `brew install ollama` → `ollama serve` (background) → `ollama pull mxbai-embed-large`.
+- Index build runs in a few minutes on a Mac CPU from `Grouped_Skills_Categorized_Updated.xlsx` (~871 canonical skill groups → 871 chunks at chunk_size=2000). One-time cost.
+- **Why this model:** A/B test against `nomic-embed-text` (see `chatbot/eval/`) showed P@5 0.36 → 0.48 (+33% relative). Two queries that were P@5=0 (data engineering, MLOps) are now retrieving correctly. Disk cost: 669 MB vs 274 MB.
 - **Cloud deployment implication:** Ollama needs to run on the deployment host too. If that's not viable (e.g. lightweight serverless), switch to `EMBEDDING_PROVIDER=openai` and rebuild the index before deploying.
 
 ---
@@ -282,3 +283,15 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **`chatbot/.env.example` refreshed** to match the env vars documented in this file (LLM_PROVIDER defaults to anthropic, EMBEDDING_PROVIDER defaults to ollama, all listed with their defaults).
 - **Cost note:** test_analyst.py keeps a single-query default so smoke runs cost cents, not dollars. Add more queries to `DEFAULT_QUERIES` deliberately when debugging.
 - **Next step:** Step 5 — web search tool (DuckDuckGo wrapper) for the University Programs agent. After that, Step 6 (University Programs agent), then Step 8 (Orchestrator) — leaving the News agent (Step 7) for whenever Eric's RSS script is ready.
+
+### 2026-05-22 — Embedding model swap: nomic-embed-text → mxbai-embed-large
+- **Hypothesis:** stronger embedder will lift the four P@5=0 queries from the baseline.
+- **Procedure:** `ollama pull mxbai-embed-large` (669 MB) → set `OLLAMA_EMBED_MODEL=mxbai-embed-large` in `chatbot/.env` → rebuild index → re-run eval.
+- **Eval script change:** `run_rag_eval.py` now includes the embed model in the snapshot filename so A/B comparisons don't overwrite each other. The old baseline was renamed `baseline_2026-05-22_nomic-embed-text.md`; new one written to `baseline_2026-05-22_mxbai-embed-large.md`. Both are committed.
+- **Result: mean P@5 0.36 → 0.48 (+33% relative), mean R@5 0.26 → 0.23 (-12%).**
+- **Per-query deltas (P@5):**
+  - Wins: `mlops` 0.00 → **0.80**; `data-engineering` 0.00 → 0.40; `cloud-infra` 0.80 → 1.00; `gen-ai` 0.40 → 0.60.
+  - Regression: `programming` 0.60 → **0.20** (worth tracking but smaller than the wins in aggregate).
+  - Unchanged structural failures: `soft-skills-ml` 0/0, `stats-math` 0/0. These are query-structure problems where "ML" in the query overwhelms "soft" or "statistics". Embedding model can't fix this; the right fix is **metadata filtering at retrieval** (pass `level1=soft` to FAISS so it can only see soft skills). That's the next RAG improvement to try.
+- **Decision: keep mxbai-embed-large as the new default.** Code defaults in `chatbot/embeddings.py` and `chatbot/.env.example` updated. CLAUDE.md (tech stack table + setup section) updated.
+- **What's NOT yet on disk for new contributors:** anyone cloning the repo needs to `ollama pull mxbai-embed-large` then `python chatbot/build_index.py` before `rag_tool.py` will work. The FAISS index is gitignored and must be rebuilt locally with the active embedding model.
