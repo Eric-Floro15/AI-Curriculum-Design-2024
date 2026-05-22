@@ -11,7 +11,9 @@ Writes: faiss_index/index.faiss
 """
 
 import os
+import re
 import sys
+import difflib
 import pandas as pd
 from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -50,18 +52,78 @@ def load_skills(path: str) -> pd.DataFrame:
     return df
 
 
-def load_cluster_map(path: str) -> dict[str, int]:
-    """Returns {skill_name_lower: cluster_id} if the file exists, else {}."""
-    if not os.path.exists(path):
-        print(f"  Cluster file not found ({path}) — skipping cluster labels.")
+_NORMALIZE_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _normalize(name: str) -> str:
+    """Collapse a skill name to lowercase alphanumerics for matching."""
+    return _NORMALIZE_RE.sub("", name.lower())
+
+
+def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]:
+    """
+    Match cluster-CSV skill names to canonical XLSX groups and return
+    {canonical_group_lower: cluster_id}.
+
+    The cluster CSV (766 skills) was generated from a different skills file
+    than the XLSX we index (4,824 rows / 871 canonical groups), so the names
+    don't align exactly. Matching strategy:
+      1. Normalized exact match (strip non-alphanumerics, lowercase) against
+         the union of XLSX Skills + Alternate Spellings columns.
+      2. Fuzzy fallback via difflib with cutoff=0.9 — high enough to avoid
+         wrong matches like "Brand Management" -> "Management".
+    CSV skills with no confident match are skipped and counted.
+    """
+    if not os.path.exists(cluster_csv_path):
+        print(f"  Cluster file not found ({cluster_csv_path}) — skipping cluster labels.")
         return {}
-    clusters = pd.read_csv(path)
+    clusters = pd.read_csv(cluster_csv_path)
     if "Cluster" not in clusters.columns or "Skill" not in clusters.columns:
         print("  Cluster file missing expected columns (Cluster, Skill) — skipping.")
         return {}
-    mapping = {row["Skill"].strip().lower(): int(row["Cluster"]) for _, row in clusters.iterrows()}
-    print(f"  Loaded cluster labels for {len(mapping):,} skills.")
-    return mapping
+
+    # Normalized name → canonical-group-lower, from the XLSX taxonomy
+    norm_to_canonical: dict[str, str] = {}
+    for _, row in df.iterrows():
+        canonical = str(row["Alternate Spellings"]).strip().lower()
+        for col in ("Skills", "Alternate Spellings"):
+            v = row[col]
+            if pd.notna(v):
+                key = _normalize(str(v))
+                if key:
+                    norm_to_canonical[key] = canonical
+
+    all_norm_names = list(norm_to_canonical.keys())
+
+    result: dict[str, int] = {}
+    exact = fuzzy = miss = 0
+    for _, row in clusters.iterrows():
+        if pd.isna(row["Skill"]):
+            miss += 1
+            continue
+        key = _normalize(str(row["Skill"]))
+        cid = int(row["Cluster"])
+        if not key:
+            miss += 1
+            continue
+        if key in norm_to_canonical:
+            result[norm_to_canonical[key]] = cid
+            exact += 1
+            continue
+        close = difflib.get_close_matches(key, all_norm_names, n=1, cutoff=0.9)
+        if close:
+            result[norm_to_canonical[close[0]]] = cid
+            fuzzy += 1
+        else:
+            miss += 1
+
+    total_groups = df["Alternate Spellings"].nunique()
+    print(
+        f"  Cluster matching: exact={exact}, fuzzy={fuzzy}, unmatched={miss} "
+        f"(CSV total={exact + fuzzy + miss})"
+    )
+    print(f"  Canonical groups labelled: {len(result):,} / {total_groups:,}")
+    return result
 
 
 CLUSTER_THEMES = {
@@ -137,8 +199,14 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
 
 
 def chunk_documents(raw_docs: list[dict]) -> tuple[list[str], list[dict]]:
-    """Split documents that exceed chunk_size; return parallel lists of texts and metadatas."""
-    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+    """Split documents that exceed chunk_size; return parallel lists of texts and metadatas.
+
+    chunk_size is set wider than the longest skill doc (p99 ≈ 1.1k chars,
+    max ≈ 1.9k) so each canonical-skill document stays in one chunk. Splitting
+    these short docs was previously stripping the "Skill: X" header off from
+    the description.
+    """
+    splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
 
     texts, metadatas = [], []
     for doc in raw_docs:
@@ -169,7 +237,7 @@ def main():
     print("=== Building FAISS index for skills taxonomy ===\n")
 
     df = load_skills(SKILLS_FILE)
-    cluster_map = load_cluster_map(CLUSTER_FILE)
+    cluster_map = build_cluster_map(df, CLUSTER_FILE)
 
     print("\nBuilding documents from skill groups …")
     raw_docs = build_documents(df, cluster_map)
@@ -177,7 +245,7 @@ def main():
 
     print("\nChunking documents …")
     texts, metadatas = chunk_documents(raw_docs)
-    print(f"  Produced {len(texts):,} chunks (chunk_size=800, overlap=100).")
+    print(f"  Produced {len(texts):,} chunks (chunk_size=2000, overlap=0).")
 
     print()
     build_faiss_index(texts, metadatas, INDEX_DIR)
