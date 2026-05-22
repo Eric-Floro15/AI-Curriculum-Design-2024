@@ -36,6 +36,12 @@ EXPECTED_COLUMNS = {
     "Level 1 Category", "Level 2 Category", "Description", "Frequency"
 }
 
+# Chunk-size hoisted so the eval script can record which config a baseline ran
+# against. Wider than the longest skill doc (p99 ≈ 1.1k chars, max ≈ 1.9k) so
+# each canonical-skill document fits in one chunk.
+CHUNK_SIZE = 2000
+CHUNK_OVERLAP = 0
+
 
 def load_skills(path: str) -> pd.DataFrame:
     print(f"Loading skills taxonomy from: {path}")
@@ -206,7 +212,7 @@ def chunk_documents(raw_docs: list[dict]) -> tuple[list[str], list[dict]]:
     these short docs was previously stripping the "Skill: X" header off from
     the description.
     """
-    splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 
     texts, metadatas = [], []
     for doc in raw_docs:
@@ -245,7 +251,7 @@ def main():
 
     print("\nChunking documents …")
     texts, metadatas = chunk_documents(raw_docs)
-    print(f"  Produced {len(texts):,} chunks (chunk_size=2000, overlap=0).")
+    print(f"  Produced {len(texts):,} chunks (chunk_size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP}).")
 
     print()
     build_faiss_index(texts, metadatas, INDEX_DIR)

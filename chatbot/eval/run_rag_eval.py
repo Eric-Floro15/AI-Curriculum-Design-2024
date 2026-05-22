@@ -15,7 +15,7 @@ Run:
 import os
 import re
 import sys
-from datetime import date
+from datetime import date, datetime
 
 import yaml
 
@@ -24,10 +24,34 @@ _CHATBOT_DIR = os.path.dirname(_HERE)
 if _CHATBOT_DIR not in sys.path:
     sys.path.insert(0, _CHATBOT_DIR)
 
-from tools.rag_tool import retrieve  # noqa: E402
+from tools.rag_tool import retrieve, _load_vectorstore, INDEX_DIR  # noqa: E402
+from embeddings import describe_embeddings_config  # noqa: E402
+from build_index import CHUNK_SIZE, CHUNK_OVERLAP  # noqa: E402
 
 QUERIES_FILE = os.path.join(_HERE, "queries.yaml")
 K = 5
+
+
+def _index_provenance() -> dict:
+    """Capture which index + embedding config a baseline run was against."""
+    store = _load_vectorstore()
+    try:
+        n_docs = store.index.ntotal
+    except Exception:
+        n_docs = "?"
+    faiss_file = os.path.join(INDEX_DIR, "index.faiss")
+    mtime_iso = (
+        datetime.fromtimestamp(os.path.getmtime(faiss_file)).isoformat(timespec="seconds")
+        if os.path.exists(faiss_file)
+        else "?"
+    )
+    return {
+        "embeddings": describe_embeddings_config(),
+        "chunk_size": CHUNK_SIZE,
+        "chunk_overlap": CHUNK_OVERLAP,
+        "index_docs": n_docs,
+        "index_mtime": mtime_iso,
+    }
 
 _NORMALIZE_RE = re.compile(r"[^a-z0-9]+")
 
@@ -90,11 +114,19 @@ def main() -> None:
     avg_p = p_sum / n
     avg_r = r_sum / n
 
+    prov = _index_provenance()
     header = [
         f"# RAG retrieval baseline — {date.today().isoformat()}",
         "",
+        "## Run config",
+        f"- embeddings: `{prov['embeddings']}`",
+        f"- chunk_size: {prov['chunk_size']}, chunk_overlap: {prov['chunk_overlap']}",
+        f"- index docs: {prov['index_docs']}",
+        f"- index built: {prov['index_mtime']}",
         f"- queries: {n}",
         f"- k: {K}",
+        "",
+        "## Results",
         f"- **mean precision@{K} = {avg_p:.2f}**",
         f"- **mean recall@{K} = {avg_r:.2f}**",
         "",
