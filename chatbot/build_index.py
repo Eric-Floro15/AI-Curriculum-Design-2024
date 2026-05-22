@@ -35,7 +35,7 @@ SKILLS_FILE = os.path.join(DATA_DIR, "Grouped_Skills_Categorized_Updated.xlsx")
 CLUSTER_FILE = os.path.join(DATA_DIR, "clust_ensembled_results.csv")
 
 EXPECTED_COLUMNS = {
-    "Skills", "Alternate Spellings", "Date",
+    "Skills", "Alternate Spellings", "Date (2024 or 2025)",
     "Level 1 Category", "Level 2 Category", "Description", "Frequency"
 }
 
@@ -99,7 +99,7 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
         level1 = group["Level 1 Category"].dropna().iloc[0] if group["Level 1 Category"].notna().any() else "Unknown"
         level2 = group["Level 2 Category"].dropna().iloc[0] if group["Level 2 Category"].notna().any() else "Unknown"
         description = group["Description"].dropna().iloc[0] if group["Description"].notna().any() else ""
-        dates = sorted(group["Date"].dropna().unique().tolist())
+        dates = sorted(group["Date (2024 or 2025)"].dropna().unique().tolist())
         total_freq = int(group["Frequency"].fillna(0).sum())
 
         # Look up cluster for the canonical name
