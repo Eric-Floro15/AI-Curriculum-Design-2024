@@ -65,8 +65,14 @@ def is_match(retrieved_skill: str, expected_term: str) -> bool:
     return _normalize(expected_term) in _normalize(retrieved_skill)
 
 
-def score_query(query: str, expected: list[str], k: int = K) -> dict:
-    results = retrieve(query, k=k)
+def score_query(
+    query: str,
+    expected: list[str],
+    k: int = K,
+    filter: dict | None = None,
+) -> dict:
+    kwargs = dict(filter or {})
+    results = retrieve(query, k=k, **kwargs)
     retrieved = [r["skill"] for r in results]
 
     relevant = [s for s in retrieved if any(is_match(s, e) for e in expected)]
@@ -91,7 +97,8 @@ def main() -> None:
     p_sum = r_sum = 0.0
 
     for case in cases:
-        result = score_query(case["query"], case["expected"], k=K)
+        filt = case.get("filter")
+        result = score_query(case["query"], case["expected"], k=K, filter=filt)
         p_sum += result["precision_at_k"]
         r_sum += result["recall_at_k"]
 
@@ -99,6 +106,7 @@ def main() -> None:
             f"## [{case['id']}] {case['query']!r}",
             "",
             f"- expected: `{case['expected']}`",
+            f"- filter: `{filt}`" if filt else "- filter: none",
             f"- precision@{K} = **{result['precision_at_k']:.2f}** ({len(result['relevant'])}/{K})",
             f"- recall@{K} = **{result['recall_at_k']:.2f}** "
             f"({len(result['matched_expected'])}/{len(case['expected'])})",

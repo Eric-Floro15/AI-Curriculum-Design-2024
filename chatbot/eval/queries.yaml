@@ -5,6 +5,11 @@
 # name (lowercase, non-alphanumerics stripped). Substrings are intentionally
 # short so they survive XLSX naming variations (e.g. "aws" matches "Aws Ec2").
 #
+# Optional `filter` block per query — passed straight through to retrieve()
+# to test what the Analyst agent can achieve when it routes a categorical
+# query with a metadata filter. Supported keys: level1, level2,
+# level2_contains, cluster_id.
+#
 # Re-run with:
 #     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_rag_eval.py
 
@@ -18,7 +23,8 @@
 
 - id: soft-skills-ml
   query: Soft skills for machine learning practitioners
-  expected: [communication, collaboration, problem solving, leadership, teamwork, critical thinking]
+  expected: [communication, collaboration, problem solving, leadership, teamwork, critical thinking, stakeholder, learning agility, decision making]
+  filter: { level1: soft }
 
 - id: mlops
   query: MLOps and model deployment skills
@@ -26,7 +32,8 @@
 
 - id: stats-math
   query: Statistical methods and mathematical foundations for machine learning
-  expected: [statistics, probability, linear algebra, regression, calculus, hypothesis testing]
+  expected: [statistics, statistical, probability, linear algebra, regression, calculus, hypothesis testing, quantitative, mathematics]
+  filter: { level2_contains: statistic }
 
 - id: nlp
   query: Natural language processing skills

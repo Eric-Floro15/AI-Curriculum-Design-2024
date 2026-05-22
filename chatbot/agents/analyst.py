@@ -39,6 +39,12 @@ You have two complementary toolsets:
      - "What skills are similar to X?"
      - Open-ended exploration where the question doesn't map to a clean filter.
 
+   The RAG tool also accepts optional metadata filters (level1, level2_contains,
+   cluster_id). USE THEM whenever the query mixes a category with a technical
+   concept — e.g. "soft skills for ML practitioners" must pass level1="soft"
+   or the embedder latches on to "ML" and returns ML technical skills; a
+   "statistical foundations" query benefits from level2_contains="statistic".
+
 2. **Top Skills By Frequency / Skills In Category / Skills In Cluster /
    Category Summary** — deterministic pandas filters and aggregations.
    Best for:
