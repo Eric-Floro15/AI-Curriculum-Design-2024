@@ -14,11 +14,17 @@ import os
 import sys
 import pandas as pd
 from dotenv import load_dotenv
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
 
 load_dotenv()
+
+# Embedding provider — "ollama" (local, default) or "openai".
+# The same provider/model must be used at query time by the RAG tool.
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "ollama").lower()
+OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OPENAI_EMBED_MODEL = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
 
 # ── paths ──────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -149,13 +155,36 @@ def chunk_documents(raw_docs: list[dict]) -> tuple[list[str], list[dict]]:
     return texts, metadatas
 
 
-def build_faiss_index(texts: list[str], metadatas: list[dict], index_dir: str) -> None:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        sys.exit("ERROR: OPENAI_API_KEY not set. Add it to chatbot/.env")
+def get_embeddings():
+    if EMBEDDING_PROVIDER == "ollama":
+        try:
+            from langchain_ollama import OllamaEmbeddings
+        except ImportError:
+            sys.exit(
+                "ERROR: langchain-ollama not installed.\n"
+                "  pip install langchain-ollama"
+            )
+        print(f"Using Ollama embeddings: model={OLLAMA_EMBED_MODEL}, host={OLLAMA_BASE_URL}")
+        print(f"  (Make sure Ollama is running: `ollama serve` and `ollama pull {OLLAMA_EMBED_MODEL}`)")
+        return OllamaEmbeddings(model=OLLAMA_EMBED_MODEL, base_url=OLLAMA_BASE_URL)
 
-    print(f"Embedding {len(texts):,} text chunks with text-embedding-3-small …")
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=api_key)
+    if EMBEDDING_PROVIDER == "openai":
+        try:
+            from langchain_openai import OpenAIEmbeddings
+        except ImportError:
+            sys.exit("ERROR: langchain-openai not installed.\n  pip install langchain-openai")
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            sys.exit("ERROR: OPENAI_API_KEY not set. Add it to chatbot/.env")
+        print(f"Using OpenAI embeddings: model={OPENAI_EMBED_MODEL}")
+        return OpenAIEmbeddings(model=OPENAI_EMBED_MODEL, openai_api_key=api_key)
+
+    sys.exit(f"ERROR: Unknown EMBEDDING_PROVIDER={EMBEDDING_PROVIDER!r}. Use 'ollama' or 'openai'.")
+
+
+def build_faiss_index(texts: list[str], metadatas: list[dict], index_dir: str) -> None:
+    embeddings = get_embeddings()
+    print(f"Embedding {len(texts):,} text chunks …")
 
     vectorstore = FAISS.from_texts(texts, embeddings, metadatas=metadatas)
 

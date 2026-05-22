@@ -72,6 +72,10 @@ The research pipeline is **complete**. Do not re-run it unless explicitly instru
 
 6. **Security alert:** `clust_skills_embedd.ipynb` contains a hardcoded OpenAI API key in two locations (`AI-driven-course-design-master/final_implementation/` and `AI-driven-course-design-master/final_implementation/kmeans/`). This key must be rotated before the repo is shared with anyone new. Replace with `os.getenv('OPENAI_API_KEY')`.
 
+7. **Embedding provider/model must match between index build and query.** `build_index.py` uses `EMBEDDING_PROVIDER` (default `ollama`, model `nomic-embed-text`). The future `tools/rag_tool.py` MUST use the same provider/model, or FAISS retrieval returns garbage. Plan to factor a shared `chatbot/embeddings.py` helper so both paths can't drift.
+
+8. **`chatbot/data/` is not in git.** The skills XLSX (`Grouped_Skills_Categorized_Updated.xlsx`) and cluster CSV (`clust_ensembled_results.csv`) referenced by `build_index.py` are NOT currently present in the repo — they live outside the working tree and need to be symlinked or copied in by whoever runs the script. Do not commit these data files. Consider adding a `chatbot/.gitignore` covering `data/`, `faiss_index/`, `.env`.
+
 ---
 
 ## The Chatbot — Architecture & Design
@@ -101,9 +105,9 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 | Layer | Choice | Notes |
 |-------|--------|-------|
 | Agent framework | **CrewAI** | Multi-agent orchestration |
-| LLM | **TBD** | OpenAI (GPT-4o), Anthropic (Claude), or Gemini — keep LLM selection configurable via `.env` variable `LLM_PROVIDER`. Write LLM calls through a thin wrapper so the provider can be swapped. |
+| LLM | **Claude Sonnet 4.6** (default) — configurable via `LLM_PROVIDER` | See "LLM Choice" section below for rationale. Provider is swappable (OpenAI / Anthropic / Gemini / local Ollama). LLM calls go through a thin wrapper. |
 | RAG / Vector store | **FAISS + LangChain** | FAISS is lightweight, no server needed. LangChain handles chunking (`RecursiveCharacterTextSplitter`, chunk_size=800, overlap=100) and retrieval. |
-| Embeddings | **OpenAI text-embedding-3-small** | Cheap, high quality. Alternatively `sentence-transformers` locally for zero API dependency. |
+| Embeddings | **Ollama `nomic-embed-text`** (default, local, free) — configurable via `EMBEDDING_PROVIDER` | OpenAI `text-embedding-3-small` available as alternative. **Critical:** the same provider + model must be used at index-build time AND at query time, or FAISS retrieval returns garbage. |
 | Web search | **DuckDuckGo (`duckduckgo-search`)** | Free, no API key. Used by University Programs agent. |
 | News | **RSS feeds** | Custom script (to be provided). Used by News agent. |
 | Frontend | **Chainlit** | Python-native chat UI, streaming built-in, minimal setup. |
@@ -138,11 +142,45 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 ### Environment Variables Required
 
 ```
-LLM_PROVIDER=openai          # or: anthropic, gemini
-OPENAI_API_KEY=...
+# LLM (agents) — see "LLM Choice" below for the default recommendation
+LLM_PROVIDER=anthropic       # or: openai, gemini, ollama
+LLM_MODEL=claude-sonnet-4-6  # default; override per agent if desired
 ANTHROPIC_API_KEY=...
+OPENAI_API_KEY=...
 GEMINI_API_KEY=...
+
+# Embeddings (FAISS index + query)
+EMBEDDING_PROVIDER=ollama          # default; alternative: openai
+OLLAMA_EMBED_MODEL=nomic-embed-text
+OLLAMA_BASE_URL=http://localhost:11434
+OPENAI_EMBED_MODEL=text-embedding-3-small
 ```
+
+### LLM Choice — Recommendation
+
+**Default: Claude Sonnet 4.6** (`LLM_PROVIDER=anthropic`, `LLM_MODEL=claude-sonnet-4-6`).
+
+Why:
+- **Strong tool use** — CrewAI relies heavily on tool calls (RAG, CSV lookups, web search). Sonnet 4.6 is among the best at structured tool use, which matters for agent reliability.
+- **Synthesis quality for the Orchestrator** — combining outputs from Analyst + News + University Programs into a coherent professor-facing recommendation is the hardest step. Sonnet handles this well.
+- **Cost/quality balance** — roughly 5× cheaper than Opus per token, while close in capability for this workload. Important for a multi-agent system where every user query fans out into several LLM calls.
+- **Domain continuity** — the original skill extraction + curriculum drafting was done in Claude.ai, so output style is already known to fit this project.
+
+Variants worth considering later:
+- **Haiku 4.5** for cheap sub-agents (e.g. Analyst doing pure RAG lookups) — only escalate to Sonnet for the Orchestrator. Add this if cost becomes an issue at scale.
+- **Opus 4.7** only if the Orchestrator's synthesis quality is insufficient on Sonnet. Likely overkill.
+- **Local Ollama (Llama 3.1 8B)** for fully offline dev. Fine for Analyst-style lookups; too weak for Orchestrator synthesis. Useful for testing without burning API budget.
+- **GPT-4o / Gemini** — kept as fallback options via the `LLM_PROVIDER` switch. No reason to prefer them as default given the above.
+
+### Embeddings — Current Setup
+
+**Default: Ollama `nomic-embed-text` (local, free, 768-dim).**
+
+- Set up by `build_index.py` (Ollama-first, falls back to OpenAI via `EMBEDDING_PROVIDER=openai`).
+- **One-time setup:** `brew install ollama` → `ollama serve` (background) → `ollama pull nomic-embed-text`.
+- Approx 5–15 min to build the index from `Grouped_Skills_Categorized_Updated.xlsx` on a Mac CPU. One-time cost.
+- **Hard constraint:** `tools/rag_tool.py` MUST instantiate embeddings with the same `EMBEDDING_PROVIDER` and model used at build time. Factor this into a shared `chatbot/embeddings.py` helper when building the RAG tool.
+- **Cloud deployment implication:** Ollama needs to run on the deployment host too. If that's not viable (e.g. lightweight serverless), switch to `EMBEDDING_PROVIDER=openai` and rebuild the index before deploying.
 
 ---
 
@@ -188,7 +226,24 @@ The paper needs the following sections written (currently outline/empty):
 
 ## Technical Environment
 
-- Python 3.9+
-- Key libraries: `crewai`, `faiss-cpu`, `langchain`, `langchain-openai`, `openai`, `chainlit`, `pandas`, `openpyxl`, `duckduckgo-search`, `feedparser` (for RSS)
+- Python 3.9+ (currently 3.12 on Cassie's Mac)
+- Key libraries: `crewai`, `faiss-cpu`, `langchain`, `langchain-openai`, `langchain-ollama`, `openai`, `chainlit`, `pandas`, `openpyxl`, `duckduckgo-search`, `feedparser` (for RSS)
 - Notebooks: Jupyter (existing pipeline code — do not modify)
 - LLMs used in prior work: ChatGPT and Claude.ai for skill extraction, descriptions, and curriculum generation
+- **Local embedding stack:** Ollama (`brew install ollama`) running `nomic-embed-text`. Required for `build_index.py` in its default config.
+
+---
+
+## Setup Log — What's Been Done
+
+Concrete record of environment + code state so future sessions don't re-do or undo this work.
+
+### 2026-05-22 — Chatbot Step 1 (build_index.py) wired up
+- `chatbot/build_index.py` refactored to support multiple embedding providers via `EMBEDDING_PROVIDER` env var. Ollama is the default (`nomic-embed-text`, 768-dim, local, free). OpenAI (`text-embedding-3-small`) selectable as fallback. Provider import is lazy so missing libs only fail at runtime.
+- `langchain-ollama>=0.2.0` added to `chatbot/requirements.txt`.
+- Ollama 0.24.0 already installed on Cassie's Mac; `nomic-embed-text` pulled (274 MB).
+- **Still to do before `python build_index.py` will succeed:**
+  1. Create `chatbot/data/` and place `Grouped_Skills_Categorized_Updated.xlsx` + `clust_ensembled_results.csv` inside (or symlink). These files are NOT currently in the repo.
+  2. `pip install -r chatbot/requirements.txt` (langchain-ollama not yet installed in the active Python env).
+  3. Ensure `ollama serve` is running (default `http://localhost:11434`).
+- **LLM choice for agents documented** in the "LLM Choice" section above. Default: Claude Sonnet 4.6.
