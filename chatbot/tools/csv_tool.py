@@ -136,13 +136,22 @@ try:
         cluster_id: int = -1,
     ) -> str:
         """
-        Return the top N most-frequent skills in the taxonomy. Filters are
-        optional: level1 is typically "technical" or "soft"; level2 is a
-        subcategory like "Cloud Computing" or "Leadership"; cluster_id is
-        the ensemble cluster (1-10, or -1 to skip the filter).
+        Return the top N most-frequent skills in the taxonomy.
+
+        Argument constraints (MUST be respected — invalid values raise errors):
+          n          integer, default 10.
+          level1     MUST be one of exactly: "technical", "soft", or "" (empty
+                     string to skip). No other values are valid. Do NOT pass
+                     things like "collaboration", "ML", "data" — those are not
+                     level1 categories.
+          level2    free-text subcategory substring like "Cloud Computing",
+                     "Leadership", "Machine Learning"; "" to skip.
+          cluster_id integer 1-10, or -1 to skip. MUST be an integer, never a
+                     string. Do not pass "" — pass -1.
 
         Best for: "what are the most in-demand skills?", "top soft skills",
-        "top skills in cluster 8".
+        "top skills in cluster 8". Example: top soft skills →
+        top_skills_tool(n=5, level1="soft", level2="", cluster_id=-1).
         """
         cid = cluster_id if cluster_id != -1 else None
         rows = top_skills_by_frequency(
@@ -155,10 +164,14 @@ try:
     @tool("Skills In Category")
     def skills_in_category_tool(level1: str, level2: str = "") -> str:
         """
-        List all skills in a given category. level1 is required (typically
-        "technical" or "soft"); level2 is an optional subcategory filter
-        like "Machine Learning" or "Leadership". Returns up to 50 skills,
-        sorted by frequency.
+        List all skills in a given category. Returns up to 50 skills sorted
+        by frequency.
+
+        Argument constraints:
+          level1    REQUIRED. MUST be exactly "technical" or "soft". No other
+                    values are valid.
+          level2   optional subcategory substring like "Machine Learning",
+                    "Leadership", "Cloud Computing"; "" to skip.
 
         Best for: "list all soft skills", "skills in the Cloud Computing
         subcategory".

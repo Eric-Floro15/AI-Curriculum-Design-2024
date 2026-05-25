@@ -219,28 +219,42 @@ try:
         frequency in job postings, Level 1/2 category, cluster membership,
         and description.
 
-        Optional metadata filters — use them when the query mixes categories
-        or the unfiltered search is likely to return the wrong category:
+        Argument constraints (MUST be respected — invalid values raise errors):
 
-          level1            "technical" or "soft" — constrain by top-level
-                            category. STRONGLY recommended when the query
-                            mixes a category with a technical concept (e.g.
-                            "soft skills for ML practitioners" — set
-                            level1="soft", or the embedder latches on to
-                            "ML" and returns ML technical skills).
+          query             REQUIRED non-empty string. The natural-language
+                            question to search for.
+
+          level1            MUST be one of EXACTLY: "technical", "soft", or ""
+                            (empty string to skip). No other values are valid.
+                            Do NOT pass "collaboration", "ML", "data", topic
+                            names, or anything else — only the three values
+                            above. STRONGLY recommended to set this when the
+                            query mixes a category with a technical concept
+                            (e.g. "soft skills for ML practitioners" — set
+                            level1="soft", or the embedder latches on to "ML"
+                            and returns ML technical skills).
 
           level2_contains   case-insensitive substring of the fine-grained
-                            subcategory. Use when you want a specific topic
-                            slice (e.g. "statistic" matches "Statistical
-                            Methods" / "Statistical Analysis"). Pair with
-                            level1="technical" or "soft" for best results.
+                            subcategory; "" to skip. Use when you want a
+                            specific topic slice (e.g. "statistic" matches
+                            "Statistical Methods" / "Statistical Analysis").
+                            Pair with level1 for best results.
 
-          cluster_id        1-10 ensemble cluster (-1 to skip). Only ~160 of
-                            871 canonical skills carry a cluster label, so
-                            this is most useful for cluster-themed questions
-                            where you already know the cluster id.
+          cluster_id        integer 1-10, or -1 to skip. MUST be an integer,
+                            never a string. Do not pass "" — pass -1. Only
+                            ~160 of 871 canonical skills carry a cluster
+                            label, so this is most useful for cluster-themed
+                            questions where you already know the cluster id.
 
-        Pass empty string or -1 to skip a filter.
+        Examples:
+          - "What is BERT?" → skills_rag_tool(query="BERT", level1="",
+              level2_contains="", cluster_id=-1)
+          - "Soft skills for ML engineers" → skills_rag_tool(query="soft
+              skills for ML engineers", level1="soft", level2_contains="",
+              cluster_id=-1)
+          - "Statistical foundations" → skills_rag_tool(query="statistical
+              foundations", level1="technical", level2_contains="statistic",
+              cluster_id=-1)
         """
         cid = cluster_id if cluster_id != -1 else None
         return format_results(

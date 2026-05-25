@@ -174,9 +174,9 @@ Why:
 - **Domain continuity** — the original skill extraction + curriculum drafting was done in Claude.ai, so output style is already known to fit this project.
 
 Variants worth considering later:
-- **Haiku 4.5** for cheap sub-agents (e.g. Analyst doing pure RAG lookups) — only escalate to Sonnet for the Orchestrator. Add this if cost becomes an issue at scale.
+- **Haiku 4.5** for cheap sub-agents (e.g. Analyst doing pure RAG lookups) — only escalate to Sonnet for the Orchestrator. **Validated 2026-05-25:** Haiku 4.5 ran the Analyst smoke test as well as Sonnet (arguably richer output — 12 skills cited vs 5) at ~10× lower cost. This is the recommended low-cost path, not local Ollama (see below). Orchestrator-on-Haiku is still untested; default the Orchestrator to Sonnet until validated.
 - **Opus 4.7** only if the Orchestrator's synthesis quality is insufficient on Sonnet. Likely overkill.
-- **Local Ollama (Llama 3.1 8B)** for fully offline dev. Fine for Analyst-style lookups; too weak for Orchestrator synthesis. Useful for testing without burning API budget.
+- **Local Ollama (Llama 3.1 8B)** — **tested 2026-05-25; viable for single-agent flows after prompt tightening, but not yet validated for multi-agent.** First Analyst run failed (invalid `level1="collaboration"`, JSON-as-text leak). After tightening tool docstrings (explicit enum constraints) and adding worked Q→tool-call examples to the Analyst backstory, the model called the right tool with valid arguments and produced a grounded answer. Use it for offline single-agent dev. Risk: Orchestrator + multiple sub-agents will be harder — tool-use brittleness compounds across hops. For production, prefer Sonnet 4.6 (default) or Haiku 4.5 (cheap). Ollama remains the default for embeddings regardless.
 - **GPT-4o / Gemini** — kept as fallback options via the `LLM_PROVIDER` switch. No reason to prefer them as default given the above.
 
 ### Embeddings — Current Setup
@@ -312,3 +312,27 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **`rank-bm25>=0.2.2` added to `requirements.txt`.** Both FAISS and BM25 caches are loaded lazily via `@lru_cache` so the first query incurs the cost (~1 sec for BM25 build over 871 docs) and subsequent queries are instant.
 - **Result: mean P@5 0.64 → 0.68 (+6%), mean R@5 0.30 → 0.37 (+23%).** programming 0.20 → 0.60 (+0.40), data-engineering 0.40 → 0.60 (+0.20), mlops 0.80 → 0.60 (-0.20), all others unchanged. Total trajectory from original baseline: **P@5 0.36 → 0.68 (+89% relative).**
 - **Data-quality finding (logged for future cleanup):** BM25 surfaced that the canonical group "Transformer Models" in `Grouped_Skills_Categorized_Updated.xlsx` is mislabeled with `level1='soft'` — the correctly labeled variant is "Transformers" at `level1='technical'`. This isn't a code bug; the filter is doing its job. Worth a sweep of the XLSX for similar errors at some point.
+
+### 2026-05-25 — Tested Analyst against local Ollama llama3.1:8b — not viable
+- **Why tested:** validate the claim in the LLM Choice section that local Ollama is "fine for Analyst-style lookups". Ran `KMP_DUPLICATE_LIB_OK=TRUE LLM_PROVIDER=ollama LLM_MODEL=llama3.1:8b python3 chatbot/agents/test_analyst.py` against the same single-query smoke test that Sonnet 4.6 passed cleanly on 2026-05-22.
+- **Failure modes observed:**
+  1. **Invalid filter values.** The model passed `level1="collaboration"` to `skills_taxonomy_rag` — `collaboration` is not a valid `level1` (only `technical` or `soft` are). Caused a pydantic validation error inside the tool wrapper.
+  2. **Wrong type for `cluster_id`.** Model passed `cluster_id=""` (empty string) to a tool typed `int`. Also a validation error.
+  3. **Tool-call-as-final-answer.** After the validation errors, the model gave up and emitted a literal `{"name": "skills_taxonomy_rag", "parameters": {...}}` JSON blob as its final text answer instead of actually re-invoking the tool. This is a known weakness in Llama 3.1 8B's function-calling robustness — recovery after a failed tool call is unreliable.
+- **Fix applied (this session):**
+  1. **`tools/csv_tool.py` + `tools/rag_tool.py` docstrings** — replaced "typically 'technical' or 'soft'" with hard constraints ("MUST be one of EXACTLY: 'technical', 'soft', or ''"), called out the `cluster_id` int-vs-string trap explicitly, and added concrete invocation examples.
+  2. **`agents/analyst.py` backstory** — added a CRITICAL TOOL-USE RULES preamble enumerating valid `level1` values + the "don't emit JSON as final answer" instruction, and added 5 worked Q→tool-call examples covering all four CSV tools and the RAG tool.
+- **Re-run result: WORKS.** Same query, same model (llama3.1:8b), same setup — model now calls a valid tool with valid args and produces a grounded final answer citing real frequencies: Communication 39,040; Agile 6,838; Problem-Solving 1,925; Collaboration 1,887; Critical Thinking 204. Less polished selection than Sonnet (e.g. picked Critical Thinking 204 over Stakeholder Mgmt 3,689 that Sonnet chose) but functionally correct.
+- **Takeaway:** small-model tool-use is recoverable with sharper prompts — but only validated for the single-agent case. The Orchestrator + multi-agent path is untested on Ollama and is where brittleness will likely return. Don't generalise this success to "Ollama is production-ready for the chatbot" — it's "Ollama is workable for offline single-agent dev".
+- **Side benefit:** the tightened prompts are also better for Sonnet/Haiku — explicit enums + worked examples reduce ambiguity for any model. No reason to roll them back.
+
+### 2026-05-25 — Tested Analyst against Haiku 4.5 — viable as cheap default
+- **Why tested:** validate Haiku 4.5 as the cost-conscious alternative to Sonnet 4.6 before committing to a model choice for the rest of the build (Orchestrator, Chainlit, etc.).
+- **Setup:** `KMP_DUPLICATE_LIB_OK=TRUE LLM_PROVIDER=anthropic LLM_MODEL=claude-haiku-4-5-20251001 python3 chatbot/agents/test_analyst.py`.
+- **Result: works as well as Sonnet on this query, possibly slightly richer.** Same single-query smoke test produced 5 well-structured recommendations with frequencies sourced from the taxonomy: Communication 39,040 (with sub-skills Verbal/Written 869, Technical 336, Presentation 128, Data Storytelling 2/cluster 10); Mentoring 7,888 + Technical Leadership 1,848; Agile 6,838 (cluster 10); Problem-Solving 1,925 + 679 + Critical Thinking 204; Cross-Functional Collaboration 924 + Stakeholder Collaboration 153. Closed with a category-level summary (Communication 41,683 / Leadership 11,044 / Project Management 6,994 / Collaboration 4,558).
+- **Quality vs cost comparison (this single Analyst query):**
+  - Sonnet 4.6: 5 recs, ~5 skills cited, structured. Reference quality.
+  - Haiku 4.5: 5 recs, **~12 skills cited including sub-categories**, includes a closing taxonomy summary. Arguably richer than the Sonnet run, and ~10x cheaper.
+  - Llama 3.1 8B (local): 5 recs, ~5 skills, less polished selection (picked Critical Thinking 204 over higher-frequency picks). Free but only after prompt-tightening; multi-agent untested.
+- **Decision:** **Haiku 4.5 is the new recommended default for the Analyst** (and likely other sub-agents that do mostly tool dispatch + light synthesis). Sonnet 4.6 remains the recommendation for the Orchestrator until it's been tested. LLM Choice section updated accordingly.
+- **What this does NOT prove:** Haiku's synthesis quality when fed outputs from multiple sub-agents (the Orchestrator's job). That's the next thing to validate after the Orchestrator agent is wired up.
