@@ -127,7 +127,8 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
     news.py                ← News agent definition                      (not yet built)
     university_programs.py ← University Programs agent definition       ✅ done
     test_university_programs.py ← Standalone end-to-end smoke test       ✅ done
-    orchestrator.py        ← Orchestrator agent definition              (not yet built)
+    orchestrator.py        ← Orchestrator agent + multi-agent crew      ✅ done
+    test_orchestrator.py   ← Standalone multi-agent end-to-end smoke test ✅ done
   tools/
     rag_tool.py            ← FAISS RAG tool (query skills taxonomy)     ✅ done
     csv_tool.py            ← Pandas filters/aggregations over taxonomy  ✅ done
@@ -352,3 +353,22 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **Quality caveat:** the agent honestly flagged uncertainty on courses 12-13 ("Additional course — elective or domain track") rather than hallucinate. Good behaviour to see on a public-web-search task.
 - **Not yet tested on Haiku 4.5 or Ollama** — single Sonnet run is enough to validate the wiring. Cross-model testing makes more sense after the Orchestrator exists, since multi-hop coordination is where small models actually break.
 - **Next step:** Step 8 — Orchestrator agent. Wires Analyst + Univ Programs into a Crew, with Sonnet handling synthesis. This is the multi-agent test gate.
+
+### 2026-05-25 — Chatbot Step 8: Orchestrator agent — multi-agent test gate PASSED
+- **`chatbot/agents/orchestrator.py` added** — CrewAI Agent with `allow_delegation=True`. The auto-injected delegation tools ("Delegate work to coworker" / "Ask question to coworker") let the Orchestrator LLM call the Analyst and University Programs agents as if they were tools. Three agents bundled in one `Crew`. `run_query(query)` helper builds a fresh crew per call so conversation state doesn't bleed between queries.
+- **`chatbot/agents/test_orchestrator.py`** — single-query end-to-end smoke test. Cost on Sonnet 4.6: ~20-40¢ per query (fans out across 3 agents with multiple tool calls each + delegation hops). Wall time: ~5-7 minutes per query.
+- **Test query (deliberately needs BOTH agents):** *"I'm updating my AI/ML Master's curriculum. What are the most in-demand data engineering skills I should make sure my program covers, and how does Queen's University's MMAI program compare on this dimension? Give me concrete recommendations for what to add or strengthen."*
+- **Result: multi-agent coordination on Sonnet 4.6 works cleanly.** The Orchestrator delegated to both sub-agents, synthesised, and produced a publication-quality recommendation. Highlights:
+  - **Analyst data integrated correctly:** real frequencies cited (Data Pipelines 4,278, Data Quality 1,914, Data Management 1,587, Data Governance 1,134, ETL 1,090, DevOps 1,007, Azure 279, NoSQL 364, etc.), tiered into must-have / growing / contextual.
+  - **University Programs data integrated correctly:** named courses + URLs from Queen's MMAI (smith.queensu.ca/grad_studies/mmai/program/), CMU MCDS (15-619 Cloud Computing, 11-637 FCDS), Waterloo MDSAI (CS 651, CS 638), UofT MScAC.
+  - **Proactive comparative analysis:** the Orchestrator went beyond the explicit Queen's MMAI ask and benchmarked against CMU, Waterloo, and UofT — producing a side-by-side gap table.
+  - **Structured output** as specified in the backstory: executive summary → market data tiers → peer benchmarks → 5 concrete recommendations with priority levels → trade-off section that genuinely engages MMAI's management-first identity.
+  - **No failure modes observed.** No tool-use errors, no delegation loops, no JSON-as-final-answer, no hallucinated URLs/frequencies. Behaved like a senior analyst.
+- **Cosmetic finding:** "Loading skills taxonomy from..." prints 3× during the run. The underlying data is `@lru_cache`'d so it's not actually re-loading 3×, but `load_skills()` in `build_index.py` has a print statement that fires before the cache check. Worth quieting at some point; not blocking.
+- **Cost note:** budget ~25-50¢ per `test_orchestrator.py` run on Sonnet 4.6. For dev iteration, set `LLM_MODEL=claude-haiku-4-5-20251001` to drop to ~3-5¢ — Haiku is validated for the sub-agents but the Orchestrator-on-Haiku synthesis quality is the next thing to validate.
+- **What this PROVES:** Sonnet 4.6 + CrewAI delegation + this prompt structure can handle 3-agent coordination for the actual curriculum-advisor use case. The system as designed is viable.
+- **What this does NOT yet prove:**
+  - Haiku-on-Orchestrator synthesis quality (next cost-saving experiment).
+  - Llama 3.1 8B local for multi-agent — the 2026-05-25 single-agent test showed Ollama is brittle; multi-agent will likely compound that. Skip until/unless cost forces it.
+  - News agent integration (Step 7, still blocked on Eric's RSS script).
+- **Next step:** Either (a) Step 9 — Chainlit frontend, which makes this usable interactively for the professor (Eric's area per the collab note); or (b) test Orchestrator-on-Haiku to lock in a cost-optimised default. Recommend (a) since the multi-agent core is now validated and the next blocker for actually showing this to a user is the UI.
