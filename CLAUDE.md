@@ -125,7 +125,8 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
     analyst.py             ← Analyst agent definition                    ✅ done
     test_analyst.py        ← Standalone end-to-end smoke test            ✅ done
     news.py                ← News agent definition                      (not yet built)
-    university_programs.py ← University Programs agent definition       (not yet built)
+    university_programs.py ← University Programs agent definition       ✅ done
+    test_university_programs.py ← Standalone end-to-end smoke test       ✅ done
     orchestrator.py        ← Orchestrator agent definition              (not yet built)
   tools/
     rag_tool.py            ← FAISS RAG tool (query skills taxonomy)     ✅ done
@@ -343,3 +344,11 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **Smoke test passed:** three queries (Queen's MMAI, MIT AI Master's, best Canadian AI programs) each returned 3 results with relevant titles + URLs + snippets. Queen's MMAI query returned the official `smith.queensu.ca/grad_studies/mmai/program/` page as result #1 — exactly the use case the University Programs agent will need.
 - **No separate agent-level test for this tool** — matches what we did for `rag_tool.py` and `csv_tool.py`: standalone smoke is the bar before wiring an agent. LLM-in-the-loop validation happens when the University Programs agent gets its smoke test (Step 6).
 - **Critical path to the multi-agent test:** Step 6 (University Programs agent) → Step 8 (Orchestrator) → first real read on whether Sonnet/Haiku/Ollama can coordinate sub-agents. News agent (Step 7) stays deferred until Eric's RSS script lands.
+
+### 2026-05-25 — Chatbot Step 6: University Programs agent
+- **`chatbot/agents/university_programs.py` added** — CrewAI Agent wired to `web_search_tool`. Backstory follows the same prompt-tightening pattern proven on the Analyst (CRITICAL TOOL-USE RULES + worked examples) so it generalises if/when we re-run on Llama 3.1 8B. The role is positioned as the peer-institution counterpart to the Analyst (Analyst = labour market signal, Univ Programs = academic-peer signal).
+- **`chatbot/agents/test_university_programs.py`** — single-query smoke test mirroring `test_analyst.py`. Cost is a few cents on Sonnet 4.6 (the search-then-synthesise loop fans out into ~3-5 LLM calls per query).
+- **Smoke test passed on Sonnet 4.6.** Query: *"What courses does the Queen's University MMAI program offer, and what topics are emphasised? Cite URLs for the program pages."* The agent ran multiple targeted searches, returned a structured course list (13 courses + capstone, ~42 units), thematic emphases (technical+management hybrid, AI ethics, applied/experiential, vertical applications), six cited URLs, AND a benchmarking note flagging gaps (no RL / no CV / no MLOps) — exactly the kind of comparative output the Orchestrator will need to consume.
+- **Quality caveat:** the agent honestly flagged uncertainty on courses 12-13 ("Additional course — elective or domain track") rather than hallucinate. Good behaviour to see on a public-web-search task.
+- **Not yet tested on Haiku 4.5 or Ollama** — single Sonnet run is enough to validate the wiring. Cross-model testing makes more sense after the Orchestrator exists, since multi-hop coordination is where small models actually break.
+- **Next step:** Step 8 — Orchestrator agent. Wires Analyst + Univ Programs into a Crew, with Sonnet handling synthesis. This is the multi-agent test gate.
