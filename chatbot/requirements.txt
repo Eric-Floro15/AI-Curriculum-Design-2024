@@ -22,7 +22,9 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 
 # Web search (University Programs agent)
-duckduckgo-search>=6.0.0
+# Note: package was renamed from duckduckgo-search → ddgs in 2025.
+# The old name silently returns zero results — do not pin it.
+ddgs>=9.0.0
 
 # RSS feeds (News agent)
 feedparser>=6.0.0

@@ -108,7 +108,7 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 | LLM | **Claude Sonnet 4.6** (default) — configurable via `LLM_PROVIDER` | See "LLM Choice" section below for rationale. Provider is swappable (OpenAI / Anthropic / Gemini / local Ollama). LLM calls go through a thin wrapper. |
 | RAG / Vector store | **FAISS + LangChain** | FAISS is lightweight, no server needed. LangChain handles chunking (`RecursiveCharacterTextSplitter`, chunk_size=800, overlap=100) and retrieval. |
 | Embeddings | **Ollama `mxbai-embed-large`** (default, local, free, 1024-dim) — configurable via `EMBEDDING_PROVIDER` | OpenAI `text-embedding-3-small` available as alternative. **Critical:** the same provider + model must be used at index-build time AND at query time, or FAISS retrieval returns garbage. See `chatbot/eval/` for the head-to-head vs `nomic-embed-text`. |
-| Web search | **DuckDuckGo (`duckduckgo-search`)** | Free, no API key. Used by University Programs agent. |
+| Web search | **DuckDuckGo (`ddgs`)** | Free, no API key. Used by University Programs agent. Library was renamed `duckduckgo-search` → `ddgs` in 2025; the old name silently returns zero results, do not pin it. |
 | News | **RSS feeds** | Custom script (to be provided). Used by News agent. |
 | Frontend | **Chainlit** | Python-native chat UI, streaming built-in, minimal setup. |
 | Data I/O | **pandas + openpyxl** | For loading skills taxonomy XLSX files. |
@@ -130,7 +130,7 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
   tools/
     rag_tool.py            ← FAISS RAG tool (query skills taxonomy)     ✅ done
     csv_tool.py            ← Pandas filters/aggregations over taxonomy  ✅ done
-    web_search_tool.py     ← DuckDuckGo web search wrapper              (not yet built)
+    web_search_tool.py     ← DuckDuckGo web search wrapper              ✅ done
     rss_tool.py            ← RSS feed news tool (script TBD)            (not yet built)
   eval/                                                                  ✅ done
     queries.yaml           ← 10 baseline retrieval queries + expected skills
@@ -336,3 +336,10 @@ Concrete record of environment + code state so future sessions don't re-do or un
   - Llama 3.1 8B (local): 5 recs, ~5 skills, less polished selection (picked Critical Thinking 204 over higher-frequency picks). Free but only after prompt-tightening; multi-agent untested.
 - **Decision:** **Haiku 4.5 is the new recommended default for the Analyst** (and likely other sub-agents that do mostly tool dispatch + light synthesis). Sonnet 4.6 remains the recommendation for the Orchestrator until it's been tested. LLM Choice section updated accordingly.
 - **What this does NOT prove:** Haiku's synthesis quality when fed outputs from multiple sub-agents (the Orchestrator's job). That's the next thing to validate after the Orchestrator agent is wired up.
+
+### 2026-05-25 — Chatbot Step 5: web search tool (DuckDuckGo via `ddgs`)
+- **`chatbot/tools/web_search_tool.py` added** — `web_search(query, max_results)` Python API + `web_search_tool` CrewAI wrapper (guarded import, same pattern as `rag_tool.py` / `csv_tool.py`). Returns normalised `{title, url, snippet}` dicts; snippet trimmed to 300 chars. Soft-fails to `[]` on rate-limit / network errors so the agent can degrade gracefully.
+- **Library rename caught at install time:** `duckduckgo-search` was renamed to `ddgs` in 2025. The old package still installs but `DDGS().text(...)` silently returns 0 results — discovered when the first smoke test returned `count: 0`. `requirements.txt` updated to `ddgs>=9.0.0` and tech-stack table in this file updated with a warning.
+- **Smoke test passed:** three queries (Queen's MMAI, MIT AI Master's, best Canadian AI programs) each returned 3 results with relevant titles + URLs + snippets. Queen's MMAI query returned the official `smith.queensu.ca/grad_studies/mmai/program/` page as result #1 — exactly the use case the University Programs agent will need.
+- **No separate agent-level test for this tool** — matches what we did for `rag_tool.py` and `csv_tool.py`: standalone smoke is the bar before wiring an agent. LLM-in-the-loop validation happens when the University Programs agent gets its smoke test (Step 6).
+- **Critical path to the multi-agent test:** Step 6 (University Programs agent) → Step 8 (Orchestrator) → first real read on whether Sonnet/Haiku/Ollama can coordinate sub-agents. News agent (Step 7) stays deferred until Eric's RSS script lands.
