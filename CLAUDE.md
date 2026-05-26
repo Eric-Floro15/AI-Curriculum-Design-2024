@@ -95,7 +95,7 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
 | Agent | Role |
 |-------|------|
 | **Analyst Agent** | Interprets the clustering results and skills taxonomy. Answers questions about which skills are most in-demand, how skills cluster together, what the data says about emerging vs. declining topics. Queries the FAISS vector store (RAG over the skills data). |
-| **News Agent** | Retrieves up-to-date AI industry news via RSS feeds (script available — to be integrated). Surfaces recent developments that should influence curriculum decisions. |
+| **News Agent** | Surfaces recent AI/ML developments relevant to curriculum design. Queries a FAISS index over ~100 articles scraped from MIT Tech Review AI, TechCrunch AI, VentureBeat AI, HuggingFace Blog, and The Decoder via `fetch_news.py`. |
 | **University Programs Agent** | Analyzes existing university MMAI programs. Phase 1: web search (DuckDuckGo) to find and summarize program info. Phase 2 (future): full web scraping of program pages for detailed course lists. Integrates findings into the RAG context. |
 | **Orchestrator Agent** | Synthesizes outputs from all other agents into a coherent, actionable response for the professor. This is the agent the user directly receives output from. Produces structured recommendations: skills to add, topics to emphasize, courses to update. |
 | **Planner Agent** *(optional — TBD)* | Receives the user query and decides which agents to invoke and in what order. Add this if query routing complexity warrants it. |
@@ -124,25 +124,32 @@ The system uses **CrewAI** for multi-agent orchestration. The architecture is fl
   agents/
     analyst.py             ← Analyst agent definition                    ✅ done
     test_analyst.py        ← Standalone end-to-end smoke test            ✅ done
-    news.py                ← News agent definition                      (not yet built)
+    news.py                ← News agent definition                       ✅ done
+    test_news.py           ← Standalone end-to-end smoke test            ✅ done
     university_programs.py ← University Programs agent definition       ✅ done
     test_university_programs.py ← Standalone end-to-end smoke test       ✅ done
-    orchestrator.py        ← Orchestrator agent + multi-agent crew      ✅ done
+    orchestrator.py        ← Orchestrator agent + multi-agent crew      ✅ done (3 sub-agents)
     test_orchestrator.py   ← Standalone multi-agent end-to-end smoke test ✅ done
+    test_orchestrator_verbose.py ← Verbose-tracing variant for diagnosis ✅ done
   tools/
     rag_tool.py            ← FAISS RAG tool (query skills taxonomy)     ✅ done
     csv_tool.py            ← Pandas filters/aggregations over taxonomy  ✅ done
     web_search_tool.py     ← DuckDuckGo web search wrapper              ✅ done
-    rss_tool.py            ← RSS feed news tool (script TBD)            (not yet built)
+    news_tool.py           ← FAISS RAG tool over scraped news index    ✅ done
   eval/                                                                  ✅ done
     queries.yaml           ← 10 baseline retrieval queries + expected skills
     run_rag_eval.py        ← Computes precision@5 / recall@5
     baseline_YYYY-MM-DD.md ← Dated snapshot (diff future runs against)
   data/                    ← Gitignored. Skills XLSX + cluster CSV       ✅ populated locally
-  faiss_index/             ← Gitignored. Persisted FAISS index           ✅ built locally
-  build_index.py           ← One-time script to build the FAISS index    ✅ done
+    news/                  ← Gitignored. Scraped RSS CSVs (timestamped)  ✅ populated locally
+  faiss_index/             ← Gitignored. Persisted skills FAISS index    ✅ built locally
+  faiss_news_index/        ← Gitignored. Persisted news FAISS index      ✅ built locally
+  build_index.py           ← One-time script to build the skills index   ✅ done
+  build_news_index.py      ← One-time script to build the news index     ✅ done
+  fetch_news.py            ← RSS scraper for AI/ML news feeds            ✅ done
   embeddings.py            ← Shared embeddings factory — used by both
-                             build_index.py and tools/rag_tool.py        ✅ done
+                             build_index.py / build_news_index.py /
+                             tools/rag_tool.py / tools/news_tool.py      ✅ done
   requirements.txt                                                       ✅ done
   .env                     ← API keys (NEVER commit — in .gitignore)
   .env.example             ← Template showing required env vars (no actual values)
@@ -178,7 +185,8 @@ Why:
 Variants worth considering later:
 - **Haiku 4.5** for cheap sub-agents (e.g. Analyst doing pure RAG lookups) — only escalate to Sonnet for the Orchestrator. **Validated 2026-05-25:** Haiku 4.5 ran the Analyst smoke test as well as Sonnet (arguably richer output — 12 skills cited vs 5) at ~10× lower cost. This is the recommended low-cost path, not local Ollama (see below). Orchestrator-on-Haiku is still untested; default the Orchestrator to Sonnet until validated.
 - **Opus 4.7** only if the Orchestrator's synthesis quality is insufficient on Sonnet. Likely overkill.
-- **Local Ollama (Llama 3.1 8B)** — **tested 2026-05-25; viable for single-agent flows after prompt tightening, but not yet validated for multi-agent.** First Analyst run failed (invalid `level1="collaboration"`, JSON-as-text leak). After tightening tool docstrings (explicit enum constraints) and adding worked Q→tool-call examples to the Analyst backstory, the model called the right tool with valid arguments and produced a grounded answer. Use it for offline single-agent dev. Risk: Orchestrator + multiple sub-agents will be harder — tool-use brittleness compounds across hops. For production, prefer Sonnet 4.6 (default) or Haiku 4.5 (cheap). Ollama remains the default for embeddings regardless.
+- **Local Ollama — recommended model: `qwen2.5:14b`** (~9 GB, fits 16 GB RAM). **Validated 2026-05-26 on the full 4-agent Orchestrator topology** with proper structured tool use, all three sub-agents called, real frequencies cited (Data Pipelines 4278, etc.), and one real News article cited with URL. Uses it for offline single-agent and multi-agent dev. **Two material caveats:** (1) latency is ~35 min/query on 16 GB Mac CPU — too slow for an interactive chatbot UX; (2) the model fabricated a Queen's MMAI URL (`courseleaf.com/...`) even with explicit "do not fabricate URLs" rules — so output needs cross-checking before it's surfaced to a real professor. For production, prefer Sonnet 4.6 (default) or Haiku 4.5 (cheap).
+- **Local Ollama — Llama 3.1 8B is now DEPRECATED for multi-agent.** Tested 2026-05-25 (single-agent: works after prompt tightening) and 2026-05-26 (multi-agent on the 4-agent crew: **broken** — JSON-as-text leaks, hallucinated specialist outputs, only 1 of 3 sub-agents called even with bug-fixed prompts). Capacity ceiling, not a code issue. Use `qwen2.5:14b` instead for local dev. Llama 3.1 8B retained only as a known-broken reference for the setup log. Ollama remains the default for embeddings regardless.
 - **GPT-4o / Gemini** — kept as fallback options via the `LLM_PROVIDER` switch. No reason to prefer them as default given the above.
 
 ### Embeddings — Current Setup
@@ -659,3 +667,83 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **What this PROVES:** CrewAI's delegation pattern is robust enough that even Llama 3.1 8B can drive it without crashing. The bottleneck on small models is *quality of sub-agent output and synthesis grounding*, not *coordination mechanics*.
 - **What's NOT proven:** Haiku 4.5 on the Orchestrator (still the most interesting cost experiment — Haiku validated for sub-agents, Orchestrator role unknown). Also: whether the fixes above would actually close the Llama 3.1 8B quality gap, or whether 8B is fundamentally underpowered for grounded synthesis.
 - **Cosmetic:** Univ Programs sub-agent's "MMOAI" typo is an LLM error, not a code bug — but worth knowing the small model corrupts proper nouns. Larger models did not.
+
+### 2026-05-26 — Chatbot Step 7: News agent (unblocked + built)
+- **Unblocked by `News-Agent-Chatbot-Code-Example/`** — a reference implementation from Eric's MIE1624 course project (AI Innovation & Competitiveness Chatbot). Used the patterns from it (RSS scrape → CSV → vector store → CrewAI agent with retrieve_context-style tool) but did NOT integrate it as code. Stack divergences vs our existing build made a clean rewrite the right move: their stack uses Chroma + sentence-transformers + GPT-4o-mini + Streamlit; ours is FAISS + Ollama mxbai-embed-large + Sonnet 4.6 + (planned) Chainlit. Mixing would have created drift bugs like Critical Rule #7 warns about.
+- **Security note logged + fixed:** the reference folder ships with a real OpenAI API key inside its `.env`. Added a root `.gitignore` that excludes `News-Agent-Chatbot-Code-Example/`, `.DS_Store`, Office lock files, and root-level `.env` files as defence in depth. Folder is kept locally as a pattern reference only — never commit.
+
+- **`chatbot/fetch_news.py` added** — RSS scraper, Python module (not notebook) so it slots into the existing chatbot/ pattern. Curated 5 AI/ML-focused feeds: MIT Technology Review AI, TechCrunch AI, VentureBeat AI, HuggingFace Blog, The Decoder. Output: timestamped CSV in `chatbot/data/news/`. Title + RSS-supplied summary only — no full-article extraction (trafilatura/newspaper3k) in v1, as the extra deps and external-site hammering aren't justified for a corpus this small.
+- **Two issues caught at first run, both fixed in `fetch_news.py`:**
+  1. **All 5 feeds returned 0 entries first run.** feedparser's default User-Agent gets blocked / served empty responses by every publisher we picked. Fixed by switching the HTTP fetch from feedparser's built-in urlopen to `requests` with a real browser UA + certifi-backed SSL. (The default urlopen also fails SSL cert verification on this macOS Python install — `requests` solves both problems at once.) `requests>=2.30.0` added to `requirements.txt`.
+  2. **VentureBeat returns HTTP 308 on URLs with trailing slash.** Removed trailing slash from the VentureBeat URL.
+- **Second run: 97 articles scraped.** Per-source breakdown: MIT TR 10, TechCrunch 20, VentureBeat 7, HuggingFace 50, The Decoder 10. **Imbalance to know about:** HuggingFace dominates the corpus by count (52%). **Even bigger imbalance:** HuggingFace's RSS provides titles only, no summary text — 50/97 articles have empty summaries. Indexed on title alone. VentureBeat goes the other way — they embed ~14k chars of full HTML per article in the RSS, which forced a chunking decision (see below).
+
+- **`chatbot/build_news_index.py` added** — analog of `build_index.py` for news. Loads the latest CSV, chunks, embeds via the shared `embeddings.py` factory (mxbai-embed-large), writes to `chatbot/faiss_news_index/`. `faiss_news_index/` added to `chatbot/.gitignore`.
+- **Chunking issue caught at first build:** `chunk_size=2000` (carried over from `build_index.py`) hit "input length exceeds the context length" errors from mxbai-embed-large on the VentureBeat full-text articles — 2000 chars ≈ 500 tokens which is right at mxbai's 512-token limit. Reduced to `chunk_size=1000, overlap=100`. Result: 97 articles → 206 chunks, build succeeds. **Note this differs from the skills index (2000/0)** — skills docs are short and single-chunk; news articles have a long tail of long ones and need real chunking with overlap.
+
+- **`chatbot/tools/news_tool.py` added** — RAG retrieval over `faiss_news_index/`. Same `@lru_cache` + shared-embeddings pattern as `rag_tool.py`. No BM25 hybrid, no metadata filtering — pure semantic retrieval. Returns title / link / source / published / content per result, formatted for citation. Standalone smoke test passed: queries like "AI agents and tool use", "large language model releases", "AI regulation and policy" all return on-topic articles with proper citations.
+
+- **`chatbot/agents/news.py` added** — single CrewAI agent wired to `news_rag_tool`. Backstory follows the prompt-tightening pattern proven on Analyst + Univ Programs: CRITICAL TOOL-USE RULES + 4 worked examples. Importantly, the backstory tells the agent to honestly flag thin retrieval rather than over-synthesise from a small corpus.
+- **`chatbot/agents/test_news.py`** — single-query smoke test. **Passed cleanly on Sonnet 4.6.** Query: *"What recent developments in AI agents and autonomous systems should I incorporate into my AI/ML Master's curriculum? Cite specific articles."*
+  - Returned 5 well-structured recommendations, each with title + source + date + URL pulled from the corpus.
+  - Linked each article to a concrete curriculum action ("Why it matters for curriculum: …").
+  - **Spontaneously flagged the corpus bias** — closing note: *"The indexed articles are primarily from HuggingFace Blog and MIT Technology Review… broadening to ACL/NeurIPS proceedings or The Decoder would give a more research-diverse view."* This is exactly the self-awareness the backstory asked for.
+- **Failed on Llama 3.1 8B first try** — same JSON-as-final-answer failure mode the other agents hit before prompt tightening. Not investigated further this session; documented for the next "make Ollama work for everything" sweep if it ever becomes a priority.
+
+- **`chatbot/agents/orchestrator.py` updated** — added News as a 3rd specialist. Backstory now describes three specialists (market-demand / peer-programs / recent-news) and tells the Orchestrator to default to consulting at least two for most queries, all three for "update / modernise" queries. Also added an explicit rule: *"The News corpus is small (~100 articles, 5 sources). If the News researcher reports thin retrieval, don't push them — note the gap in your final answer rather than re-delegating."*
+- **End-to-end 4-agent crew NOT yet run** — pieces are individually validated, but the new test_orchestrator.py against a query that exercises all three sub-agents hasn't been kicked off this session. Reasonable next step is to run it on Sonnet (~5-7 min, ~25-50¢) with a query like *"I'm updating my AI/ML Master's curriculum. What in-demand skills should it cover, how does Queen's MMAI compare, and which recent AI developments should shape my decisions?"* — single query that needs Analyst + Univ Programs + News.
+
+- **Step 7 status:** built and individually smoke-tested. Multi-agent integration tested-by-construction (same patterns as Steps 6 + 8). Step 8 (Orchestrator) is updated in lockstep — the orchestrator change is part of this Step 7 work, not a separate revision of Step 8.
+- **What's next-blocked now:** Step 9 (Chainlit frontend, Eric's area per collab notes) is the only remaining build step that gates a professor-usable demo.
+
+### 2026-05-26 — Orchestrator multi-agent validation: 4 Ollama runs → bug fix → qwen2.5:14b passes
+- **Why:** Step 7 added News as a 3rd specialist. Need end-to-end validation that the Orchestrator can coordinate 3 sub-agents (Analyst + Univ Programs + News), not just the 2-of-3 mix that passed on 2026-05-25.
+- **Strategy:** start free (Ollama), only escalate to paid Sonnet if Ollama fails. Same test query as 2026-05-25 baseline for direct comparison.
+
+- **Run 1 — Ollama llama3.1:8b, original query (5.9 min):** **broken.** Orchestrator delegated to Analyst only (1 of 3 sub-agents) then fabricated content claiming to have consulted the others — invented URLs (`mmaiqc.ca/curriculum/`), fictional course codes (`DevOps MTC-6502`), a non-existent MIT Tech Review article ("The Future of Cloud-Native Development, 2023"). Final answer even contained literal text *"(URL to come from University AI Programs Researcher)"* — model knew it should delegate but didn't.
+- **Run 2 — Ollama llama3.1:8b, explicit-naming query (2.4 min):** **worse.** Probe added "Consult the Analyst, the University Programs Researcher, AND the News Researcher" directly in the query. Orchestrator attempted 3 delegations but only 2 succeeded (News + Analyst). Analyst sub-agent's tool use ALSO degraded under cross-talk — emitted `{"name": "skills_in_cluster", "parameters": {"cluster_id": 8}}` as final text instead of calling the tool. Final output: single incoherent JSON blob `{'cluster_8_skills': [{'canonical_skill_name': 'Data Storage and Retrieval', 'frequency': 6.0}]}`.
+
+- **Code audit between runs — found a real bug.** The OUTPUT FORMAT section of `agents/orchestrator.py:ORCHESTRATOR_BACKSTORY` only required citations from Analyst + Univ Programs — **News was completely absent from the output format spec**. Leftover from when there were two specialists. The model was subtly being told "the canonical final answer doesn't include news" — explains both the under-delegation (model decides News isn't part of the deliverable) and the hallucination (model fabricates News-shaped content to fill its own expectation). Also found a contradictory delegation rule ("default to consulting at least two specialists" + "use News when query touches recent developments") that the small model couldn't reconcile.
+- **Fix applied to `agents/orchestrator.py`:**
+  1. Made *"consult ALL THREE specialists for ANY curriculum-update query"* the canonical default. Skip a specialist only if the query is unambiguously about one area.
+  2. Added explicit anti-hallucination rules: *"Do NOT fabricate URLs, frequencies, course codes, or article titles to fill the gap. Do NOT claim to have consulted a specialist you did not actually delegate to."*
+  3. Added News to the OUTPUT FORMAT spec with concrete citation examples for all three specialists (frequencies / URLs / article titles+sources+dates).
+  4. Added a CRITICAL TOOL-USE RULES section: *"To consult a specialist, INVOKE the delegate_work_to_coworker tool — actually call it, do NOT emit tool-call JSON like {...} as your final text answer."* Mirrors the prompt-tightening that fixed the Analyst on 2026-05-22.
+
+- **Run 3 — Ollama llama3.1:8b, bug-fixed code (58.9s):** **planning fixed, execution broke.** Orchestrator emitted three properly-formed `ask_question_to_coworker` JSON calls — one each for Analyst, Univ Programs, News, with sensible context+coworker+question — but as TEXT in its final answer instead of executing them. Literally wrote *"We will now wait for each of these queries to get their responses."* Zero delegations actually fired. So the bug fix DID help (planning now correct), but Llama 3.1 8B couldn't distinguish "describe the plan" from "execute the plan".
+- **Run 4 — Ollama llama3.1:8b, with INVOKE-not-JSON rule added (62s):** **identical failure to Run 3.** New CRITICAL TOOL-USE RULES section ignored. Three more JSON-as-text leaks. Confirmed: more prompt instructions make Llama 3.1 8B WORSE, not better, on this topology. The model is past its capacity ceiling.
+
+- **Diagnostic conclusion:** Llama 3.1 8B's effective complexity ceiling for this orchestration topology is between 2 and 3 active sub-agents. At 3, planning succeeds but execution fails. Not fixable with prompts.
+- **Hardware check on Cassie's Mac:** 16 GB RAM, 48 GB free disk. 14B Q4 models fit (~9 GB). 32B+ models would thrash.
+- **Pulled `qwen2.5:14b` (~9 GB)** as the most capable Ollama model that fits in 16 GB. Re-ran the same test on it.
+
+- **Run 5 — Ollama qwen2.5:14b, bug-fixed code (34.8 min):** **PASSED end-to-end with quality caveats.**
+  - **All 3 sub-agents called** (Analyst + Univ Programs + News). 7 total tool calls across the run, all properly invoked (no JSON-as-text leaks).
+  - **Real frequencies cited from Analyst:** Data Pipelines 4278, Data Management 1587, DevOps 1007, Relational Databases 936, Big Data Tech 510 — all match the taxonomy.
+  - **One real News article cited:** HuggingFace "Foundation Models on AWS", with real URL.
+  - **Honest about thin retrieval:** explicitly noted *"direct industry insights into evolving data engineering practices were scant"* — exactly the behavior the new backstory asked for.
+  - **Structured output format followed** (Exec Summary → Recommendations → Industry Trends → Trade-off).
+- **Quality caveats on the qwen2.5:14b output:**
+  1. **Hallucinated Queen's MMAI URL** — cited `queensu-ca-public.courseleaf.com/business/...` which does not exist. The correct URL is `smith.queensu.ca/grad_studies/mmai/`. This is exactly the failure mode the new "do NOT fabricate URLs" rule was meant to prevent — qwen2.5:14b followed every other rule but ignored this one.
+  2. **Invented course name** *"MMAI Mathematics and Development Techniques"* — not an actual MMAI course.
+  3. **Thinner peer comparison than Sonnet:** only Queen's mentioned. Yesterday's Sonnet 3-agent run spontaneously brought in CMU + Waterloo + UofT.
+- **Latency caveat:** **34.8 min on 16 GB Mac CPU.** Acceptable for batch evaluation; not acceptable for an interactive professor-facing chatbot.
+
+- **Comparison table for posterity (same query, same bug-fixed code, different models):**
+
+  | | Sonnet 4.6 (2026-05-25, 3-agent) | qwen2.5:14b (today, 4-agent) | llama3.1:8b (today, 4-agent) |
+  |---|---|---|---|
+  | Sub-agents called | 2/2 | **3/3** | 0-1 of 3 |
+  | Tool calls structurally correct | yes | yes | no (JSON-as-text) |
+  | Frequencies cited accurately | yes (~8 with tiering) | yes (5) | none / wrong |
+  | URLs cited accurately | yes (smith.queensu.ca) | **no (fabricated courseleaf URL)** | n/a |
+  | Peer programs cited | 4 (Queen's, CMU, Waterloo, UofT) | 1 (Queen's only) | 0 |
+  | News articles cited | n/a | 1 (real URL) | 0 |
+  | Wall time | 5-7 min | **34.8 min** | 1-5 min (no real work done) |
+  | Cost | 25-50¢ | $0 | $0 |
+
+- **Decision: keep Sonnet 4.6 as the production default for the Orchestrator.** Two reasons: (1) 34.8 min/query on local qwen2.5:14b is incompatible with an interactive chatbot UX; (2) qwen2.5:14b retains URL-fabrication risk even with the explicit anti-hallucination rule — Sonnet did not on yesterday's baseline. The chatbot's value depends on grounded citations the professor can trust; fabricated URLs undermine that directly.
+- **Decision: `qwen2.5:14b` is the new recommended local Ollama model.** Replaces Llama 3.1 8B in the "LLM Choice" section. Strictly better for multi-agent: real tool use, all-three delegation, structured output. Llama 3.1 8B marked as deprecated for multi-agent (kept only as a known-broken reference).
+- **Bug fixes to the Orchestrator backstory are NET-POSITIVE for all models** — even though qwen2.5:14b still fabricated one URL, the rest of the output was much more disciplined than it would have been pre-fix. Sonnet hasn't been re-tested with the new prompt yet but the fixes are model-agnostic improvements.
+
+- **What was NOT done this session:** the 4-agent crew has not been validated on Sonnet 4.6 with the bug-fixed code. The 2026-05-25 Sonnet baseline was 3-agent. Recommended next step before declaring Step 7 fully production-ready: one Sonnet 4.6 run on the same query (~5-7 min, ~25-50¢) to confirm the bug fixes don't regress Sonnet output. Lower priority than Step 9 (Chainlit frontend) since Sonnet has historically been the strongest path and the bug fixes only add discipline.
