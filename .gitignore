@@ -1,0 +1,14 @@
+# Reference / example folders — kept locally only, not committed.
+# News-Agent-Chatbot-Code-Example contains a third-party .env with a
+# real OpenAI API key — DO NOT commit.
+News-Agent-Chatbot-Code-Example/
+
+# macOS junk
+.DS_Store
+
+# Office/Word lock files (e.g. ~$foo.docx, .~foo.docx)
+.~*
+~$*
+
+# Root-level env files (defence in depth — chatbot/.gitignore also covers chatbot/.env)
+.env
