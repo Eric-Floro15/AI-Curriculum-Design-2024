@@ -774,3 +774,42 @@ Concrete record of environment + code state so future sessions don't re-do or un
   2. **Whether Sonnet 4.6 produces a clean answer with the new caps** — needs one capped Sonnet run. With max_iter=8 on Orchestrator + max_iter=6/6/10 on sub-agents, worst-case cost should be ~$1-2. Still requires supervisor approval after this overrun.
   3. **Whether the CrewAI ensure_force_final_answer bug bites again under the new caps** — likely not, because agents will converge to a Final Answer before hitting max_iter (the listener only fires when an agent EXHAUSTS its iter budget without answering). The new lower caps make convergence more likely, not less.
   4. **Long-term option if the CrewAI listener bug persists:** investigate setting `respect_context_window=True` or upgrading/downgrading `crewai` version, or patch the listener to use a regular user message instead of assistant prefill. Not urgent — caps should mostly hide it.
+
+### 2026-05-26 — Sonnet 4-agent test with caps: PASSED. Step 7 production-validated.
+- **Re-ran the same test (`test_orchestrator_verbose.py`, same data-engineering / Queen's MMAI query) on Sonnet 4.6 immediately after committing the max_iter caps.** Goal: verify the caps prevent the runaway and that Sonnet still produces high-quality output.
+- **Result: PASSED CLEANLY.** Wall time **3.3 min** (vs 9 min and still running on the uncapped run). 17 total tool executions (vs 161+). All 3 sub-agents converged to Final Answers; Orchestrator produced a publication-quality synthesis. **0 errors.** Estimated cost ~$1.50-3.
+- **Per-agent tool usage** (all comfortably within their caps — the model self-converged before hitting `max_iter`):
+  - Analyst: 5 tool calls (3× `skills_taxonomy_rag` + 1× `skills_in_cluster` + 1× `top_skills_by_frequency`) under its `max_iter=10` and "max 6 tool calls" backstory rule.
+  - University Programs: 6 `web_search` calls under its `max_iter=6` cap (down from 138 on the unbounded run).
+  - News: 3 `ai_news_rag` calls — exactly at its "max 3" backstory rule.
+  - Orchestrator: 3 delegations (one per specialist) — exactly the expected pattern.
+- **Output quality (this is the load-bearing finding):**
+  - **Real Queen's MMAI URL** cited (`smith.queensu.ca/grad_studies/mmai/`) — vs qwen2.5:14b's fabricated `courseleaf.com/...`. The bug-fixed anti-hallucination rules ARE effective on Sonnet specifically.
+  - **5-program peer benchmarking table** (Queen's MMAI, CMU MCDS, MIT IDSS, Stanford Stats MS, Georgia Tech OMSA) with correct URLs for each. Identified Georgia Tech OMSA as the strongest peer benchmark and CMU MCDS as the aspirational ceiling.
+  - **Frequencies tiered by priority** (Must-Have Core / Strong Elective / Emerging) — exactly the structured framing the prompt requested.
+  - **Real news article citations** (4 articles): NousCoder-14B from VentureBeat Jan 2026, TRL v1.0 from HuggingFace March 2026, Foundation Model Building Blocks on AWS from HuggingFace May 2026, Ulysses Sequence Parallelism + Robotics AI Embedded from HuggingFace March 2026. All URLs verifiable against the scraped news corpus.
+  - **Honest gap-flagging** — explicitly noted the news corpus does not cover vector databases / feature stores / real-time streaming / data observability, and recommended supplementing with dbt/Databricks/Fivetran reports.
+  - **Four prioritized recommendations** with priority tiers (🔴 Highest Priority × 2, 🟡 Strong Elective × 2).
+  - **Closing trade-off section** that genuinely engages MMAI's business-school identity ("depth vs. identity") and proposes a practical resolution (Actions 1+2 required, Actions 3+4 as a "Data Engineering Track" elective stream).
+  - **Verification step recommendation** — *"Before finalizing, confirm Queen's MMAI's actual course list directly at smith.queensu.ca/.../schedule.php — public web search did not surface course-level granularity."* This is exactly the kind of grounded epistemic humility the chatbot's value depends on.
+- **Three-way comparison across the same query (data engineering / Queen's MMAI):**
+
+  | Metric | Capped Sonnet 4.6 (now) | Uncapped Sonnet 4.6 (earlier today) | qwen2.5:14b (yesterday) |
+  |---|---|---|---|
+  | Wall time | **3.3 min** | 9 min (killed, not converged) | 34.8 min |
+  | Total tool calls | **17** | 161+ | ~30 |
+  | Sub-agent Final Answers | **3 of 3** | 2 of 3 | 3 of 3 |
+  | Queen's MMAI URL accuracy | **correct** | n/a | **fabricated** |
+  | News articles cited | 4 real | n/a | 1 real |
+  | Peer programs benchmarked | 5 (real URLs each) | n/a | 1 |
+  | CrewAI listener errors | **0** | 2 | 0 |
+  | Cost | ~$1.50-3 | ~$8-10 | $0 |
+
+- **Decision: Step 7 is now PRODUCTION-VALIDATED on Sonnet 4.6.** The bug-fixed code + max_iter caps produce publication-quality output at acceptable cost (~$1.50-3/query) and wall time (~3 min). This is the configuration that ships.
+- **Implications for project status:**
+  - The chatbot's multi-agent core is fully validated end-to-end. The only remaining build step before a demo-able product is Step 9 (Chainlit frontend).
+  - The `~$1.50-3/query` cost on Sonnet 4.6 fits the $50-200/month API budget at low-to-moderate demo traffic (~30-100 queries/month).
+  - The capped configuration also worked on Sonnet without triggering the CrewAI `ensure_force_final_answer` listener bug — confirming the prediction that lower caps make convergence more likely, not less.
+- **What's still worth doing (no longer urgent):**
+  - Optional: re-run on qwen2.5:14b with the new caps to confirm caps don't break the local-dev path. Likely fine since qwen never came close to the caps anyway.
+  - Optional: re-run with a curriculum-update query that explicitly requires News (current query is ambiguous about news; the Orchestrator delegated to News anyway because of the new "consult all three" mandate).
