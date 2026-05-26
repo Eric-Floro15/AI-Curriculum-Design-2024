@@ -496,6 +496,90 @@ The paper needs the following sections written (currently outline/empty):
 
 ---
 
+## Open Questions for Supervisor / Discussion
+
+Active items pending supervisor input. Resolve each before deploying or
+declaring the prototype shipped.
+
+### Validation & evaluation
+- **Eval suite scope vs. Step 9 priority.** A golden-query file
+  (`chatbot/eval/orchestrator_queries.yaml`) and a known-good baseline
+  (`chatbot/eval/orchestrator_baseline_2026-05-26_sonnet.md`) are in
+  place — seeded with one query. Open question: do we expand to 5-10
+  queries (~$8-25 to baseline) BEFORE working on Step 9 (Chainlit
+  frontend), or after? Trade-off: paper deadline vs. defensible quality
+  claim.
+- **Which queries belong in the test suite.** The current single query
+  was chosen by the development team. Romanko + Kwon should contribute
+  4-9 more representative queries from their teaching experience
+  (curriculum-update, peer-comparison, soft-skills, MLOps,
+  ethics/policy, edge cases, etc.).
+- **What counts as a passing answer.** Substring assertions (current
+  approach) catch hallucinations and verify citation accuracy
+  mechanically. They do NOT measure recommendation quality or
+  pedagogical soundness — that needs human-judged scoring or
+  LLM-as-judge (e.g., RAGAS in production). Open question whether
+  mechanical-only is enough for the paper's quality claims.
+
+### Data freshness & refresh strategy
+- **News corpus freshness.** Currently scraped manually by
+  `fetch_news.py`; the active corpus is frozen at scrape time. The News
+  Agent cannot see anything published after the last manual scrape. The
+  matrix doc (Decision 18) recommends cron scheduling — weekly for
+  news, monthly for skills. Not implemented. Open: who owns the cron
+  setup, and where does it run (deploy host, GitHub Actions, manual
+  weekly)?
+- **News corpus quality.** Current corpus is 97 articles, 5 sources,
+  with HuggingFace dominating (50/97) because we don't paginate. Worse:
+  HuggingFace's RSS provides titles only (no summaries), so 50/97
+  entries are title-only and weak in retrieval. Open options: (a) add
+  full-article extraction via `trafilatura` for HF specifically; (b)
+  add more diverse feeds (MIT Tech Review, ArXiv cs.LG digest, OpenAI
+  / Anthropic / Google DeepMind blogs if RSS exists); (c) cap HF and
+  oversample lower-volume sources to rebalance.
+- **Skills taxonomy refresh cadence.** Last skill extraction was an
+  expensive GPT-4 run; rerunning the full pipeline is non-trivial
+  (Critical Rule #1). Open: do we accept a 6-12 month staleness window
+  on the skills data, or is there a cheaper incremental-update plan?
+
+### Cloud platform & deployment
+- **AWS / GCP / Azure / Render — pick one.** Matrix doc recommends
+  Render for prototype, AWS for production. Mitacs project plan
+  specifies cloud deployment. Romanko/Kwon may have Queen's
+  institutional preferences (Azure has had university partnerships in
+  Canada). Decision needed before Step 10.
+- **Embedding-provider implication.** Default is Ollama
+  `mxbai-embed-large` (local). If the deploy target can't run Ollama,
+  the index must be rebuilt with `EMBEDDING_PROVIDER=openai` BEFORE
+  deploy (Critical Rule #7). Pre-deploy task.
+- **News refresh on deploy.** Whoever runs the deploy host needs a
+  cron / scheduled task for `fetch_news.py` + `build_news_index.py`.
+  Not yet specced.
+
+### News agent — further testing ideas
+- **Synthetic article injection test.** Inject a small set of
+  "control" articles with known content into the news CSV, rebuild
+  the index, then run targeted queries that should retrieve them.
+  Validates the full pipeline (scrape → index → retrieve → agent
+  reasoning).
+- **Off-corpus probe queries.** Ask about things definitely NOT in the
+  corpus and verify the agent honestly says "thin retrieval" instead
+  of hallucinating. Catches the URL-fabrication failure mode in
+  advance.
+- **Query-diversity matrix.** 2-3 queries each across categories:
+  model releases, regulation, applied AI, research, hardware,
+  ethics, education. Runs against current corpus to map "what
+  topics is the corpus actually useful for?" Output: a coverage
+  report the supervisor can sign off on.
+- **Document-injection (feature, not pure test).** Add an optional
+  `context_documents` parameter to the News agent so the professor
+  can paste a specific paper / blog post into the chat and have the
+  News agent synthesise from that document plus the corpus. More of
+  a v2 feature than a v1 test, but worth flagging as a use case
+  Romanko/Kwon may want.
+
+---
+
 ## Technical Environment
 
 - Python 3.9+ (currently 3.12 on Cassie's Mac)
