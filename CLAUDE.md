@@ -210,6 +210,261 @@ Build and test one component at a time before wiring them together:
 
 ---
 
+## Architecture Decision Matrix (May 2026)
+
+Source: `Chatbot_Architecture_Decision_Matrix_May2026.docx` — team planning doc cataloging all 19 architectural decisions for the chatbot. Two-phase framing throughout: **prototype** (drives paper, July/August 2026 deadline) vs **production** (multi-institution deployment after paper submission).
+
+### Hard constraints surfaced by this document (not previously in CLAUDE.md)
+- **Paper deadline: July/August 2026.** All prototype-phase decisions optimise for fastest-path-to-working-system, not eventual-best. Anything that delays a working demo is wrong for the prototype.
+- **API budget: $50–200/month total.** This caps how aggressively we can use Sonnet 4.6 / GPT-4o for everything. Reinforces the case for Haiku-on-sub-agents.
+- **Team size: 4 (Eric, Cassie, Romanko, Kwon) for prototype** → unlocks "no auth needed" simplification but constrains evaluation throughput.
+- **Prof. Romanko mildly opposes Streamlit** — not a veto, but use Chainlit unless something blocks it.
+- **"May 19 meeting" identified industry PDF reports (Coursera / Kaggle / Datacamp / LinkedIn / WEF) as a high-value RAG addition.** Not yet ingested.
+
+### Divergences between this matrix and what's actually built (2026-05-26)
+The matrix was written before some of our empirical findings. Where we've deliberately diverged, the build wins — but note them so future-self doesn't get confused reading both documents:
+
+| Decision | Matrix says | We built | Why we diverged |
+|---|---|---|---|
+| LLM (primary) | OpenAI GPT-4o | Claude Sonnet 4.6 (default) | LLM Choice section in CLAUDE.md — Sonnet's tool use + synthesis quality validated empirically; Haiku 4.5 emerged as cheap default for sub-agents |
+| Embeddings | OpenAI `text-embedding-3-small` | Ollama `mxbai-embed-large` (local) | Empirical A/B against `nomic-embed-text` (P@5 0.36→0.48); local is free and validated for current data scale |
+| RAG architecture | Naive RAG | **Hybrid (FAISS + BM25 via RRF)** | Programming-skills regression after embedding swap forced hybrid; ended at P@5 0.68 vs matrix's "start naive" |
+| Cloud platform | Render (prototype) | TBD | Open question. Render is a credible recommendation we hadn't documented |
+| Monitoring | LangSmith free tier | None set up | Gap. Worth adding before Step 9 / deploy |
+| Evaluation | Manual prof review + RAGAS production | Custom P@5 / R@5 eval suite (`chatbot/eval/`) | We built RAG eval, but no LLM-output eval (Analyst / Orchestrator answer quality is currently judged anecdotally) |
+
+### Recommended Stack Summary (from the matrix)
+
+| Decision | Prototype (paper deadline) | Production (post-paper) |
+|---|---|---|
+| Agent Framework | CrewAI | LangGraph |
+| LLM (primary) | OpenAI GPT-4o | GPT-4o + GPT-4o-mini (routing) |
+| LLM (alternative) | Claude Sonnet (via `LLM_PROVIDER`) | Same — keep configurable |
+| Memory: Skills Taxonomy | RAG (FAISS) | RAG (ChromaDB) |
+| Memory: Clustering | Context window | Context window |
+| Memory: Curricula | RAG (FAISS) | RAG (ChromaDB) |
+| Memory: Industry Reports | RAG (FAISS) | RAG (ChromaDB) |
+| Memory: Conversation | Context window (session) | Persistent DB (SQLite / Supabase) |
+| Vector Store | FAISS | ChromaDB |
+| Embeddings | OpenAI `text-embedding-3-small` | Same (or Voyage AI) |
+| Chunking | RecursiveCharacterTextSplitter 800/100 | Semantic + Document-Aware |
+| RAG Architecture | Naive RAG | Advanced RAG + Reranking |
+| Curricula Access | Static local DOCX | Curated DB (10-20 programs) |
+| Industry Reports | PDF ingestion + RSS feeds | + NewsAPI supplement |
+| Web Search | DuckDuckGo (free) | Tavily (LLM-purpose-built) |
+| Frontend | Chainlit | Chainlit → React (future SaaS) |
+| Response Delivery | Streaming (Chainlit built-in) | Streaming + progress indicators |
+| Cloud Platform | Render (PaaS) | AWS EC2 / ECS |
+| Deployment Model | Docker container | Docker container (ECS) |
+| Authentication | None (4-person team) | Chainlit Google OAuth |
+| Monitoring | LangSmith (free dev tier) | LangSmith paid |
+| Evaluation | Manual prof review | RAGAS automated + manual |
+| Data Refresh | Manual (`build_index.py`) | Cron: weekly news, monthly skills |
+| Semantic Caching | None | LangChain InMemory Cache |
+
+### Decision 1 — Agent Orchestration Framework
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **CrewAI** | Intuitive role abstraction; fastest to prototype; good docs | Less state control; limited conditional routing | Free | **Prototype pick** — already in use |
+| **LangGraph** | Fine-grained state control; first-class streaming; scales well | More verbose; steeper curve | Free | **Production pick** — migrate post-paper |
+| smolagents (HF) | Lightweight; transparent (code-as-reasoning); great for research | Newer; code-exec security concerns | Free | Viable for research demo only |
+| AutoGen (MS) | MS backing; flexible conversation patterns; async | Unpredictable flow; heavy deps | Free | Not recommended — conversational model doesn't fit |
+| LlamaIndex Workflows | Best RAG integration; async-first | Less mature multi-agent | Free | Consider only if switching to LlamaIndex |
+| Haystack | Battle-tested; strong doc handling; observability | Pipeline not agent-focused | Free | Not recommended — static-pipeline framework |
+| Semantic Kernel (MS) | Enterprise features; Azure OpenAI integration | MS-centric; over-engineered | Free | Not recommended — enterprise complexity unjustified |
+| Custom Python | Max control; no lock-in | Significant dev time | Free | Not recommended — no reason to reinvent |
+
+### Decision 2 — LLM Provider
+
+| Option | Pros | Cons | Cost/mo | Verdict |
+|---|---|---|---|---|
+| **OpenAI GPT-4o** | Best tool use; JSON mode; 128k context; reliable | Most expensive; US data storage | $15-80 | **Matrix prototype pick** (we use Sonnet 4.6 instead) |
+| **GPT-4o-mini** | 8× cheaper than GPT-4o; fast | Lower reasoning quality | $2-10 | Recommended for low-complexity agents (routing) |
+| **Claude Sonnet** | Best for long docs; 200k context; strong structured output | Slightly behind on tool benchmarks; fewer integrations | $15-60 | Strong alternative — **what we actually use** |
+| Gemini 1.5 Pro | 1M context; native PDF; free tier | Less mature agent ecosystem | $5-30 | Consider for huge context or PDF ingestion |
+| Mistral Large | GDPR-friendly; EU data sovereignty | Less proven on agents | $10-40 | Consider if EU compliance becomes required |
+| Cohere Command R+ | RAG-optimised; citation support; grounding | Weaker general agent reasoning | $10-30 | Consider if RAG quality is bottleneck |
+| Local (Ollama + Llama 3) | Free; private; no rate limits | Requires GPU; significant quality gap | $0 API | Not recommended — no GPU server (note: we tested 8B for dev, see setup log) |
+
+### Decision 3 — Memory / Knowledge-Base Allocation
+
+| Knowledge Item | Volume | Context window? | RAG? | Persistent DB? | Plan |
+|---|---|---|---|---|---|
+| Skills Taxonomy (4,824 skills) | ~2 MB XLSX | No — too large | **Yes (primary KB)** | No | RAG (FAISS). Top-k retrieval per query |
+| Clustering Results (10 clusters, 766 skills) | ~50 KB CSV | **Yes — fits easily** | Optional | No | Inject cluster themes + top-5/cluster into system prompt |
+| Existing Curricula (2-3 DOCX) | ~200 KB | Borderline | **Yes (recommended)** | No | RAG. Chunk by course/section. Essential once >3 programs |
+| Industry PDF Reports (Coursera, Kaggle, WEF) | 5-50 MB | No | **Yes — ingest** | No | RAG. **Not yet built — May 19 meeting identified as high-value** |
+| Conversation history (current session) | 5-50 KB | **Yes (sliding window)** | No | Yes (production) | Context window now; SQLite/Chainlit DB for multi-session in prod |
+| Live web search results | 5-10 KB | **Yes (inject at runtime)** | No | No | Ephemeral; no need to index |
+| RSS / news items | 1-5 KB each | Yes (last 7 days) | Yes (historical) | No | Context for recent; RAG if archive grows |
+| User preferences | 1-5 KB | Yes (in system prompt) | No | Yes (production) | Not needed for prototype |
+| Raw job postings (10,600 rows, 264 MB) | 264 MB | No | **Do NOT** | No | Pre-aggregate to summary stats; don't embed raw |
+
+### Decision 4 — Vector Store
+
+| Option | Pros | Cons | Cost/mo | Verdict |
+|---|---|---|---|---|
+| **FAISS** | Fast; free; no server; easy LangChain integration | No metadata filtering native; not distributed | $0 | **Prototype pick** — in use |
+| **ChromaDB** | Metadata filtering; persistent by default; easy local | Not horizontally scalable | $0 OSS / $20+ cloud | **Production pick** — natural FAISS upgrade |
+| Qdrant | Best filtering; fast; Docker-friendly | More setup than FAISS/Chroma | $0 OSS / $25+ | Consider at scale |
+| Pinecone | Fully managed; zero-ops; auto-scale | Vendor lock-in; data leaves infra | $0 free / $70+ | Consider if ops becomes bottleneck |
+| Weaviate | Hybrid search; KG support; powerful filtering | Most complex setup | $0 OSS / $25+ | Consider if GraphRAG path adopted |
+| pgvector | Reuses existing PG; SQL + vectors | Requires Postgres already | $0 OSS / $20+ | Not recommended unless PG already in stack |
+| Milvus | Enterprise-scale; rich features | Massive overkill for <5K vectors | $0 OSS / $65+ | Not recommended — exceeds scale needs |
+
+### Decision 5 — Embeddings Model
+
+| Option | Pros | Cons | Cost/mo | Verdict |
+|---|---|---|---|---|
+| **OpenAI text-embedding-3-small** | Best quality/cost; fast API; great LC integration | API cost; internet required; data sent to OpenAI | $0.50-5 | **Matrix prototype pick** (we use Ollama mxbai instead) |
+| OpenAI text-embedding-3-large | Best-in-class retrieval; larger semantic space | 3× more expensive; marginal gains for skills | $2-15 | Consider if small isn't enough |
+| sentence-transformers MiniLM-L6 | Free; private; offline; fast on CPU | Lower quality; 384 dims | $0 | Good zero-cost option |
+| sentence-transformers mpnet-base | Free; better than MiniLM; 768 dims | Slower than MiniLM | $0 | Best local option if privacy/$0 hard constraint |
+| Voyage AI voyage-3 | Top RAG benchmarks; domain variants | Newer; smaller community | $1-10 | Consider for production if quality gap |
+| Cohere Embed v3 | Multilingual | No real advantage for English | $1-8 | Not recommended for this project |
+
+### Decision 6 — Chunking Strategy
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **RecursiveCharacterTextSplitter** | Simple; predictable; battle-tested | Ignores semantic boundaries | $0 | **Prototype pick** — in use (note: we run 2000/0, not matrix's 800/100, after empirical chunking-cuts-headers finding) |
+| Semantic Chunking | Respects semantic boundaries; better precision | More compute; NLP library required | $0 | **Production pick** |
+| Document-Aware (header-based) | Preserves doc structure; chunk = one course | Requires structured sources | $0 | **Recommended for curricula and PDFs specifically** |
+| Hierarchical (Parent-Child) | Solves "lost in the middle"; best retrieval+context balance | Complex index structure | $0 | Consider for production |
+| Agentic Chunking (LLM-based) | Best semantic coherence | Cost prohibitive (LLM per chunk) | High | Not recommended |
+
+### Decision 7 — RAG Architecture Style
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Naive RAG** | Simple; fast; low cost; easy to debug | Lower precision; lost-in-middle | $0 | Matrix prototype pick — we built beyond this |
+| Advanced RAG + Reranking | Significant precision win; reduces noise | Extra API call / local model | $1-5 | **Production pick** — highest single-improvement ROI |
+| **Hybrid RAG (Vector + BM25)** | Best recall; finds semantic AND keyword | Requires BM25 index | $0 | **Already built (RRF 1.0:0.10)** — P@5 0.68 |
+| Agentic RAG | Most flexible; self-correcting; multi-hop | Highest latency; more LLM cost | Higher | Consider for complex multi-hop questions |
+| GraphRAG (Microsoft) | Captures skill relationships | Very expensive to build graph | High | Future direction if skill relationships become key |
+
+### Decision 8 — Existing Curriculum Access
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Static local DOCX files** | Simple; reliable; already in repo | Manual updates | $0 | **Prototype pick** — `Existing_Course_Curriculum.docx`, `Optimal_Course_Curriculum.docx` |
+| **Curated static DB (10-20 programs)** | Rich comparison; reliable; high ROI for professors | 1-2 days manual curation | $0 | **Production pick** |
+| Web scraping (live) | Always fresh; any program; no curation | Sites break; rate limits; quality varies | $0 + LLM parse | Planned for Phase 2 |
+| University API / data partnership | Most reliable; structured; outcomes data | Requires formal agreements | $0 / negotiated | Long-term vision; paper future-work item |
+
+### Decision 9 — Industry Reports and News Sources
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Published PDF reports** (Coursera, Kaggle, Datacamp, LinkedIn, WEF) | Authoritative; rich; free | Manual download; annual cycle | $0 | **Recommended — May 19 meeting** |
+| **RSS feeds (Eric's script)** | Automated; free; real-time | News quality varies | $0 | **Recommended — already in build plan** |
+| Runtime web search | Real-time; fresh | Rate-limited; latency | $0 (DDG) / $20+ (Tavily) | Supplement to RSS + PDFs |
+| NewsAPI.org | Structured JSON; good AI coverage | Free tier limited; paid $50/mo | $0 free / $50+ | Consider as RSS supplement |
+| Semantic Scholar API | Free; academic focus; great for lit review | Academic only — different use case | $0 | Consider for paper lit review |
+| SerpAPI / Google News | Quality; broad coverage | Expensive; ToS concerns | $50-150 | Not recommended |
+
+### Decision 10 — Web Search Tool
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **DuckDuckGo (`ddgs`)** | Free; no API key; already integrated | Rate-limited; can break | $0 | **Prototype pick** — in use |
+| **Tavily** | Designed for LLMs; clean results; built-in summarization | Paid after 1000/mo free | $0 free / $20-50 | **Production pick** |
+| Brave Search API | Independent index; privacy-focused | Smaller index than Google | $0 free / $3-30 | Viable middle ground |
+| Bing Web Search | High quality; Azure synergy | Azure account required | $3-15 | Consider if on Azure |
+| Exa (Metaphor) | Best for semantic similarity | Paid; niche | $0 free / $20-50 | Consider for academic paper discovery |
+| SerpAPI | Google quality | Expensive; Google dep | $50-150 | Not recommended |
+| Perplexity API | Already-summarized | Pre-summary reduces control | $5-20 | Not recommended — agents need raw results |
+
+### Decision 11 — Frontend / Chat UI
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Chainlit** | Purpose-built for LLM chat; streaming; sessions; auth hooks | Smaller community than Streamlit | $0 | **Recommended** — in build plan |
+| Streamlit | Massive community; many LLM examples | Not chat-native; **Romanko mildly against** | $0 | Viable but disfavoured by Romanko |
+| Gradio | Quick demos; HF Spaces hosting | Basic chat; less professional | $0 | Good for demos only |
+| Custom React / Next.js | Professional UI; full control; SaaS-scale | Significant dev time; FE expertise | $0 + hosting | **Production SaaS phase** |
+| FastAPI + plain HTML | Lightweight; no framework opinions | Build all chat UI manually | $0 | Not recommended — reinvents Chainlit |
+| Open WebUI | Polished UI; model switcher | Designed for Ollama; hard to adapt | $0 | Not recommended — backend integration painful |
+
+### Decision 12 — Response Delivery
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Streaming tokens (SSE)** | Best perceived performance; modern UX | Async complexity; tool results don't stream mid-run cleanly | $0 | **Recommended** — Chainlit has built-in support |
+| Batch (wait for completion) | Simplest; easier debugging | Poor UX for 10-30 s runs | $0 | v1 only if streaming adds complexity |
+| Progressive structured output | Users see progress; educational about system | Complex lifecycle hooks | $0 | Consider for production |
+
+### Decision 13 — Cloud Platform
+
+| Option | Pros | Cons | Cost/mo | Verdict |
+|---|---|---|---|---|
+| **Render** | Easiest deploy; GitHub push-to-deploy; free tier | Less control; no academic credits | $0 free / $7-25 | **Prototype pick — new info, not yet in our plan** |
+| **AWS (EC2 / ECS / App Runner)** | Most mature; S3 for FAISS; academic credits often available | Complex; over-provision risk | $20-100 | **Production pick** — fits Mitacs requirement |
+| GCP (Cloud Run / GKE) | Serverless containers; Gemini + Vertex AI synergy | Less familiar; fewer examples | $15-80 | Strong alternative — esp. if Gemini added |
+| Azure (App Service) | Azure OpenAI credits possible | Complex pricing; ecosystem dep | $20-100 | Consider if Azure OpenAI credits via Mitacs |
+| Railway | Very easy; affordable | Smaller than AWS | $0 free / $5-20 | Good Render alternative |
+| HuggingFace Spaces | Free; instant sharing | Not production-suitable; Gradio-focused | $0 free / $9+ GPU | Demo sharing only |
+
+### Decision 14 — Deployment Model
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Docker container (PaaS/cloud)** | Portable; reproducible; CI/CD friendly | Docker knowledge required | $0 + hosting | **Recommended** — prototype and production |
+| PaaS direct (no Docker) | Simplest; fastest iteration | Less control; platform quirks | $0 + hosting | OK for fastest prototype |
+| Serverless (Lambda / Cloud Functions) | Pay-per-request; auto-scale; zero idle | Cold starts (5-15 s) kill chat UX | $0 at low use | Not recommended — incompatible with chat UX |
+| Kubernetes (EKS / GKE) | Multi-instance scale; rolling updates | Massive ops complexity | $70-300 | Future only at 1000+ concurrent users |
+
+### Decision 15 — Authentication
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **None (prototype)** | Zero setup; team can test immediately | Anyone with URL has access | $0 | **Prototype pick** — 4-person team |
+| **Chainlit built-in Google OAuth** | Built into frontend; minimal code; profs have Google | Chainlit-specific; harder to migrate | $0 | **Production MVP pick** |
+| Auth0 | Industry standard; SSO/MFA; scales | Overkill for <100 users | $0 free / $23+ | Consider at scale |
+| Supabase Auth | Free tier; OSS; bundles Auth+DB | Only worthwhile if also using Supabase DB | $0 free / $25+ | Consider if adding persistent profiles |
+| Custom JWT | Full control | Security risk; unnecessary effort | $0 | Not recommended |
+
+### Decision 16 — Monitoring / Observability
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **LangSmith** | Purpose-built for LLM agents; free dev tier; latency + cost per call | LC ecosystem preference; data sent to LangSmith | $0 free / $39+ | **Recommended — gap in current build, not yet set up** |
+| LangFuse | OSS; self-host option keeps data local; strong evals | More setup than LangSmith if self-hosted | $0 OSS / $29+ | Strong alternative if data privacy required |
+| Arize Phoenix | Excellent eval integration; OSS | Newer; smaller community | $0 OSS | Consider for eval-focused monitoring |
+| Helicone | Easy proxy setup; detailed cost tracking | Proxy adds latency; LangSmith covers same | $0 free / $20+ | Not recommended — LangSmith covers it |
+| Print logging only | Zero setup; always works | No agent-chain visibility; no cost tracking | $0 | Not recommended beyond very early dev |
+
+### Decision 17 — Evaluation Framework
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Manual expert evaluation (professors)** | Free; validates actual use case; profs ARE target users | Time-consuming; throughput-limited | $0 | **Prototype pick** — Romanko + Kwon |
+| **RAGAS** | Purpose-built for RAG; automated; quantitative; LC integration | Requires ground-truth Q&A set first | $1-5 LLM | **Production pick** — build a prof Q&A test set |
+| DeepEval | Wide metric range; CI/CD; pytest-style | More opinionated; evolving API | $0 OSS | Consider as RAGAS complement |
+| LangSmith Evals | Zero extra setup if LangSmith already in use; annotation UI | LangSmith dependency | Included | Consider once LangSmith is set up |
+| None | Zero overhead | No way to back paper claims about performance | $0 | Not recommended — risk for paper |
+
+### Decision 18 — Data Refresh Strategy
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **Manual rebuild (`build_index.py`)** | Simple; full control; appropriate for low-change research phase | Human action required; can be forgotten | $0 | **Prototype pick** |
+| **Scheduled cron** (weekly news, monthly skills) | Automated; freshness | May rebuild unnecessarily; needs always-on server | $2-5 compute | **Production pick** — per-source schedules |
+| Event-triggered rebuild | Only rebuilds when data changes; GitHub Actions friendly | More setup; CI/CD integration | $0 (GH Actions) | Consider for prod CI/CD |
+| Real-time incremental update | Most fresh; no downtime | FAISS doesn't support natively — must switch to ChromaDB first | $0 | Not recommended with FAISS |
+
+### Decision 19 — Semantic Caching
+
+| Option | Pros | Cons | Cost | Verdict |
+|---|---|---|---|---|
+| **None (prototype)** | Zero complexity; always fresh | Higher API cost at scale | $0 | **Prototype pick** — premature optimisation |
+| **LangChain InMemory Cache (exact match)** | Zero config; one line to enable | Exact-match only; cleared on restart | $0 | **Production pick** — easy win |
+| GPTCache (semantic) | Reduces cost for similar queries; OSS; flexible | Risk of stale responses for similar-but-different | $0 OSS | Consider if costs exceed $50/mo |
+| Redis + vector similarity | Fast; production-grade; persists; scales | Requires Redis; complex; false-hit cost may outweigh | $10-30 Redis | Not recommended for current scale |
+
+---
+
 ## Paper — Outstanding Tasks
 
 The paper needs the following sections written (currently outline/empty):
