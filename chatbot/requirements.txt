@@ -26,8 +26,10 @@ openpyxl>=3.1.0
 # The old name silently returns zero results — do not pin it.
 ddgs>=9.0.0
 
-# RSS feeds (News agent)
+# RSS feeds (News agent) — requests fetches the feeds (handles SSL via
+# certifi); feedparser parses the XML.
 feedparser>=6.0.0
+requests>=2.30.0
 
 # Chat UI
 chainlit>=1.1.0
