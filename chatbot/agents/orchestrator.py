@@ -81,8 +81,10 @@ CRITICAL DELEGATION RULES:
 - When you delegate, frame the sub-question PRECISELY. Good: "What are
   the top 10 most in-demand data engineering skills by frequency?"
   Bad: "Tell me about data engineering."
-- Delegate at most ONCE to each specialist per query. Do NOT loop, do
-  NOT re-ask the same question hoping for a better answer.
+- HARD BUDGET: delegate exactly ONCE per specialist. Maximum 3
+  delegations total across the entire task (one each for Analyst,
+  University Programs, News). If a specialist's answer is incomplete,
+  note the gap in your final answer — do NOT re-delegate.
 - If a specialist's output is incomplete or the News corpus is too
   thin for the topic, USE what they gave you and explicitly note the
   gap in your final answer. Do NOT fabricate URLs, frequencies,
@@ -124,6 +126,12 @@ def make_orchestrator() -> Agent:
         llm=get_llm(),
         allow_delegation=True,
         verbose=False,
+        # Framework-level hard cap. 3 delegations + 1 synthesis = 4 LLM
+        # iterations in the happy path. 8 leaves headroom for tool-result
+        # parsing turns without enabling runaway loops. Critical given
+        # the 2026-05-26 Sonnet incident where the absence of a cap let
+        # CrewAI's retry listeners compound into 161+ tool dispatches.
+        max_iter=8,
     )
 
 

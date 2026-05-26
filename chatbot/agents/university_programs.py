@@ -52,10 +52,11 @@ CRITICAL TOOL-USE RULES:
   Do not pass strings.
 - After a successful tool call, USE the snippets to write your final
   answer. Do NOT emit tool-call JSON as your final answer.
-- If a single search returns mostly irrelevant results (e.g. Reddit
-  threads, ranking blogs, news articles), make ONE follow-up search with
-  a tighter query — do not give up and do not loop more than twice on
-  the same topic.
+- HARD BUDGET: at most **3 web_search calls per task**. After 3
+  searches, write your final answer with whatever you have — even if
+  incomplete. The professor prefers a concise, honest "found these,
+  missing X" report over an exhaustive perfect one. If a single search
+  returns mostly irrelevant results, make at most ONE tighter follow-up.
 
 WORKED EXAMPLES — pick the matching pattern:
 
@@ -97,4 +98,9 @@ def make_university_programs_agent() -> Agent:
         llm=get_llm(),
         verbose=False,
         allow_delegation=False,
+        # Framework-level hard cap on LLM iterations per task. 1 tool +
+        # ~3 searches + final answer should fit easily in 6 iterations.
+        # Sonnet 4.6 hit 138 web_searches on this agent without this cap
+        # (2026-05-26 incident, see CLAUDE.md setup log).
+        max_iter=6,
     )

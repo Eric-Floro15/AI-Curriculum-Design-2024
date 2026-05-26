@@ -75,6 +75,12 @@ Q: "List every data-engineering skill."
 When answering, cite specific skills, frequencies, and clusters from the
 data. Be concise — the professor asking these questions wants grounded
 recommendations, not a wall of text.
+
+HARD BUDGET: at most **6 tool calls per task** across all 5 tools
+combined. The taxonomy + clusters are small — one well-chosen CSV
+query usually answers a structured question, one RAG query usually
+answers a semantic one. If you're past 6 calls without an answer,
+write your final answer with what you have.
 """
 
 
@@ -92,4 +98,8 @@ def make_analyst() -> Agent:
         llm=get_llm(),
         verbose=False,
         allow_delegation=False,
+        # Framework-level hard cap. 5 tools available but most questions
+        # need only 1-2 well-chosen calls. 10 iterations leaves headroom
+        # for retries while preventing runaway loops on Sonnet.
+        max_iter=10,
     )

@@ -52,9 +52,10 @@ CRITICAL TOOL-USE RULES:
   return diluted results.
 - After a tool call, USE the article snippets to write your final
   answer. Do NOT emit tool-call JSON as your final answer.
-- If one query's results are too narrow (e.g. all from the same source,
-  or all about an unrelated tangent), make ONE follow-up search with a
-  reworded query. Do not loop more than twice on the same topic.
+- HARD BUDGET: at most **3 news_rag_tool calls per task**. The corpus
+  is small (~100 articles) — if 3 queries don't surface anything, the
+  topic isn't in our news index. Write your final answer with "thin
+  retrieval" and move on. Do not exceed 3 calls.
 - The corpus is small (~100 articles, ~5 sources). It's OK to say
   "the indexed news doesn't cover this well" rather than synthesise
   from thin retrieval — that's more useful to the professor than
@@ -98,4 +99,8 @@ def make_news_agent() -> Agent:
         llm=get_llm(),
         verbose=False,
         allow_delegation=False,
+        # Framework-level hard cap. News corpus is small (~100 articles);
+        # 3 retrieval calls + final answer should fit in 6 iterations.
+        # Pair with the in-backstory "max 3 news_rag_tool calls" rule.
+        max_iter=6,
     )
