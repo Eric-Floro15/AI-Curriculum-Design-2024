@@ -1,0 +1,92 @@
+# Orchestrator end-to-end eval — golden queries.
+#
+# Each query specifies what a passing run of the full 4-agent crew
+# (Orchestrator + Analyst + University Programs + News) must produce.
+#
+# Three assertion types per query:
+#   - must_delegate_to      sub-agent role names the Orchestrator MUST
+#                           consult. Verified by counting delegation
+#                           events in the verbose log.
+#   - expected_substrings   strings that MUST appear in the Orchestrator's
+#                           final answer (case-insensitive substring match).
+#                           Derived from the known-good run for this query.
+#   - forbidden_substrings  strings that must NOT appear. Catches the known
+#                           failure modes we've observed across 6+ test runs
+#                           (fabricated URLs, hallucinated course names,
+#                           tool-call-JSON leaks, placeholder text).
+#
+# Plus a budget per query:
+#   - max_tool_calls        total tool dispatches across the crew. Caps
+#                           cost via early-fail rather than waiting for
+#                           wall-time to expire.
+#   - max_wall_time_sec     hard cap on a single query's runtime.
+#
+# Re-run with (when run_orchestrator_eval.py exists — not yet built):
+#     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py
+#
+# History: this file was seeded with one query on 2026-05-26 from the
+# successful capped-Sonnet 4-agent run (commit dc50a60). Reference answer
+# preserved in chatbot/eval/orchestrator_baseline_2026-05-26_sonnet.md.
+
+- id: data-eng-curriculum-update
+  query: |
+    I'm updating my AI/ML Master's curriculum. What are the most
+    in-demand data engineering skills I should make sure my program
+    covers, and how does Queen's University's MMAI program compare
+    on this dimension? Give me concrete recommendations for what to
+    add or strengthen.
+
+  # All three specialists must be consulted because this is a
+  # "curriculum-update" query — the canonical case per the
+  # Orchestrator's backstory.
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+    - University AI Programs Researcher
+    - AI Industry News Researcher
+
+  # Things a passing answer MUST contain. Derived from the
+  # 2026-05-26 capped Sonnet 4.6 run.
+  expected_substrings:
+    # Top data-engineering frequencies from the Analyst (Cluster 8).
+    - "Data Pipelines"
+    - "4,278"
+    - "Data Management"
+    - "1,587"
+    - "DevOps"
+    - "1,007"
+    - "Big Data"
+    # Real Queen's MMAI URL — qwen2.5:14b fabricated this; Sonnet
+    # got it right.
+    - "smith.queensu.ca"
+    # At least one real peer-program comparator with the correct name.
+    - "CMU"
+    # Structural requirements from the OUTPUT FORMAT spec.
+    - "Executive Summary"
+    - "Trade-off"
+
+  # Things a passing answer MUST NOT contain. Each entry corresponds
+  # to a specific observed failure mode from the test history.
+  forbidden_substrings:
+    # qwen2.5:16b fabricated Queen's MMAI URL (2026-05-26).
+    - "courseleaf.com"
+    # Llama 3.1 8B typo of "MMAI" (Run 2 of 2026-05-26).
+    - "MMOAI"
+    # Llama 3.1 8B placeholder hallucination (Run 1 of 2026-05-26).
+    - "(URL to come from"
+    # Tool-call-JSON leak — emitted as final-answer text by Llama 3.1
+    # 8B (Runs 3-4 of 2026-05-26).
+    - '"name": "delegate_work_to_coworker"'
+    - '"name": "ask_question_to_coworker"'
+    # Specific fabricated artifacts observed on bad runs.
+    - "mmaiqc.ca"          # invented domain (Run 1, Llama 3.1 8B)
+    - "MTC-6502"           # invented course code (Run 1, Llama 3.1 8B)
+
+  # Cost / time budget per the max_iter caps in the Agent constructors:
+  #   Orchestrator   max_iter=8   ≤ 3 delegations
+  #   Analyst        max_iter=10  ≤ 6 tool calls (5 tools available)
+  #   Univ Programs  max_iter=6   ≤ 3 web_search calls
+  #   News           max_iter=6   ≤ 3 news_rag_tool calls
+  # Combined worst case ≈ 25-30 tool dispatches.
+  budget:
+    max_tool_calls: 30
+    max_wall_time_sec: 600
