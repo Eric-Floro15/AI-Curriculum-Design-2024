@@ -372,3 +372,35 @@ Concrete record of environment + code state so future sessions don't re-do or un
   - Llama 3.1 8B local for multi-agent — the 2026-05-25 single-agent test showed Ollama is brittle; multi-agent will likely compound that. Skip until/unless cost forces it.
   - News agent integration (Step 7, still blocked on Eric's RSS script).
 - **Next step:** Either (a) Step 9 — Chainlit frontend, which makes this usable interactively for the professor (Eric's area per the collab note); or (b) test Orchestrator-on-Haiku to lock in a cost-optimised default. Recommend (a) since the multi-agent core is now validated and the next blocker for actually showing this to a user is the UI.
+
+### 2026-05-25 — Tested Orchestrator (multi-agent) against local Ollama llama3.1:8b — partial pass
+- **Why tested:** the 2026-05-25 Analyst-on-Ollama log explicitly flagged multi-agent as "untested and will likely compound brittleness". This run resolves that open question — first read on whether the local model can handle the Orchestrator's delegation hops.
+- **Setup:** ran `test_orchestrator.py` (then re-ran with a verbose wrapper since `orchestrator.py` ships `verbose=False`) with `LLM_PROVIDER=ollama LLM_MODEL=llama3.1:8b`. Same data engineering / Queen's MMAI query that Sonnet 4.6 aced on 2026-05-25. Wall time: **282s (4.7 min)** — notably *faster* than the Sonnet run (5-7 min), because the Univ Programs sub-agent gave up early (see below).
+- **Headline result: the multi-agent skeleton works on Llama 3.1 8B.** No crashes, no delegation loops, exit 0. The Orchestrator called `ask_question_to_coworker` against BOTH sub-agents (Analyst, then University Programs), and produced a structured final answer following the backstory format (exec summary → recommendations → trade-off). This is more than the prior log predicted.
+- **Quality findings (graded against the Sonnet 4.6 baseline from 2026-05-25):**
+  1. **Analyst sub-agent: clean.** Called `skills_in_cluster` twice (likely tried cluster 7 first, then 8), returned a top-10 data engineering list with real frequencies matching what Sonnet got: Data Pipelines 4278, Data Management 1587, DevOps 1007, Relational DBs 936, Big Data Tech 510, Data Integration 432, NoSQL 364, Azure 279, Data Modeling 210, AWS 75. Equivalent to Sonnet's Analyst output.
+  2. **University Programs sub-agent: failed.** Three compounding issues: (a) LLM typo in the search query — wrote "**MMOAI**" instead of "MMAI", so the search returned mostly unrelated Queen's engineering pages; (b) gave up after ONE web_search call vs Sonnet's 3-5 targeted searches; (c) **leaked tool-call JSON into final answer** — same failure mode the Analyst hit on 2026-05-22 before prompt tightening: ``Final Answer: ... {"name": "web_search", "parameters": {...}}``. The model knew it should retry but emitted the JSON as text instead of actually invoking the tool. The Univ Programs backstory has CRITICAL TOOL-USE RULES but evidently not strong enough to prevent this on Llama 3.1 8B.
+  3. **Orchestrator synthesis: degraded but structurally correct.** Followed the format. Honestly noted "Queen's University's lack of publicly available information" (good — did NOT hallucinate Queen's courses to fill the gap). BUT: **dropped every frequency the Analyst handed it** — recommended skills by name only, no `(freq=4278)` style citations. Also **hallucinated specific tooling** not present in the Analyst's output: Apache Beam, AWS Glue, Apache Flink, Apache Spark MLlib, MongoDB, MySQL. Plausible picks for the topic but ungrounded by the data pipeline.
+  4. **Orchestrator obeyed "don't re-delegate" rule** from its backstory — when Univ Programs failed, it noted the gap and proceeded rather than looping. Good prompt adherence.
+- **Comparison table:**
+
+  | Dimension | Sonnet 4.6 | Llama 3.1 8B local |
+  |---|---|---|
+  | Delegation fires | ✅ both | ✅ both |
+  | Analyst sub-agent | clean | clean |
+  | Univ Programs sub-agent | 13 courses + URLs, multiple peer programs | typo, 1 search, JSON-leak |
+  | Frequencies cited in final | yes, tiered | none |
+  | Peer-program citations | yes (Queen's, CMU, Waterloo, UofT) | none |
+  | Hallucinated tooling | no | yes (Apache Beam, MongoDB, etc.) |
+  | Structured output format | yes | yes |
+  | Wall time | 5-7 min | 4.7 min |
+  | Cost per query | 25-50¢ | free |
+
+- **Verdict — calibrated:** Llama 3.1 8B multi-agent is **"works structurally, fails on grounding"**. It is NOT a drop-in replacement for Sonnet 4.6. But the skeleton holding up at all is meaningful — it means cost-optimisation paths exist if Sonnet pricing becomes a blocker. For the professor-facing chatbot, this output would be misleading (ungrounded recommendations look authoritative), so **Sonnet 4.6 remains the Orchestrator default**.
+- **Concrete fix path if we ever need Llama 3.1 8B to work better:**
+  1. Apply the same prompt-tightening to the Univ Programs backstory that fixed the Analyst on 2026-05-22 — explicit "if first search fails, INVOKE the tool again with a different query, do NOT emit JSON as text". The current backstory has CRITICAL TOOL-USE RULES but they didn't bite hard enough.
+  2. Tighten the Orchestrator backstory: **"You MUST cite frequencies from the Analyst's response verbatim. Do NOT recommend specific tools or technologies not mentioned by your sub-agents."** This addresses the grounding-loss failure mode.
+  3. Both fixes are zero-cost for Sonnet/Haiku and might help them too — same logic as 2026-05-22.
+- **What this PROVES:** CrewAI's delegation pattern is robust enough that even Llama 3.1 8B can drive it without crashing. The bottleneck on small models is *quality of sub-agent output and synthesis grounding*, not *coordination mechanics*.
+- **What's NOT proven:** Haiku 4.5 on the Orchestrator (still the most interesting cost experiment — Haiku validated for sub-agents, Orchestrator role unknown). Also: whether the fixes above would actually close the Llama 3.1 8B quality gap, or whether 8B is fundamentally underpowered for grounded synthesis.
+- **Cosmetic:** Univ Programs sub-agent's "MMOAI" typo is an LLM error, not a code bug — but worth knowing the small model corrupts proper nouns. Larger models did not.
