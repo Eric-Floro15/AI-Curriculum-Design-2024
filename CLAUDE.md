@@ -859,6 +859,31 @@ Concrete record of environment + code state so future sessions don't re-do or un
   3. **Whether the CrewAI ensure_force_final_answer bug bites again under the new caps** — likely not, because agents will converge to a Final Answer before hitting max_iter (the listener only fires when an agent EXHAUSTS its iter budget without answering). The new lower caps make convergence more likely, not less.
   4. **Long-term option if the CrewAI listener bug persists:** investigate setting `respect_context_window=True` or upgrading/downgrading `crewai` version, or patch the listener to use a regular user message instead of assistant prefill. Not urgent — caps should mostly hide it.
 
+### 2026-05-26 — News agent: targeted retrieval + fabrication test suite (both passed)
+- **Why:** the validation up to this point was a single end-to-end query through the full crew. Wanted targeted tests specifically on the News agent — the most fabrication-prone sub-agent because its corpus is small (~100 articles) and easily out-covered by professor queries.
+- **Two new test approaches added in `chatbot/eval/`:**
+  - **Approach 1: synthetic article injection (retrieval-layer, free)** — 5 hand-written test articles in `test_articles.csv` with unique anchor terms (`CURRGRAPH-2026`, `PEDAGOGUE-Net`, `ETL-Lab`, `CurricBench-2026`, `Cassandra Lee-Floro`) that cannot occur by chance. The runner combines them with the production corpus, rebuilds a FAISS index in `/tmp/`, then queries each anchor phrase and checks the test article is in the top-5 retrieved set. Validates the scrape → index → retrieve pipeline end-to-end without needing the LLM.
+  - **Approach 2: off-corpus probes (agent-layer, paid)** — 5 deliberately out-of-corpus queries in `news_offcorpus_queries.yaml` (quantum computing for AI, ag curriculum in Africa, the 2023 Falcon-180B release, Allen Institute for AI breakthroughs, biomedical imaging) — each with both `expected_thin_signals` (honest "no coverage" phrases the agent SHOULD use) and `forbidden_substrings` (fabricated URLs/orgs/products that catch hallucination, e.g. `quantum-ai.com`, `RadiologyAI Quarterly`, `OLMo-2 Technical Report`). The runner runs each through the live News Agent and grades PASS / FAIL / INSPECT.
+- **Runner:** `chatbot/eval/run_news_tests.py` — runs both approaches with `--approach 1`, `--approach 2`, or both. Approach 1 is free; Approach 2 costs ~$0.50-1.00 on Sonnet 4.6 (5 queries × 2-3 News-agent tool calls each, well within the new caps).
+- **Results (2026-05-26 first run):**
+  - **Approach 1: 5/5 PASS.** All 5 test articles retrieved at **rank 1** (best possible). The scrape-to-retrieval pipeline is sound.
+  - **Approach 2: 5/5 PASS.** Every off-corpus query produced an honest "thin retrieval" signal — agent used phrases like *"🔍 Honest Assessment: Thin Retrieval on Quantum Computing for AI"* and *"🔍 Thin Retrieval Notice — AI in Biomedical Imaging"*. Zero fabricated URLs, zero invented organisation names, zero plausible-but-fake product names. The agent typically ran 2-3 different search angles per query before honestly reporting zero matches — exactly the "make ONE follow-up search" behavior in the bug-fixed backstory.
+  - **Total Approach 2 wall time:** ~92 seconds for 5 queries (~14-22s each). Cost: ~$0.50-1.00.
+- **What this proves:**
+  1. The capped + bug-fixed News agent **does not fabricate** even when the corpus has zero relevant content. The fear after the qwen `courseleaf.com` URL fabrication is addressed for Sonnet specifically.
+  2. The `max_iter=6` + "max 3 news_rag_tool calls" hard caps actually bind — runs converged in 2-3 tool calls, never approached the cap.
+  3. The "thin retrieval" honesty pattern that emerged spontaneously in the Step 7 single-query test was not a one-off; it reproduces reliably across queries.
+- **What this does NOT prove:** Anchored retrieval works on a SMALL corpus (97 + 5 = 102 articles). Doesn't speak to retrieval quality at scale (1000+ articles). Probably fine for prototype.
+- **Limit / known gap:** the same off-corpus probe suite has not been run on `qwen2.5:14b`. Worth doing later as a free comparison to see whether the local model is also fabrication-resistant under these caps, since qwen previously fabricated a Queen's MMAI URL when given the older (pre-cap, pre-bugfix) prompts.
+- **Files added (`chatbot/eval/`):**
+  - `test_articles.csv` (5 rows, ~3 KB)
+  - `news_offcorpus_queries.yaml` (5 queries with thin-signal + forbidden-substring lists)
+  - `run_news_tests.py` (single-file runner with `--approach {1,2,both}`)
+- **Next News-related work (deferred until supervisor input):**
+  - Run the same test suite on qwen2.5:14b to compare cross-model fabrication resistance (~50 min wall time, free).
+  - Build a query-diversity matrix to map which topics the current 100-article corpus actually serves well (matrix is in CLAUDE.md "Open Questions for Supervisor / Discussion" section).
+  - Decide on news refresh cadence (manual vs cron — also in the Open Questions section).
+
 ### 2026-05-26 — Sonnet 4-agent test with caps: PASSED. Step 7 production-validated.
 - **Re-ran the same test (`test_orchestrator_verbose.py`, same data-engineering / Queen's MMAI query) on Sonnet 4.6 immediately after committing the max_iter caps.** Goal: verify the caps prevent the runaway and that Sonnet still produces high-quality output.
 - **Result: PASSED CLEANLY.** Wall time **3.3 min** (vs 9 min and still running on the uncapped run). 17 total tool executions (vs 161+). All 3 sub-agents converged to Final Answers; Orchestrator produced a publication-quality synthesis. **0 errors.** Estimated cost ~$1.50-3.

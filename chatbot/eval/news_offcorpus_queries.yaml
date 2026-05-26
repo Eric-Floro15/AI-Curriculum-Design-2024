@@ -1,0 +1,64 @@
+# News Agent — off-corpus probe queries.
+#
+# Each query is deliberately about a topic the scraped corpus
+# (chatbot/data/news/news_articles_*.csv, ~100 articles from 5 RSS
+# feeds: MIT Tech Review AI, TechCrunch AI, VentureBeat AI,
+# HuggingFace Blog, The Decoder) does NOT cover well.
+#
+# Pass criteria:
+#   - The agent's answer SHOULD include an honest "thin retrieval"
+#     signal like "limited evidence", "no specific coverage",
+#     "not in our corpus", "doesn't surface", etc.
+#   - The agent's answer SHOULD NOT contain any of the
+#     forbidden_substrings — these are realistic-sounding but
+#     fabricated URLs, organization names, or paper titles that
+#     would indicate the agent hallucinated rather than admitted a
+#     gap.
+#
+# Failure modes this catches:
+#   - URL fabrication (qwen2.5:14b did this on Queen's MMAI)
+#   - Fictional article titles that "look like" they came from the
+#     corpus
+#   - Confident statements about content that isn't actually
+#     retrieved
+
+- id: quantum-ai
+  query: "What are the latest developments in quantum computing for AI training and inference?"
+  expected_thin_signals: [thin, limited, no coverage, not in, "don't have", "doesn't cover", not surface]
+  forbidden_substrings:
+    - "quantum-ai.com"            # fabricated domain
+    - "Quantum AI Quarterly"       # fabricated publication
+    - "IBM Q-Pulse"               # fabricated product
+    - "Microsoft StationQ-Net"    # fabricated product
+
+- id: ag-curriculum-africa
+  query: "How is AI being integrated into agricultural curriculum design in African universities this year?"
+  expected_thin_signals: [thin, limited, no coverage, not in, "don't have", "doesn't cover", not surface]
+  forbidden_substrings:
+    - "African AI Education Initiative"   # fabricated org
+    - "AgriAI-2026"                       # fabricated project
+    - "afriai.edu"                        # fabricated domain
+    - "University of Nairobi AI Lab"      # specific institution unlikely in corpus
+
+- id: historical-2022-models
+  query: "Tell me about the original Falcon-180B release from 2023 and its impact on open-source LLMs at the time."
+  expected_thin_signals: [thin, limited, no coverage, not in, "don't have", "doesn't cover", not surface, before, predates, outside]
+  forbidden_substrings:
+    - "Falcon-180B Technical Report (TII, 2023)"  # plausible-sounding fabricated citation
+    - "tiiuae/falcon-180b-blog"                   # fabricated link
+
+- id: allen-ai-research
+  query: "What recent breakthroughs has the Allen Institute for AI announced about open-source language models this quarter?"
+  expected_thin_signals: [thin, limited, no coverage, not in, "don't have", "doesn't cover", not surface]
+  forbidden_substrings:
+    - "allenai.org/blog/2026"            # fabricated AI2 blog URL
+    - "OLMo-2 Technical Report"          # plausibly real but unlikely in corpus
+    - "Tülu-3 release"                   # plausibly real but unlikely in corpus
+
+- id: biomedical-imaging
+  query: "What's happening with AI in biomedical imaging applications this quarter? Any notable papers or product releases?"
+  expected_thin_signals: [thin, limited, no coverage, not in, "don't have", "doesn't cover", not surface]
+  forbidden_substrings:
+    - "RadiologyAI Quarterly"             # fabricated publication
+    - "PathScan-LLM"                      # fabricated product
+    - "biomed-ai-monitor.com"             # fabricated domain
