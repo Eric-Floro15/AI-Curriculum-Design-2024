@@ -747,3 +747,30 @@ Concrete record of environment + code state so future sessions don't re-do or un
 - **Bug fixes to the Orchestrator backstory are NET-POSITIVE for all models** — even though qwen2.5:14b still fabricated one URL, the rest of the output was much more disciplined than it would have been pre-fix. Sonnet hasn't been re-tested with the new prompt yet but the fixes are model-agnostic improvements.
 
 - **What was NOT done this session:** the 4-agent crew has not been validated on Sonnet 4.6 with the bug-fixed code. The 2026-05-25 Sonnet baseline was 3-agent. Recommended next step before declaring Step 7 fully production-ready: one Sonnet 4.6 run on the same query (~5-7 min, ~25-50¢) to confirm the bug fixes don't regress Sonnet output. Lower priority than Step 9 (Chainlit frontend) since Sonnet has historically been the strongest path and the bug fixes only add discipline.
+
+### 2026-05-26 — Sonnet 4-agent test FAILED via cost overrun (~$8-10, killed after 9 min)
+- **Why tested:** validate the bug-fixed 4-agent code on the production-default model (Sonnet 4.6). Estimated cost beforehand: $0.50-1.00. **Actual cost when killed: ~$8-10.** Documenting this honestly because it's the most important kind of finding.
+- **What happened:** Crew ran `test_orchestrator_verbose.py` with `LLM_PROVIDER=anthropic LLM_MODEL=claude-sonnet-4-6`. All 3 delegations fired correctly and in parallel. Sub-agent behaviour then diverged catastrophically:
+  - **Analyst:** 11 tool calls (`skills_taxonomy_rag`×9 + `top_skills_by_frequency`×2) → reasonable, returned a clean Final Answer.
+  - **News:** 8 `ai_news_rag` calls → on the high end but produced a clean Final Answer.
+  - **University Programs: 138 web_search calls** with no Final Answer in 9 minutes. The backstory's "make at most ONE follow-up search... do not loop more than twice on the same topic" was completely ignored.
+- **161 total tool dispatches** before kill. Estimated ~322 LLM turns at ~5K input + ~1K output tokens average ≈ ~$8-10 actual spend on Anthropic API.
+- **CrewAI compatibility bug also observed:** the framework's `ensure_force_final_answer` listener fired twice (lines 5042 + 8310 of the log) with `HTTP 400 invalid_request_error: This model does not support assistant message prefill`. Sonnet rejects assistant-message-prefill patterns CrewAI uses for forced final-answer recovery. Not a code bug on our side — framework-level. The failed listener triggers more retry loops, compounding the cost.
+- **Diagnostic findings:**
+  1. The bug-fixed prompt's "consult all 3 + cite from all 3" demand pressures Sonnet to keep searching for content the corpus doesn't have (curriculum-relevant news is genuinely thin in a 100-article general-AI corpus). qwen2.5:14b naturally capped at ~10-15 searches due to slower per-call inference; Sonnet's speed amplified the issue.
+  2. **No framework-level tool-budget cap existed** on any sub-agent. Default `max_iter=25` on CrewAI Agent means a runaway agent burns up to 25 LLM calls before stopping — and the `ensure_force_final_answer` retry compounded that.
+  3. The backstory's English-language "make at most N calls" rule was ignored on Sonnet. Hard caps must be code-level, not prompt-level.
+- **Fixes applied immediately (this session) to prevent recurrence:**
+  - **`agents/analyst.py`:** added `max_iter=10` + backstory rule "HARD BUDGET: at most 6 tool calls per task".
+  - **`agents/university_programs.py`:** added `max_iter=6` + backstory rule "HARD BUDGET: at most 3 web_search calls per task".
+  - **`agents/news.py`:** added `max_iter=6` + backstory rule "HARD BUDGET: at most 3 news_rag_tool calls per task".
+  - **`agents/orchestrator.py`:** added `max_iter=8` + backstory rule "HARD BUDGET: delegate exactly ONCE per specialist, max 3 delegations total".
+  - Combined worst-case LLM iterations across the crew is now 30 (vs the 161+ that actually ran on Sonnet today). Roughly 5× cost-cap improvement.
+- **What this means for the project:**
+  - qwen2.5:14b output from the previous Run 5 (2026-05-26) is currently the BEST CONCRETE VALIDATION of the 4-agent system. Despite the URL fabrication, it stayed within reasonable tool budgets and produced a structured answer.
+  - Sonnet 4.6 on the 4-agent crew is currently UNVALIDATED. The first attempt was killed for cost. Future attempts MUST use the new tool-budget caps and should also budget a hard $1-2 ceiling via output token limits.
+- **What's still NOT proven and how to address it (the plan):**
+  1. **Whether the new max_iter caps actually prevent the runaway** — needs one re-run. Free option: run on qwen2.5:14b again to confirm output quality is unchanged with the caps in place (~35 min, $0). This validates the caps are not over-tight on a model that previously worked.
+  2. **Whether Sonnet 4.6 produces a clean answer with the new caps** — needs one capped Sonnet run. With max_iter=8 on Orchestrator + max_iter=6/6/10 on sub-agents, worst-case cost should be ~$1-2. Still requires supervisor approval after this overrun.
+  3. **Whether the CrewAI ensure_force_final_answer bug bites again under the new caps** — likely not, because agents will converge to a Final Answer before hitting max_iter (the listener only fires when an agent EXHAUSTS its iter budget without answering). The new lower caps make convergence more likely, not less.
+  4. **Long-term option if the CrewAI listener bug persists:** investigate setting `respect_context_window=True` or upgrading/downgrading `crewai` version, or patch the listener to use a regular user message instead of assistant prefill. Not urgent — caps should mostly hide it.
