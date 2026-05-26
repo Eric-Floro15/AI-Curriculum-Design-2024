@@ -25,18 +25,19 @@ if _CHATBOT_DIR not in sys.path:
 from crewai import Agent, Crew, Task  # noqa: E402
 
 from agents.analyst import make_analyst  # noqa: E402
+from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
 from llm import get_llm  # noqa: E402
 
 
 ORCHESTRATOR_BACKSTORY = """\
-You are a senior curriculum advisor coordinating two specialist
+You are a senior curriculum advisor coordinating three specialist
 researchers to help a university professor design or update an AI/ML
 Master's program. You do NOT answer the professor directly from your
 own knowledge — you delegate to your specialists and synthesise their
 outputs.
 
-YOUR TWO SPECIALISTS:
+YOUR THREE SPECIALISTS:
 
 1. **Skills Taxonomy Analyst** — knows what skills are in demand in
    the AI/ML job market. Backed by 10,600+ job postings, ~871 canonical
@@ -48,26 +49,63 @@ YOUR TWO SPECIALISTS:
    Use when the question touches benchmarking, comparing curricula,
    peer-program coverage, or recent program additions.
 
+3. **AI Industry News Researcher** — knows what's been happening in AI
+   recently. Backed by a small corpus (~100 articles) of recent
+   coverage from MIT Tech Review AI, TechCrunch AI, VentureBeat AI,
+   HuggingFace Blog, and The Decoder. Use when the question touches
+   recent developments, new model releases, emerging applied-AI trends,
+   or "what's new in AI that the curriculum should reflect?".
+
+CRITICAL TOOL-USE RULES (read carefully — small models break here):
+- To consult a specialist, INVOKE the `delegate_work_to_coworker` or
+  `ask_question_to_coworker` tool. Actually call the tool — wait for
+  its real response — then use that response in your reasoning.
+- Do NOT emit tool-call JSON like `{"name": "ask_question_to_coworker",
+  "parameters": {...}}` as your final text answer. If you find yourself
+  about to write that JSON in your answer, STOP — that means you
+  forgot to actually invoke the tool. Go back and invoke it for real.
+- Do NOT write things like "we will now wait for the responses" — that
+  is a sign you described a plan instead of executing it.
+- The valid `coworker` values are EXACTLY: "Skills Taxonomy Analyst",
+  "University AI Programs Researcher", or "AI Industry News
+  Researcher". No other strings work.
+
 CRITICAL DELEGATION RULES:
-- MOST professor queries benefit from BOTH perspectives — what the
-  market wants AND what peers teach. Default to consulting both unless
-  the query is clearly only about one.
+- For ANY query about updating, modernising, or designing an AI/ML
+  curriculum, you MUST consult ALL THREE specialists in turn. This is
+  the canonical case. Market signal (Analyst) + peer signal (Univ
+  Programs) + recency signal (News) together give the professor a
+  defensible recommendation; missing any one is a degradation.
+- Only skip a specialist if the query is unambiguously about ONE area
+  (e.g. "just summarise recent AI news" → only News needed).
 - When you delegate, frame the sub-question PRECISELY. Good: "What are
   the top 10 most in-demand data engineering skills by frequency?"
   Bad: "Tell me about data engineering."
 - Delegate at most ONCE to each specialist per query. Do NOT loop, do
   NOT re-ask the same question hoping for a better answer.
-- If a specialist's output is incomplete, use what they gave you and
-  note the gap in your final answer — do not re-delegate.
+- If a specialist's output is incomplete or the News corpus is too
+  thin for the topic, USE what they gave you and explicitly note the
+  gap in your final answer. Do NOT fabricate URLs, frequencies,
+  course codes, or article titles to fill the gap. Do NOT claim to
+  have consulted a specialist you did not actually delegate to.
 - Your final answer to the professor is a SINGLE coherent
   recommendation, not a raw transcript of the specialists' outputs.
 
 OUTPUT FORMAT for your final answer:
 - Open with a 2-3 sentence executive summary of the recommendation.
 - Then a structured body with concrete picks (skills to add, topics
-  to emphasise, courses to update). Cite the evidence — frequency
-  numbers from the Analyst, peer-program course names and URLs from
-  the University Programs researcher.
+  to emphasise, courses to update). Cite the evidence from ALL
+  specialists consulted:
+    * Frequency numbers (e.g. "Data Pipelines, 4,278") from the
+      Skills Taxonomy Analyst.
+    * Peer-program course names + URLs (e.g. "Queen's MMAI capstone
+      at smith.queensu.ca/...") from the University Programs
+      Researcher.
+    * Recent article titles + sources + dates (e.g. "'Agentic AI in
+      Enterprise', MIT Tech Review AI, May 2026") from the AI
+      Industry News Researcher.
+  If a specialist was not consulted (because the query truly didn't
+  need them), say so explicitly rather than leaving the section blank.
 - Close with the trade-off or caveat the professor should consider.
 """
 
@@ -76,10 +114,11 @@ def make_orchestrator() -> Agent:
     return Agent(
         role="Senior Curriculum Advisor",
         goal=(
-            "Coordinate the Skills Taxonomy Analyst and the University AI "
-            "Programs Researcher to give a university professor a single "
-            "coherent, data-grounded recommendation about what skills, "
-            "topics, or courses to add to their AI/ML Master's curriculum."
+            "Coordinate the Skills Taxonomy Analyst, the University AI "
+            "Programs Researcher, and the AI Industry News Researcher to "
+            "give a university professor a single coherent, data-grounded "
+            "recommendation about what skills, topics, or courses to add "
+            "to their AI/ML Master's curriculum."
         ),
         backstory=ORCHESTRATOR_BACKSTORY,
         llm=get_llm(),
@@ -90,7 +129,7 @@ def make_orchestrator() -> Agent:
 
 def build_crew() -> tuple[Crew, Agent]:
     """
-    Build a fresh Crew with all three agents. Returns (crew, orchestrator)
+    Build a fresh Crew with all four agents. Returns (crew, orchestrator)
     so callers can attach a Task to the orchestrator and kick off.
 
     Agents are rebuilt per call so conversation state doesn't bleed
@@ -98,9 +137,10 @@ def build_crew() -> tuple[Crew, Agent]:
     """
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
+    news = make_news_agent()
     orchestrator = make_orchestrator()
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs],
+        agents=[orchestrator, analyst, univ_programs, news],
         tasks=[],  # caller adds the task
         verbose=False,
     )
@@ -111,6 +151,7 @@ def run_query(query: str) -> str:
     """Run a single professor query end-to-end through the full crew."""
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
+    news = make_news_agent()
     orchestrator = make_orchestrator()
 
     task = Task(
@@ -119,14 +160,15 @@ def run_query(query: str) -> str:
             "A single coherent recommendation for the professor. Open with "
             "a 2-3 sentence executive summary. Then a structured body of "
             "concrete recommendations citing specific skills with "
-            "frequencies (from the Analyst) and peer-program courses with "
-            "URLs (from the University Programs researcher). Close with a "
-            "trade-off or caveat."
+            "frequencies (from the Analyst), peer-program courses with "
+            "URLs (from the University Programs researcher), and recent "
+            "articles with titles + sources (from the News researcher) "
+            "where each is relevant. Close with a trade-off or caveat."
         ),
         agent=orchestrator,
     )
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs],
+        agents=[orchestrator, analyst, univ_programs, news],
         tasks=[task],
         verbose=False,
     )
