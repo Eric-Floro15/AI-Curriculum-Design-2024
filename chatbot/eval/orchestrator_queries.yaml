@@ -3,30 +3,132 @@
 # Each query specifies what a passing run of the full 4-agent crew
 # (Orchestrator + Analyst + University Programs + News) must produce.
 #
-# Three assertion types per query:
-#   - must_delegate_to      sub-agent role names the Orchestrator MUST
-#                           consult. Verified by counting delegation
-#                           events in the verbose log.
-#   - expected_substrings   strings that MUST appear in the Orchestrator's
-#                           final answer (case-insensitive substring match).
-#                           Derived from the known-good run for this query.
-#   - forbidden_substrings  strings that must NOT appear. Catches the known
-#                           failure modes we've observed across 6+ test runs
-#                           (fabricated URLs, hallucinated course names,
-#                           tool-call-JSON leaks, placeholder text).
+# REPRODUCIBILITY WORKFLOW (see chatbot/eval/README.md for full notes):
 #
-# Plus a budget per query:
-#   - max_tool_calls        total tool dispatches across the crew. Caps
-#                           cost via early-fail rather than waiting for
-#                           wall-time to expire.
-#   - max_wall_time_sec     hard cap on a single query's runtime.
+#   1. To add/edit a query: edit this file. Each entry takes 5 fields
+#      (id, query, must_delegate_to, expected_substrings,
+#      forbidden_substrings, budget).
+#   2. To re-run the baseline: `KMP_DUPLICATE_LIB_OK=TRUE
+#      python3 chatbot/eval/run_orchestrator_eval.py`. Each query's full
+#      response and PASS/FAIL grades are written to a dated snapshot file
+#      `orchestrator_baseline_YYYY-MM-DD_<model>.md` in this folder.
+#   3. To update assertions after a real run: open the latest snapshot,
+#      copy the substrings that should be required into expected_substrings
+#      here, then re-run to verify.
 #
-# Re-run with (when run_orchestrator_eval.py exists — not yet built):
-#     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py
+# Assertion types per query:
+#   - must_delegate_to       sub-agent role names the Orchestrator MUST
+#                            consult. Empty list means "no delegation
+#                            required" (e.g. for off-scope queries the
+#                            Orchestrator should redirect, not fan out).
+#   - expected_substrings    strings that MUST appear (case-insensitive)
+#                            in the Orchestrator's final answer.
+#                            Conservative — only includes facts derivable
+#                            from the data (real frequencies, real URLs,
+#                            structural elements required by OUTPUT FORMAT).
+#                            Refine after the first baseline run.
+#   - forbidden_substrings   strings that must NOT appear. Drawn from the
+#                            full failure-mode catalog observed across
+#                            all the 2026-05-26 test runs.
 #
-# History: this file was seeded with one query on 2026-05-26 from the
-# successful capped-Sonnet 4-agent run (commit dc50a60). Reference answer
-# preserved in chatbot/eval/orchestrator_baseline_2026-05-26_sonnet.md.
+# Budget per query:
+#   - max_tool_calls         total tool dispatches across the crew.
+#                            Calibrated to the agent max_iter caps:
+#                            Orchestrator 8 + Analyst 10 + Univ 6 + News 6
+#                            ≈ 30 worst case. Failing budget = early kill.
+#   - max_wall_time_sec      hard cap on a single query's runtime.
+
+# ── Shared baseline forbidden substrings (referenced by anchors below) ──
+# These are the known failure modes documented across all the 2026-05-26
+# test runs. Every query should reject these. This entry is filtered out
+# of the runner (`id` starts with `_`) — it only exists to define the
+# anchor used by the real queries below.
+- id: _baseline_forbidden
+  forbidden_substrings: &SHARED_FORBIDDEN
+    # qwen2.5:14b fabricated Queen's MMAI URL (2026-05-26 capped-Sonnet
+    # comparison run).
+    - "courseleaf.com"
+    # Llama 3.1 8B typo of "MMAI" (Run 2 of 2026-05-26).
+    - "MMOAI"
+    # Llama 3.1 8B placeholder hallucination (Run 1 of 2026-05-26).
+    - "(URL to come from"
+    # Tool-call-JSON leaks — emitted as final-answer text by Llama 3.1 8B
+    # (Runs 3-4 of 2026-05-26).
+    - '"name": "delegate_work_to_coworker"'
+    - '"name": "ask_question_to_coworker"'
+    - '"name": "skills_in_cluster"'
+    - '"name": "ai_news_rag"'
+    # Specific fabricated artifacts observed on bad runs.
+    - "mmaiqc.ca"       # invented domain (Run 1, Llama 3.1 8B)
+    - "MTC-6502"        # invented course code (Run 1, Llama 3.1 8B)
+
+# ============================================================================
+# QUERIES
+# ============================================================================
+
+# ── INFO QUERIES (single-specialist may be sufficient) ──────────────────
+
+- id: pure-market-soft-skills
+  query: "What are the top 5 most in-demand soft skills for AI/ML graduates? Give me specific frequencies from your data."
+  category: info-market
+  # An info query about a single dimension. The Orchestrator can
+  # reasonably skip Univ Programs and News here — the backstory
+  # allows "Only skip a specialist if the query is unambiguously
+  # about ONE area". A passing answer just needs the Analyst.
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+  expected_substrings:
+    # Known top soft skills from the taxonomy (CLAUDE.md 2026-05-22):
+    - "Communication"
+    - "39,040"        # Communication frequency
+    # Structural — the answer should be data-grounded and structured.
+    - "frequency"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 15
+    max_wall_time_sec: 300
+
+- id: pure-peer-mit
+  query: "What does MIT's AI / data science Master's program offer? Cite specific URLs for the program page."
+  category: info-peer
+  # Pure peer-comparison query — Univ Programs is the only required
+  # specialist. Analyst and News should be skipped.
+  must_delegate_to:
+    - University AI Programs Researcher
+  expected_substrings:
+    - "MIT"
+    # MIT's official AI/data programs are under mit.edu and idss.mit.edu.
+    # The agent should cite at least one such URL.
+    - "mit.edu"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 12
+    max_wall_time_sec: 300
+
+- id: pure-news-ai-agents
+  query: "What are the most important recent developments in AI agents according to the indexed news?"
+  category: info-news
+  # Pure news-recency query — News is the only required specialist.
+  must_delegate_to:
+    - AI Industry News Researcher
+  expected_substrings:
+    # The corpus has HuggingFace blog posts on agents (we confirmed
+    # this in the Step 7 News-agent smoke test).
+    - "agent"
+    - "HuggingFace"
+  forbidden_substrings:
+    - "courseleaf.com"
+    - "MMOAI"
+    - "(URL to come from"
+    - '"name": "ai_news_rag"'
+    # Off-corpus hallucinations from the news_offcorpus_queries probes:
+    - "Quantum AI Quarterly"
+    - "RadiologyAI Quarterly"
+  budget:
+    max_tool_calls: 12
+    max_wall_time_sec: 300
+
+# ── UPDATE / DESIGN QUERIES (all three specialists required) ────────────
 
 - id: data-eng-curriculum-update
   query: |
@@ -35,19 +137,15 @@
     covers, and how does Queen's University's MMAI program compare
     on this dimension? Give me concrete recommendations for what to
     add or strengthen.
-
-  # All three specialists must be consulted because this is a
-  # "curriculum-update" query — the canonical case per the
-  # Orchestrator's backstory.
+  category: update-mixed
+  # This is the canonical reference query. Full known-good answer
+  # documented in orchestrator_baseline_2026-05-26_sonnet.md.
   must_delegate_to:
     - Skills Taxonomy Analyst
     - University AI Programs Researcher
     - AI Industry News Researcher
-
-  # Things a passing answer MUST contain. Derived from the
-  # 2026-05-26 capped Sonnet 4.6 run.
   expected_substrings:
-    # Top data-engineering frequencies from the Analyst (Cluster 8).
+    # Top data-engineering frequencies (Cluster 8).
     - "Data Pipelines"
     - "4,278"
     - "Data Management"
@@ -55,38 +153,151 @@
     - "DevOps"
     - "1,007"
     - "Big Data"
-    # Real Queen's MMAI URL — qwen2.5:14b fabricated this; Sonnet
-    # got it right.
+    # Real Queen's MMAI URL.
     - "smith.queensu.ca"
-    # At least one real peer-program comparator with the correct name.
+    # At least one real peer-program comparator.
     - "CMU"
     # Structural requirements from the OUTPUT FORMAT spec.
     - "Executive Summary"
     - "Trade-off"
-
-  # Things a passing answer MUST NOT contain. Each entry corresponds
-  # to a specific observed failure mode from the test history.
-  forbidden_substrings:
-    # qwen2.5:16b fabricated Queen's MMAI URL (2026-05-26).
-    - "courseleaf.com"
-    # Llama 3.1 8B typo of "MMAI" (Run 2 of 2026-05-26).
-    - "MMOAI"
-    # Llama 3.1 8B placeholder hallucination (Run 1 of 2026-05-26).
-    - "(URL to come from"
-    # Tool-call-JSON leak — emitted as final-answer text by Llama 3.1
-    # 8B (Runs 3-4 of 2026-05-26).
-    - '"name": "delegate_work_to_coworker"'
-    - '"name": "ask_question_to_coworker"'
-    # Specific fabricated artifacts observed on bad runs.
-    - "mmaiqc.ca"          # invented domain (Run 1, Llama 3.1 8B)
-    - "MTC-6502"           # invented course code (Run 1, Llama 3.1 8B)
-
-  # Cost / time budget per the max_iter caps in the Agent constructors:
-  #   Orchestrator   max_iter=8   ≤ 3 delegations
-  #   Analyst        max_iter=10  ≤ 6 tool calls (5 tools available)
-  #   Univ Programs  max_iter=6   ≤ 3 web_search calls
-  #   News           max_iter=6   ≤ 3 news_rag_tool calls
-  # Combined worst case ≈ 25-30 tool dispatches.
+  forbidden_substrings: *SHARED_FORBIDDEN
   budget:
     max_tool_calls: 30
     max_wall_time_sec: 600
+
+- id: soft-skills-curriculum-update
+  query: |
+    I want to strengthen the soft skills component of my AI/ML
+    Master's program. Which soft skills are most in demand, what do
+    peer programs do here, and have there been recent industry
+    developments that should shape my approach?
+  category: update-mixed
+  # Update query — all three specialists required.
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+    - University AI Programs Researcher
+    - AI Industry News Researcher
+  expected_substrings:
+    - "Communication"
+    - "39,040"
+    # Structural elements.
+    - "Trade-off"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 30
+    max_wall_time_sec: 600
+
+- id: mlops-coverage-benchmark
+  query: |
+    I'm considering adding a dedicated MLOps module to my AI/ML
+    Master's. How strong is the market demand, how do peer
+    institutions cover MLOps today, and what recent industry
+    developments should shape the module's content?
+  category: update-mixed
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+    - University AI Programs Researcher
+    - AI Industry News Researcher
+  expected_substrings:
+    - "MLOps"   # the query topic must appear in the answer
+    # At least one of the related skills appears with its frequency.
+    # We don't pre-commit to one; refine after first run.
+    - "Trade-off"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 30
+    max_wall_time_sec: 600
+
+- id: cloud-infra-curriculum
+  query: |
+    Should I add a cloud infrastructure module to my AI/ML Master's
+    curriculum? Compare the in-demand cloud skills in the job market
+    with how major peer programs teach cloud, and note any recent
+    cloud-AI developments worth including.
+  category: update-mixed
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+    - University AI Programs Researcher
+    - AI Industry News Researcher
+  expected_substrings:
+    # Known high-frequency cloud skills (Cluster 4).
+    - "AWS"
+    - "Azure"
+    - "cloud"
+    - "Trade-off"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 30
+    max_wall_time_sec: 600
+
+- id: broad-improve-curriculum
+  query: "I want to improve my AI/ML Master's curriculum. What should I focus on?"
+  category: update-broad
+  # Deliberately broad query. Tests whether the Orchestrator can
+  # still produce a focused, grounded recommendation rather than a
+  # vague generic answer or a runaway tool-call loop.
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+    - University AI Programs Researcher
+    - AI Industry News Researcher
+  expected_substrings:
+    # Even a broad query should surface SOME specific frequency from
+    # the taxonomy. Pick a couple of guaranteed-to-be-relevant ones.
+    - "Communication"
+    - "Data Pipelines"
+    - "Executive Summary"
+    - "Trade-off"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 30
+    max_wall_time_sec: 600
+
+# ── EDGE / ADVERSARIAL QUERIES ──────────────────────────────────────────
+
+- id: off-scope-python-tutorial
+  query: "Can you teach me Python programming basics step by step?"
+  category: edge-off-scope
+  # The chatbot is a curriculum-design tool, not a programming tutor.
+  # A passing answer either redirects to the actual capability or
+  # honestly says this is out of scope. It should NOT fan out
+  # delegations to all three specialists.
+  must_delegate_to: []   # empty list = no delegation expected
+  expected_substrings:
+    # The agent should signal scope honestly. Any of these phrasings
+    # is acceptable as an honest-redirect signal.
+    - "curriculum"   # answer should mention the chatbot's real purpose
+  forbidden_substrings:
+    # Don't generate a Python tutorial. If we see code blocks or
+    # tutorial-style language, the agent went off-scope.
+    - "```python"
+    - "def "
+    - "print("
+    - "import "
+    - "# Step 1"
+    - "courseleaf.com"
+    - "MMOAI"
+    - '"name": "delegate_work_to_coworker"'
+  budget:
+    max_tool_calls: 4   # minimal — no delegation should fire
+    max_wall_time_sec: 120
+
+- id: narrow-jax-demand
+  query: "How in-demand is JAX as a skill in the current job market? Should I include JAX in my AI/ML curriculum?"
+  category: edge-narrow
+  # Narrow query about a specific, possibly low-frequency tool.
+  # Tests whether the Analyst honestly reports thin coverage rather
+  # than inventing a frequency, and whether Univ Programs / News
+  # are correctly considered (curriculum-design framing).
+  must_delegate_to:
+    - Skills Taxonomy Analyst
+  expected_substrings:
+    - "JAX"
+    # The agent should be honest about what frequency JAX has (it
+    # might be very low or absent). One of these signals must
+    # appear — either a number/frequency, or an honest "not in" /
+    # "low frequency" / "limited" signal.
+    # Refine after first run.
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    max_tool_calls: 15
+    max_wall_time_sec: 300
