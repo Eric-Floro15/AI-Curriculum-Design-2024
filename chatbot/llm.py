@@ -12,6 +12,18 @@ Default is Claude Sonnet 4.6 (anthropic/claude-sonnet-4-6) — see the
 """
 
 import os
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+
+api_key = os.getenv("LANGCHAIN_API_KEY") or os.getenv("LANGSMITH_API_KEY")
+if api_key:
+    os.environ["LANGCHAIN_API_KEY"] = api_key
+else:
+    print("⚠️  WARNING: No LangSmith API key found. Tracing will NOT work.")
+    print("   Add LANGSMITH_API_KEY or LANGCHAIN_API_KEY to your .env file.")
+
+if not os.getenv("LANGCHAIN_PROJECT"):
+    os.environ["LANGCHAIN_PROJECT"] = "mitacs-agents-research"
 
 from crewai import LLM
 

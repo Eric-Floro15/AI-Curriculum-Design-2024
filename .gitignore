@@ -12,3 +12,9 @@ News-Agent-Chatbot-Code-Example/
 
 # Root-level env files (defence in depth — chatbot/.gitignore also covers chatbot/.env)
 .env
+
+# Claude Cowork session files
+.claude/
+
+# Chainlit runtime config (auto-generated on first run)
+chatbot/.chainlit/
