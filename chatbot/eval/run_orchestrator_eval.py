@@ -8,14 +8,23 @@ assertion types:
 
   1. expected_substrings    — every listed substring (case-insensitive)
                               MUST appear in the Orchestrator's final answer.
+                              Number formatting is normalised: "39,040" and
+                              "39040" are treated as equivalent so slower
+                              local models that omit comma separators still
+                              pass the numeric check.
   2. forbidden_substrings   — none of these may appear in the final answer.
                               Catches known hallucination patterns.
   3. must_delegate_to       — each listed sub-agent role MUST have been
                               delegated to by the Orchestrator. Verified
                               by parsing the verbose log for the
-                              `'coworker': '<role>'` arg patterns.
+                              `'coworker': '<role>'` arg patterns. ANSI
+                              escape codes are stripped from the log before
+                              parsing so rich/console colour codes don't
+                              corrupt role-name matching.
   4. budget                 — total tool dispatches and wall time must
-                              stay under per-query caps.
+                              stay under per-query caps. Use --no-time-check
+                              to skip the wall-time assertion when running
+                              slow local Ollama models on CPU.
 
 Writes a dated snapshot Markdown file next to this script with each
 query's full answer + PASS/FAIL grades. Re-running with the same model
@@ -32,6 +41,10 @@ Run:
     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py
     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py --only data-eng-curriculum-update
     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py --provider anthropic --model claude-sonnet-4-6
+
+    # Local Ollama (slow on CPU — skip the wall-time budget check):
+    KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py \\
+        --provider ollama --model qwen2.5:14b --no-time-check
 """
 
 import argparse
@@ -43,6 +56,87 @@ import sys
 import time
 import traceback
 from datetime import date
+
+# ── LangSmith tracing — must be configured BEFORE any LangChain/CrewAI import ─
+# Load .env first so LANGSMITH_API_KEY is available, then set the LangChain
+# tracing vars. Doing this here (module level) rather than inside main() or
+# llm.py ensures LangChain picks them up during its own module-level init.
+_here_eval = os.path.dirname(os.path.abspath(__file__))
+_chatbot_dir = os.path.dirname(_here_eval)
+sys.path.insert(0, _chatbot_dir)
+
+from dotenv import load_dotenv as _load_dotenv  # noqa: E402
+_load_dotenv(os.path.join(_chatbot_dir, ".env"))
+
+os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
+os.environ.setdefault("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
+os.environ.setdefault("LANGCHAIN_PROJECT", "mitacs-agents-research")
+
+_ls_key = os.getenv("LANGSMITH_API_KEY") or os.getenv("LANGCHAIN_API_KEY")
+if _ls_key:
+    os.environ["LANGCHAIN_API_KEY"] = _ls_key
+else:
+    print("⚠️  WARNING: LANGSMITH_API_KEY not found in chatbot/.env — LangSmith tracing disabled.")
+
+# ── Silence CrewAI's "Tracing is disabled" banner ─────────────────────────
+# CrewAI >= 0.80 prints a rich panel on every Crew.kickoff() when its own
+# platform tracing isn't enabled. We use LangSmith instead, so opt out of
+# CrewAI telemetry entirely — this suppresses the banner without enabling
+# their platform.
+os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
+# ── Helpers ────────────────────────────────────────────────────────────────
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mGKHFABCDJsu]")
+# Rich box-drawing characters injected when the verbose log is rendered
+# inside a panel (e.g. │, ╭, ─, ╰). These appear mid-string in captured
+# role names, turning 'AI Industry News Researcher' into
+# 'AI Industry News   │\n│  Researcher'.
+_BOX_RE = re.compile(r"[│╭╰╮╯─├┤┬┴┼╔╗╚╝╠╣╦╩╬═║╴╶╸╺]+")
+
+
+def _clean_log(text: str) -> str:
+    """Remove ANSI escape codes and rich box-drawing characters from log text.
+
+    Two-pass cleaning:
+    1. Strip ANSI colour/cursor codes  (\x1b[...m etc.)
+    2. Replace rich panel border chars (│, ─, ╭ …) with a space
+    The result is plain text safe for regex parsing.
+    """
+    text = _ANSI_RE.sub("", text)
+    text = _BOX_RE.sub(" ", text)
+    return text
+
+
+def _normalize_role(raw: str) -> str:
+    """Collapse whitespace and newlines in a captured coworker role name.
+
+    Rich wraps long strings across panel lines, injecting newlines and
+    indentation. After box-char removal the fragments remain separated
+    by whitespace/newlines — join them back into a single clean string.
+    """
+    return " ".join(raw.split())
+
+
+def _substring_match(needle: str, haystack: str) -> bool:
+    """Case-insensitive substring check with number-comma normalisation.
+
+    Treats '39,040' and '39040' as equivalent so models that format
+    numbers without comma separators still pass numeric assertions.
+    Both needle and haystack have commas stripped before comparison,
+    but only when the needle itself contains a digit (avoids over-
+    normalising non-numeric strings that happen to contain commas).
+    """
+    needle_lc = needle.lower()
+    haystack_lc = haystack.lower()
+    if needle_lc in haystack_lc:
+        return True
+    # Numeric normalisation: strip commas and retry
+    if any(c.isdigit() for c in needle):
+        if needle_lc.replace(",", "") in haystack_lc.replace(",", ""):
+            return True
+    return False
 
 import yaml
 
@@ -118,12 +212,18 @@ def run_single_query(case: dict) -> dict:
         traceback.print_exc(file=buf)
     elapsed = time.time() - t0
 
-    log = buf.getvalue()
+    # Clean log: strip ANSI codes AND rich box-drawing characters before
+    # parsing. Box chars (│, ─ …) are injected mid-string when CrewAI
+    # renders verbose output inside a panel, corrupting role names like
+    # 'AI Industry News │\n│  Researcher'. See _clean_log() / _normalize_role().
+    log = _clean_log(buf.getvalue())
     tool_calls = len(re.findall(r"Tool Execution Started", log))
     delegated_to: set[str] = set()
     # Both delegation tools share the same Args shape; capture both.
     for m in re.finditer(r"'coworker':\s*'([^']+)'", log):
-        delegated_to.add(m.group(1))
+        role = _normalize_role(m.group(1))
+        if role:
+            delegated_to.add(role)
 
     return {
         "answer": answer,
@@ -135,20 +235,29 @@ def run_single_query(case: dict) -> dict:
     }
 
 
-def grade_case(case: dict, result: dict) -> list[str]:
-    """Return a list of failure reasons (empty list = PASS)."""
-    failures: list[str] = []
-    answer_lc = result["answer"].lower()
+def grade_case(case: dict, result: dict, check_time: bool = True) -> list[str]:
+    """Return a list of failure reasons (empty list = PASS).
 
-    # 1. expected_substrings — all must appear
+    Args:
+        case:        the query definition from orchestrator_queries.yaml.
+        result:      dict returned by run_single_query().
+        check_time:  when False, the wall-time budget assertion is skipped.
+                     Pass False via --no-time-check for slow local Ollama
+                     models where latency is a hardware constraint, not a
+                     quality signal.
+    """
+    failures: list[str] = []
+    answer = result["answer"]
+
+    # 1. expected_substrings — all must appear (number-comma normalised)
     expected = case.get("expected_substrings", []) or []
-    missing = [s for s in expected if s.lower() not in answer_lc]
+    missing = [s for s in expected if not _substring_match(s, answer)]
     if missing:
         failures.append(f"missing expected substrings: {missing}")
 
     # 2. forbidden_substrings — none may appear
     forbidden = case.get("forbidden_substrings", []) or []
-    found_forbidden = [s for s in forbidden if s.lower() in answer_lc]
+    found_forbidden = [s for s in forbidden if _substring_match(s, answer)]
     if found_forbidden:
         failures.append(f"forbidden substrings appeared: {found_forbidden}")
 
@@ -164,8 +273,7 @@ def grade_case(case: dict, result: dict) -> list[str]:
             )
     else:
         # Empty must_delegate_to means "no delegation expected"
-        # (used by off-scope queries — Orchestrator should redirect,
-        # not fan out). If actual delegations fired, that's a fail.
+        # (used by off-scope queries). If any delegation fired, that's a fail.
         if actual:
             failures.append(
                 f"unexpected delegations for no-delegation query: {sorted(actual)}"
@@ -178,11 +286,12 @@ def grade_case(case: dict, result: dict) -> list[str]:
         failures.append(
             f"tool budget exceeded: {result['tool_calls']} > {max_tools}"
         )
-    max_time = budget.get("max_wall_time_sec")
-    if max_time is not None and result["wall_time_sec"] > max_time:
-        failures.append(
-            f"wall time exceeded: {result['wall_time_sec']:.1f}s > {max_time}s"
-        )
+    if check_time:
+        max_time = budget.get("max_wall_time_sec")
+        if max_time is not None and result["wall_time_sec"] > max_time:
+            failures.append(
+                f"wall time exceeded: {result['wall_time_sec']:.1f}s > {max_time}s"
+            )
 
     # Any uncaught exception from the run is a failure
     if result["error"]:
@@ -313,6 +422,15 @@ def main() -> None:
         action="store_true",
         help="Parse the queries file and print what would run, then exit.",
     )
+    parser.add_argument(
+        "--no-time-check",
+        action="store_true",
+        help=(
+            "Skip the wall-time budget assertion. Recommended for local "
+            "Ollama models running on CPU (e.g. qwen2.5:14b) where latency "
+            "is a hardware constraint, not a quality signal."
+        ),
+    )
     args = parser.parse_args()
 
     if args.provider:
@@ -320,8 +438,7 @@ def main() -> None:
     if args.model:
         os.environ["LLM_MODEL"] = args.model
 
-    from dotenv import load_dotenv  # noqa: E402
-    load_dotenv(os.path.join(_CHATBOT_DIR, ".env"))
+    # dotenv already loaded at module level (top of file) before LangChain init.
 
     with open(QUERIES_FILE) as f:
         all_cases = yaml.safe_load(f)
@@ -352,7 +469,7 @@ def main() -> None:
     for i, case in enumerate(cases, 1):
         print(f"\n[{i}/{len(cases)}] {case['id']} — running...")
         result = run_single_query(case)
-        fs = grade_case(case, result)
+        fs = grade_case(case, result, check_time=not args.no_time_check)
         results.append(result)
         failures.append(fs)
         verdict = "PASS" if not fs else "FAIL"

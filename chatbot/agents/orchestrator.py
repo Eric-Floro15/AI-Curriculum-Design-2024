@@ -25,6 +25,7 @@ if _CHATBOT_DIR not in sys.path:
 from crewai import Agent, Crew, Task  # noqa: E402
 
 from agents.analyst import make_analyst  # noqa: E402
+from agents.curriculum import make_curriculum_agent  # noqa: E402
 from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
 from llm import get_llm  # noqa: E402
@@ -37,7 +38,7 @@ Master's program. You do NOT answer the professor directly from your
 own knowledge — you delegate to your specialists and synthesise their
 outputs.
 
-YOUR THREE SPECIALISTS:
+YOUR FOUR SPECIALISTS:
 
 1. **Skills Taxonomy Analyst** — knows what skills are in demand in
    the AI/ML job market. Backed by 10,600+ job postings, ~871 canonical
@@ -56,6 +57,15 @@ YOUR THREE SPECIALISTS:
    recent developments, new model releases, emerging applied-AI trends,
    or "what's new in AI that the curriculum should reflect?".
 
+4. **Curriculum Architect** — analyses a SPECIFIC program's existing
+   curriculum (fetched from the web) and cross-references it against
+   the in-demand skills taxonomy to produce a gap analysis. Use when
+   the professor asks about THEIR OWN program: "what are we missing?",
+   "analyse our current curriculum", "what does our program cover?",
+   "give me a gap analysis of [program name]". This agent is distinct
+   from the University Programs Researcher: that agent looks at PEER
+   programs; this agent looks at the professor's OWN program.
+
 CRITICAL TOOL-USE RULES (read carefully — small models break here):
 - To consult a specialist, INVOKE the `delegate_work_to_coworker` or
   `ask_question_to_coworker` tool. Actually call the tool — wait for
@@ -71,13 +81,24 @@ CRITICAL TOOL-USE RULES (read carefully — small models break here):
   Researcher". No other strings work.
 
 CRITICAL DELEGATION RULES:
+- You MUST ALWAYS delegate to at least one specialist before answering.
+  NEVER answer directly from your own knowledge — your value is in
+  synthesising grounded specialist outputs, not in recalling facts.
 - For ANY query about updating, modernising, or designing an AI/ML
   curriculum, you MUST consult ALL THREE specialists in turn. This is
   the canonical case. Market signal (Analyst) + peer signal (Univ
   Programs) + recency signal (News) together give the professor a
   defensible recommendation; missing any one is a degradation.
-- Only skip a specialist if the query is unambiguously about ONE area
-  (e.g. "just summarise recent AI news" → only News needed).
+- For focused/single-topic queries, consult the ONE most relevant
+  specialist:
+    "top soft skills"              → Skills Taxonomy Analyst
+    "what does MIT offer?"         → University AI Programs Researcher
+    "recent AI news"               → AI Industry News Researcher
+    "analyse our current program"  → Curriculum Architect
+  Still MUST delegate — do not answer from memory.
+- The valid `coworker` values are EXACTLY: "Skills Taxonomy Analyst",
+  "University AI Programs Researcher", "AI Industry News Researcher",
+  or "Curriculum Architect". No other strings work.
 - When you delegate, frame the sub-question PRECISELY. Good: "What are
   the top 10 most in-demand data engineering skills by frequency?"
   Bad: "Tell me about data engineering."
@@ -137,7 +158,7 @@ def make_orchestrator() -> Agent:
 
 def build_crew() -> tuple[Crew, Agent]:
     """
-    Build a fresh Crew with all four agents. Returns (crew, orchestrator)
+    Build a fresh Crew with all five agents. Returns (crew, orchestrator)
     so callers can attach a Task to the orchestrator and kick off.
 
     Agents are rebuilt per call so conversation state doesn't bleed
@@ -146,9 +167,10 @@ def build_crew() -> tuple[Crew, Agent]:
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
+    curriculum = make_curriculum_agent()
     orchestrator = make_orchestrator()
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs, news],
+        agents=[orchestrator, analyst, univ_programs, news, curriculum],
         tasks=[],  # caller adds the task
         verbose=False,
     )
@@ -160,6 +182,7 @@ def run_query(query: str) -> str:
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
+    curriculum = make_curriculum_agent()
     orchestrator = make_orchestrator()
 
     task = Task(
@@ -169,14 +192,16 @@ def run_query(query: str) -> str:
             "a 2-3 sentence executive summary. Then a structured body of "
             "concrete recommendations citing specific skills with "
             "frequencies (from the Analyst), peer-program courses with "
-            "URLs (from the University Programs researcher), and recent "
-            "articles with titles + sources (from the News researcher) "
-            "where each is relevant. Close with a trade-off or caveat."
+            "URLs (from the University Programs researcher), recent "
+            "articles with titles + sources (from the News researcher), "
+            "and a curriculum gap analysis with source URL (from the "
+            "Curriculum Architect) where each is relevant. Close with a "
+            "trade-off or caveat."
         ),
         agent=orchestrator,
     )
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs, news],
+        agents=[orchestrator, analyst, univ_programs, news, curriculum],
         tasks=[task],
         verbose=False,
     )

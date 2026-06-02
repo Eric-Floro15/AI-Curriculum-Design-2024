@@ -48,6 +48,10 @@ else:
 if not os.getenv("LANGCHAIN_PROJECT"):
     os.environ["LANGCHAIN_PROJECT"] = "mitacs-agents-research"
 
+# Silence CrewAI's "Tracing is disabled" banner — we use LangSmith instead.
+os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 
 # ── Path setup (mirrors every other chatbot/ module) ──────────────────────
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -57,6 +61,7 @@ load_dotenv(os.path.join(_HERE, ".env"))
 
 # Heavy imports (crewai, faiss, etc.) — once at startup, not per message.
 from agents.analyst import make_analyst                                # noqa: E402
+from agents.curriculum import make_curriculum_agent                    # noqa: E402
 from agents.news import make_news_agent                                # noqa: E402
 from agents.orchestrator import make_orchestrator                      # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
@@ -175,6 +180,9 @@ _AGENT_META: dict[str, tuple[str, str]] = {
     ),
     "AI Industry News Researcher": (
         "📰", "Scanning recent AI/ML news corpus…",
+    ),
+    "Curriculum Architect": (
+        "🗺️", "Fetching curriculum and running gap analysis…",
     ),
 }
 
@@ -350,6 +358,9 @@ async def on_message(message: cl.Message) -> None:
             news = make_news_agent()
             news.step_callback = _make_callback("AI Industry News Researcher")
 
+            curriculum = make_curriculum_agent()
+            curriculum.step_callback = _make_callback("Curriculum Architect")
+
             orch = make_orchestrator()
 
             task = Task(
@@ -358,7 +369,7 @@ async def on_message(message: cl.Message) -> None:
                 agent=orch,
             )
             crew = Crew(
-                agents=[orch, analyst, univ, news],
+                agents=[orch, analyst, univ, news, curriculum],
                 tasks=[task],
                 verbose=False,
             )
