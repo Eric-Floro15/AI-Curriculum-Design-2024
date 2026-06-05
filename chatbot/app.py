@@ -61,6 +61,7 @@ load_dotenv(os.path.join(_HERE, ".env"))
 
 # Heavy imports (crewai, faiss, etc.) — once at startup, not per message.
 from agents.analyst import make_analyst                                # noqa: E402
+from agents.cluster_interpreter import make_cluster_interpreter        # noqa: E402
 from agents.curriculum import make_curriculum_agent                    # noqa: E402
 from agents.news import make_news_agent                                # noqa: E402
 from agents.orchestrator import make_orchestrator                      # noqa: E402
@@ -182,7 +183,10 @@ _AGENT_META: dict[str, tuple[str, str]] = {
         "📰", "Scanning recent AI/ML news corpus…",
     ),
     "Curriculum Architect": (
-        "🗺️", "Fetching curriculum and running gap analysis…",
+        "🗺️", "Fetching program curriculum from the web…",
+    ),
+    "Cluster Interpreter": (
+        "🔬", "Analysing skill cluster gaps…",
     ),
 }
 
@@ -361,6 +365,9 @@ async def on_message(message: cl.Message) -> None:
             curriculum = make_curriculum_agent()
             curriculum.step_callback = _make_callback("Curriculum Architect")
 
+            cluster_interp = make_cluster_interpreter()
+            cluster_interp.step_callback = _make_callback("Cluster Interpreter")
+
             orch = make_orchestrator()
 
             task = Task(
@@ -369,7 +376,7 @@ async def on_message(message: cl.Message) -> None:
                 agent=orch,
             )
             crew = Crew(
-                agents=[orch, analyst, univ, news, curriculum],
+                agents=[orch, analyst, univ, news, curriculum, cluster_interp],
                 tasks=[task],
                 verbose=False,
             )

@@ -289,3 +289,61 @@
   budget:
     max_tool_calls: 15
     max_wall_time_sec: 300
+
+# ── CURRICULUM + CLUSTER QUERIES (new agents) ───────────────────────────────
+
+- id: curriculum-fetch-mmai
+  query: "Fetch and structure the publicly available curriculum for Queen's University MMAI program. Return a clean course list with source URLs and the broad topic areas covered. Do not perform gap analysis."
+  category: info-curriculum
+  # Tests the Curriculum Architect in isolation. Should delegate to it
+  # alone and return a structured course list — no gap analysis, no
+  # skill comparisons.
+  must_delegate_to:
+    - Curriculum Architect
+  expected_substrings:
+    # Any honest answer about MMAI must mention Queen's and a URL.
+    - "Queen"
+    - "MMAI"
+    # The output format requires a topic areas section.
+    - "Topic"
+  forbidden_substrings:
+    # Gap analysis should NOT appear — that belongs to Cluster Interpreter.
+    - "❌ Missing"
+    - "gap analysis"
+    - "cluster"
+    - "courseleaf.com"
+    - "MMOAI"
+    - '"name": "delegate_work_to_coworker"'
+  budget:
+    max_tool_calls: 10
+    max_wall_time_sec: 300
+
+- id: curriculum-cluster-gap-analysis
+  query: |
+    Analyse the Queen's University MMAI program curriculum for skill gaps.
+    First fetch the current course list, then use the CSPA ensemble clustering
+    results to identify which skill clusters are missing or underrepresented.
+    Provide a prioritised list of skills to add, with market-demand frequencies.
+  category: update-curriculum
+  # Tests the two-agent cooperation: Curriculum Architect (fetch curriculum)
+  # followed by Cluster Interpreter (gap analysis on the fetched curriculum).
+  # Both must be called; Orchestrator passes Curriculum Architect output as
+  # context to Cluster Interpreter.
+  must_delegate_to:
+    - Curriculum Architect
+    - Cluster Interpreter
+  expected_substrings:
+    # Curriculum Architect must surface Queen's MMAI
+    - "Queen"
+    # Cluster Interpreter must reference the cluster analysis
+    - "cluster"
+    # Output must include at least one concrete missing skill recommendation
+    - "Missing"
+  forbidden_substrings:
+    - "courseleaf.com"
+    - "MMOAI"
+    - '"name": "delegate_work_to_coworker"'
+    - '"name": "ask_question_to_coworker"'
+  budget:
+    max_tool_calls: 25   # Curriculum: 2 web searches; Cluster: 1 overview + 4 details
+    max_wall_time_sec: 600

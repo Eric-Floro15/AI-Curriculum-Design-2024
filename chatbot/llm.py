@@ -12,6 +12,18 @@ Default is Claude Sonnet 4.6 (anthropic/claude-sonnet-4-6) — see the
 """
 
 import os
+
+# ── Disable CrewAI telemetry before importing crewai ─────────────────────────
+# CrewAI phones home to telemetry.crewai.com on every crew run. When there is
+# no internet access (sandbox, CI, local Ollama-only dev) this produces noisy
+# timeout errors and slows down startup. Setting these two vars disables both
+# the OpenTelemetry exporter and the CrewAI-specific telemetry opt-in.
+# Must be set BEFORE `from crewai import ...` — once the module is loaded the
+# telemetry client is already initialised.
+os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
+# ── LangSmith tracing ─────────────────────────────────────────────────────────
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 

@@ -25,6 +25,7 @@ if _CHATBOT_DIR not in sys.path:
 from crewai import Agent, Crew, Task  # noqa: E402
 
 from agents.analyst import make_analyst  # noqa: E402
+from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
 from agents.curriculum import make_curriculum_agent  # noqa: E402
 from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
@@ -38,7 +39,7 @@ Master's program. You do NOT answer the professor directly from your
 own knowledge — you delegate to your specialists and synthesise their
 outputs.
 
-YOUR FOUR SPECIALISTS:
+YOUR FIVE SPECIALISTS:
 
 1. **Skills Taxonomy Analyst** — knows what skills are in demand in
    the AI/ML job market. Backed by 10,600+ job postings, ~871 canonical
@@ -57,14 +58,27 @@ YOUR FOUR SPECIALISTS:
    recent developments, new model releases, emerging applied-AI trends,
    or "what's new in AI that the curriculum should reflect?".
 
-4. **Curriculum Architect** — analyses a SPECIFIC program's existing
-   curriculum (fetched from the web) and cross-references it against
-   the in-demand skills taxonomy to produce a gap analysis. Use when
-   the professor asks about THEIR OWN program: "what are we missing?",
-   "analyse our current curriculum", "what does our program cover?",
-   "give me a gap analysis of [program name]". This agent is distinct
-   from the University Programs Researcher: that agent looks at PEER
-   programs; this agent looks at the professor's OWN program.
+4. **Curriculum Architect** — fetches and structures the existing
+   curriculum of a SPECIFIC program from the public web. Returns a
+   clean course list and topic areas. Use FIRST when the professor
+   asks about their OWN program ("what does our program cover?",
+   "fetch our curriculum"). Does NOT do gap analysis — that is the
+   Cluster Interpreter's job.
+
+5. **Cluster Interpreter** — takes a curriculum summary (typically
+   the output from the Curriculum Architect, which you pass as context)
+   and produces a systematic gap analysis using the CSPA ensemble
+   clustering results: which of the 10 skill clusters are covered,
+   underrepresented, or missing, with specific skill recommendations
+   ranked by market frequency. Use AFTER the Curriculum Architect, or
+   whenever the professor asks "what are we missing?", "do a gap
+   analysis", "which skill clusters does our program lack?".
+
+   IMPORTANT COOPERATION PATTERN: For full curriculum gap analysis,
+   delegate to Curriculum Architect FIRST, then pass its output as
+   context when delegating to Cluster Interpreter:
+   "Given this curriculum: [paste Curriculum Architect output], identify
+   which skill clusters are missing or underrepresented."
 
 CRITICAL TOOL-USE RULES (read carefully — small models break here):
 - To consult a specialist, INVOKE the `delegate_work_to_coworker` or
@@ -94,11 +108,13 @@ CRITICAL DELEGATION RULES:
     "top soft skills"              → Skills Taxonomy Analyst
     "what does MIT offer?"         → University AI Programs Researcher
     "recent AI news"               → AI Industry News Researcher
-    "analyse our current program"  → Curriculum Architect
+    "fetch our curriculum"         → Curriculum Architect
+    "gap analysis of our program"  → Curriculum Architect THEN
+                                     Cluster Interpreter (in sequence)
   Still MUST delegate — do not answer from memory.
 - The valid `coworker` values are EXACTLY: "Skills Taxonomy Analyst",
   "University AI Programs Researcher", "AI Industry News Researcher",
-  or "Curriculum Architect". No other strings work.
+  "Curriculum Architect", or "Cluster Interpreter". No other strings work.
 - When you delegate, frame the sub-question PRECISELY. Good: "What are
   the top 10 most in-demand data engineering skills by frequency?"
   Bad: "Tell me about data engineering."
@@ -158,7 +174,7 @@ def make_orchestrator() -> Agent:
 
 def build_crew() -> tuple[Crew, Agent]:
     """
-    Build a fresh Crew with all five agents. Returns (crew, orchestrator)
+    Build a fresh Crew with all six agents. Returns (crew, orchestrator)
     so callers can attach a Task to the orchestrator and kick off.
 
     Agents are rebuilt per call so conversation state doesn't bleed
@@ -168,9 +184,11 @@ def build_crew() -> tuple[Crew, Agent]:
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
     curriculum = make_curriculum_agent()
+    cluster_interp = make_cluster_interpreter()
     orchestrator = make_orchestrator()
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs, news, curriculum],
+        agents=[orchestrator, analyst, univ_programs, news,
+                curriculum, cluster_interp],
         tasks=[],  # caller adds the task
         verbose=False,
     )
@@ -183,6 +201,7 @@ def run_query(query: str) -> str:
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
     curriculum = make_curriculum_agent()
+    cluster_interp = make_cluster_interpreter()
     orchestrator = make_orchestrator()
 
     task = Task(
@@ -190,18 +209,21 @@ def run_query(query: str) -> str:
         expected_output=(
             "A single coherent recommendation for the professor. Open with "
             "a 2-3 sentence executive summary. Then a structured body of "
-            "concrete recommendations citing specific skills with "
+            "concrete recommendations citing: specific skills with "
             "frequencies (from the Analyst), peer-program courses with "
             "URLs (from the University Programs researcher), recent "
             "articles with titles + sources (from the News researcher), "
-            "and a curriculum gap analysis with source URL (from the "
-            "Curriculum Architect) where each is relevant. Close with a "
+            "a structured curriculum course list with source URL (from the "
+            "Curriculum Architect), and a cluster-level gap analysis with "
+            "priority recommendations (from the Cluster Interpreter) — "
+            "each section only where relevant to the query. Close with a "
             "trade-off or caveat."
         ),
         agent=orchestrator,
     )
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs, news, curriculum],
+        agents=[orchestrator, analyst, univ_programs, news,
+                curriculum, cluster_interp],
         tasks=[task],
         verbose=False,
     )

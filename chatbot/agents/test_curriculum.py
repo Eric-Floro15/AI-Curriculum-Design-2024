@@ -1,18 +1,23 @@
 """
 test_curriculum.py — Standalone smoke test for the Curriculum Architect agent.
 
-Tests the agent in isolation (no Orchestrator, no other sub-agents) with a
-single query referencing Queen's MMAI — the canonical program used throughout
-the project's evaluation baseline.
+The Curriculum Architect is a web-search-only agent. It fetches and structures
+the publicly available curriculum of a specific program — nothing more. It does
+NOT perform gap analysis or compare against the skills taxonomy (that is the
+Cluster Interpreter's job).
 
 What a passing run produces:
-  - A curriculum summary fetched from smith.queensu.ca or similar
-  - A skill coverage map (✅ / ⚠️ / ❌) for major taxonomy areas
-  - A gap analysis with at least one skill frequency cited
-  - Numbered recommendations with market justifications
+  - Program name and source URL(s)
+  - Required courses list with brief descriptions from web snippets
+  - Elective courses if listed publicly
+  - Broad topic areas covered (comma-separated)
+  - Notes about what couldn't be verified
 
-Cost:  ~5–15¢ on Sonnet 4.6  (~2–4 LLM calls + 4–6 tool dispatches)
-       $0 on qwen2.5:14b      (~10–25 min on CPU)
+The output is intentionally concise and factual — it is designed to be passed
+to the Cluster Interpreter by the Orchestrator as context for gap analysis.
+
+Cost:  ~3–8¢ on Sonnet 4.6  (1–2 web searches + synthesis)
+       $0 on qwen2.5:14b     (~5–12 min on CPU)
 
 Run:
     cd chatbot
@@ -40,20 +45,23 @@ from llm import describe_llm_config  # noqa: E402
 
 
 QUERY = (
-    "Analyse the Queen's University MMAI (Master of Management in Artificial "
-    "Intelligence) program curriculum. Fetch the current course list from the "
-    "web, then compare it against the in-demand AI/ML skills in the job-market "
-    "taxonomy. Identify the top gaps — skills most in-demand that the program "
-    "doesn't cover — and give concrete recommendations for what to add or "
-    "strengthen. Cite skill frequencies and the program URL."
+    "Fetch and structure the publicly available curriculum for Queen's University "
+    "MMAI (Master of Management in Artificial Intelligence) program. Search for the "
+    "current course list — both required and elective courses — and return a clean "
+    "structured summary with course names, brief descriptions where available, "
+    "source URLs, and the broad topic areas the program covers. "
+    "Do not perform gap analysis or compare against any skills taxonomy."
 )
 
 EXPECTED_OUTPUT = (
-    "A structured report with: (1) current curriculum summary with source URL, "
-    "(2) skill coverage map showing which market skills are covered vs missing, "
-    "(3) gap analysis listing high-demand uncovered skills with frequencies, "
-    "(4) numbered recommendations with market justifications, (5) caveats about "
-    "what couldn't be verified."
+    "A structured curriculum report containing: "
+    "(1) program name and institution, "
+    "(2) source URL(s) found, "
+    "(3) list of required courses with brief descriptions from search snippets, "
+    "(4) list of elective courses if publicly available, "
+    "(5) broad topic areas covered as a comma-separated list, "
+    "(6) notes about what could not be verified (e.g. syllabi behind login wall). "
+    "No gap analysis, no skill comparisons, no recommendations — just the curriculum facts."
 )
 
 
