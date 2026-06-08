@@ -46,6 +46,13 @@ csv.field_size_limit(sys.maxsize)
 from dotenv import load_dotenv  # noqa: E402
 load_dotenv(os.path.join(_CHATBOT_DIR, ".env"))
 
+# Must be set BEFORE any `from crewai import ...` — crewai is lazy-imported
+# inside approach_2() but these env vars must already be in the environment
+# before that happens. Setting them here (module level, after load_dotenv)
+# guarantees the order regardless of which approach is run.
+os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 import yaml  # noqa: E402
 
 from langchain_community.vectorstores import FAISS  # noqa: E402

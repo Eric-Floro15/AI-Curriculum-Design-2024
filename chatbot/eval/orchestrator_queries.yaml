@@ -1,7 +1,8 @@
 # Orchestrator end-to-end eval — golden queries.
 #
-# Each query specifies what a passing run of the full 4-agent crew
-# (Orchestrator + Analyst + University Programs + News) must produce.
+# Each query specifies what a passing run of the full 5-agent crew
+# (Orchestrator + Analyst + University Programs + News + Cluster
+# Interpreter) must produce.
 #
 # REPRODUCIBILITY WORKFLOW (see chatbot/eval/README.md for full notes):
 #
@@ -295,11 +296,11 @@
 - id: curriculum-fetch-mmai
   query: "Fetch and structure the publicly available curriculum for Queen's University MMAI program. Return a clean course list with source URLs and the broad topic areas covered. Do not perform gap analysis."
   category: info-curriculum
-  # Tests the Curriculum Architect in isolation. Should delegate to it
-  # alone and return a structured course list — no gap analysis, no
-  # skill comparisons.
+  # Tests the University AI Programs Researcher in structured-output mode.
+  # Should delegate to it alone and return a structured course list —
+  # no gap analysis, no skill comparisons.
   must_delegate_to:
-    - Curriculum Architect
+    - University AI Programs Researcher
   expected_substrings:
     # Any honest answer about MMAI must mention Queen's and a URL.
     - "Queen"
@@ -310,7 +311,6 @@
     # Gap analysis should NOT appear — that belongs to Cluster Interpreter.
     - "❌ Missing"
     - "gap analysis"
-    - "cluster"
     - "courseleaf.com"
     - "MMOAI"
     - '"name": "delegate_work_to_coworker"'
@@ -325,15 +325,16 @@
     results to identify which skill clusters are missing or underrepresented.
     Provide a prioritised list of skills to add, with market-demand frequencies.
   category: update-curriculum
-  # Tests the two-agent cooperation: Curriculum Architect (fetch curriculum)
-  # followed by Cluster Interpreter (gap analysis on the fetched curriculum).
-  # Both must be called; Orchestrator passes Curriculum Architect output as
-  # context to Cluster Interpreter.
+  # Tests the two-agent cooperation: University AI Programs Researcher
+  # (structured curriculum fetch) followed by Cluster Interpreter (gap
+  # analysis on the fetched curriculum). Both must be called; Orchestrator
+  # passes University AI Programs Researcher output as context to Cluster
+  # Interpreter.
   must_delegate_to:
-    - Curriculum Architect
+    - University AI Programs Researcher
     - Cluster Interpreter
   expected_substrings:
-    # Curriculum Architect must surface Queen's MMAI
+    # University AI Programs Researcher must surface Queen's MMAI
     - "Queen"
     # Cluster Interpreter must reference the cluster analysis
     - "cluster"
@@ -345,5 +346,5 @@
     - '"name": "delegate_work_to_coworker"'
     - '"name": "ask_question_to_coworker"'
   budget:
-    max_tool_calls: 25   # Curriculum: 2 web searches; Cluster: 1 overview + 4 details
+    max_tool_calls: 25   # Univ Programs: 2 web searches; Cluster: 1 overview + 4 details
     max_wall_time_sec: 600

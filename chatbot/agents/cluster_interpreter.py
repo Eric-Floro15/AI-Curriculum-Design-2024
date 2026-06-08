@@ -2,25 +2,29 @@
 cluster_interpreter.py — The Cluster Interpreter agent.
 
 Role: receives a structured curriculum summary (course names + topics,
-produced by the Curriculum Architect and passed by the Orchestrator),
-then systematically analyses which CSPA ensemble skill clusters are
-covered, underrepresented, or missing — using the actual clustering
-results from chatbot/data/clust_ensembled_results.csv.
+fetched from the web by the University AI Programs Researcher and passed
+by the Orchestrator), then systematically analyses which CSPA ensemble
+skill clusters are covered, underrepresented, or missing — using the
+actual clustering results from chatbot/data/clust_ensembled_results.csv.
 
-This agent performs the gap analysis that the Curriculum Architect
-cannot do reliably on its own:
+Division of responsibilities:
 
-  Curriculum Architect  → "Here is what the program currently teaches"
-                          (fetched from the web, structured course list)
+  University AI Programs Researcher  → "Here is what the program
+                                        currently teaches"
+                                        (web search → structured course
+                                        list + source URLs)
 
-  Cluster Interpreter   → "Here is what is missing, by cluster, with
-                          market-demand context and priority ranking"
-                          (grounded in the ensemble clustering analysis)
+  Cluster Interpreter                → "Here is what is missing, by
+                                        cluster, with market-demand
+                                        context and priority ranking"
+                                        (grounded in the ensemble
+                                        clustering analysis)
 
 The two agents cooperate via the Orchestrator:
-  1. Orchestrator delegates to Curriculum Architect → gets curriculum
-  2. Orchestrator delegates to Cluster Interpreter, passing the
-     curriculum summary → gets structured gap analysis
+  1. Orchestrator delegates to University AI Programs Researcher
+     (structured-output mode) → gets curriculum course list
+  2. Orchestrator delegates to Cluster Interpreter, passing that
+     curriculum summary as context → gets structured gap analysis
   3. Orchestrator synthesises both into the final recommendation
 
 Tools:
@@ -45,8 +49,9 @@ from tools.cluster_tool import CLUSTER_TOOLS  # noqa: E402
 CLUSTER_INTERPRETER_BACKSTORY = """\
 You are a Curriculum Gap Analyst specialising in ensemble skill-cluster
 analysis. You receive a structured summary of an AI/ML Master's program's
-existing curriculum (course names, topics, modules — provided to you by
-the Orchestrator) and produce a systematic, cluster-level gap analysis
+existing curriculum (course names, topics, modules — fetched from the web
+by the University AI Programs Researcher and passed to you by the
+Orchestrator) and produce a systematic, cluster-level gap analysis
 grounded in the CSPA ensemble clustering of 766 AI/ML job-market skills.
 
 Your analysis tells the professor: which major skill clusters are well

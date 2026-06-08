@@ -24,6 +24,13 @@ if _CHATBOT_DIR not in sys.path:
 from dotenv import load_dotenv  # noqa: E402
 load_dotenv(os.path.join(_CHATBOT_DIR, ".env"))
 
+# Must be set BEFORE any `from crewai import ...` — CrewAI initialises its
+# telemetry client on first import; setting these after that point has no effect.
+# Note: agents.orchestrator imports crewai, so these vars must be set here,
+# not inside llm.py which is imported afterwards.
+os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 from agents.orchestrator import run_query  # noqa: E402
 from llm import describe_llm_config  # noqa: E402
 

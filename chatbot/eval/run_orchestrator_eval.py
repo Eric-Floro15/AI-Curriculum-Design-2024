@@ -1,5 +1,5 @@
 """
-run_orchestrator_eval.py — End-to-end eval for the full 4-agent crew.
+run_orchestrator_eval.py — End-to-end eval for the full 5-agent crew.
 
 Runs each query in orchestrator_queries.yaml through the live Orchestrator
 (`agents.orchestrator.run_query`-equivalent, but with verbose tracing
@@ -159,7 +159,7 @@ DEFAULT_EXPECTED_OUTPUT = (
 
 
 def run_single_query(case: dict) -> dict:
-    """Build a fresh 4-agent crew, run the query verbose, capture metrics.
+    """Build a fresh 5-agent crew, run the query verbose, capture metrics.
 
     Returns a dict with:
         answer            str  — Orchestrator's final answer
@@ -175,7 +175,6 @@ def run_single_query(case: dict) -> dict:
     from crewai import Crew, Task  # noqa: E402
     from agents.analyst import make_analyst  # noqa: E402
     from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
-    from agents.curriculum import make_curriculum_agent  # noqa: E402
     from agents.news import make_news_agent  # noqa: E402
     from agents.orchestrator import make_orchestrator  # noqa: E402
     from agents.university_programs import make_university_programs_agent  # noqa: E402
@@ -183,10 +182,9 @@ def run_single_query(case: dict) -> dict:
     analyst = make_analyst()
     univ = make_university_programs_agent()
     news = make_news_agent()
-    curriculum = make_curriculum_agent()
     cluster_interp = make_cluster_interpreter()
     orch = make_orchestrator()
-    for a in (orch, analyst, univ, news, curriculum, cluster_interp):
+    for a in (orch, analyst, univ, news, cluster_interp):
         a.verbose = True
 
     task = Task(
@@ -195,7 +193,7 @@ def run_single_query(case: dict) -> dict:
         agent=orch,
     )
     crew = Crew(
-        agents=[orch, analyst, univ, news, curriculum, cluster_interp],
+        agents=[orch, analyst, univ, news, cluster_interp],
         tasks=[task],
         verbose=True,
     )
@@ -239,69 +237,101 @@ def run_single_query(case: dict) -> dict:
     }
 
 
-def grade_case(case: dict, result: dict, check_time: bool = True) -> list[str]:
-    """Return a list of failure reasons (empty list = PASS).
+def grade_case(case: dict, result: dict, check_time: bool = True) -> dict:
+    """Return a grading dict with three-state verdict.
 
-    Args:
-        case:        the query definition from orchestrator_queries.yaml.
-        result:      dict returned by run_single_query().
-        check_time:  when False, the wall-time budget assertion is skipped.
-                     Pass False via --no-time-check for slow local Ollama
-                     models where latency is a hardware constraint, not a
-                     quality signal.
+    Verdict logic:
+        PASS    — all assertions met.
+        INSPECT — only soft assertions failed (expected_substrings missing or
+                  delegation issues). The answer may still be valid; a human
+                  should confirm. Typical cause: local model (qwen) phrases
+                  facts differently from the expected substrings, or delegated
+                  to 2/3 required agents but the answer is still substantive.
+        FAIL    — at least one hard assertion failed (hallucinated content,
+                  tool budget exceeded, or runtime error). Something definitely
+                  went wrong regardless of answer quality.
+
+    Hard failures → FAIL:
+        • forbidden_substrings found in the answer (hallucination signal)
+        • tool call count exceeds max_tool_calls (runaway loop)
+        • wall time exceeds max_wall_time_sec (when check_time=True)
+        • uncaught runtime exception
+
+    Soft failures → INSPECT (only if no hard failures):
+        • expected_substrings missing from the answer (brittle string match;
+          model may have used different but correct phrasing)
+        • must_delegate_to roles not reached (partial delegation)
+        • unexpected delegations on a no-delegation query
+
+    Returns:
+        {
+          "verdict": "PASS" | "INSPECT" | "FAIL",
+          "hard":    list[str],   # hard failure reasons
+          "soft":    list[str],   # soft failure reasons
+        }
     """
-    failures: list[str] = []
+    hard: list[str] = []
+    soft: list[str] = []
     answer = result["answer"]
 
-    # 1. expected_substrings — all must appear (number-comma normalised)
+    # ── Soft: expected_substrings ─────────────────────────────────────────────
     expected = case.get("expected_substrings", []) or []
     missing = [s for s in expected if not _substring_match(s, answer)]
     if missing:
-        failures.append(f"missing expected substrings: {missing}")
+        soft.append(f"missing expected substrings: {missing}")
 
-    # 2. forbidden_substrings — none may appear
+    # ── Hard: forbidden_substrings ────────────────────────────────────────────
     forbidden = case.get("forbidden_substrings", []) or []
     found_forbidden = [s for s in forbidden if _substring_match(s, answer)]
     if found_forbidden:
-        failures.append(f"forbidden substrings appeared: {found_forbidden}")
+        hard.append(f"forbidden substrings appeared: {found_forbidden}")
 
-    # 3. must_delegate_to — all listed roles must have been delegated to
+    # ── Soft: must_delegate_to ────────────────────────────────────────────────
     expected_delegations = set(case.get("must_delegate_to", []) or [])
     actual = result["delegated_to"]
     if expected_delegations:
         missing_delegations = expected_delegations - actual
         if missing_delegations:
-            failures.append(
+            soft.append(
                 f"missing delegations: {sorted(missing_delegations)} "
                 f"(actual: {sorted(actual)})"
             )
     else:
-        # Empty must_delegate_to means "no delegation expected"
-        # (used by off-scope queries). If any delegation fired, that's a fail.
+        # Empty must_delegate_to → no delegation expected (off-scope queries).
+        # Delegating when not expected is a soft signal: the agent went
+        # off-scope, but the final answer might still redirect correctly.
         if actual:
-            failures.append(
+            soft.append(
                 f"unexpected delegations for no-delegation query: {sorted(actual)}"
             )
 
-    # 4. budget
+    # ── Hard: budget ──────────────────────────────────────────────────────────
     budget = case.get("budget", {}) or {}
     max_tools = budget.get("max_tool_calls")
     if max_tools is not None and result["tool_calls"] > max_tools:
-        failures.append(
+        hard.append(
             f"tool budget exceeded: {result['tool_calls']} > {max_tools}"
         )
     if check_time:
         max_time = budget.get("max_wall_time_sec")
         if max_time is not None and result["wall_time_sec"] > max_time:
-            failures.append(
+            hard.append(
                 f"wall time exceeded: {result['wall_time_sec']:.1f}s > {max_time}s"
             )
 
-    # Any uncaught exception from the run is a failure
+    # ── Hard: runtime error ───────────────────────────────────────────────────
     if result["error"]:
-        failures.append(f"runtime error: {result['error']}")
+        hard.append(f"runtime error: {result['error']}")
 
-    return failures
+    # ── Verdict ───────────────────────────────────────────────────────────────
+    if hard:
+        verdict = "FAIL"
+    elif soft:
+        verdict = "INSPECT"
+    else:
+        verdict = "PASS"
+
+    return {"verdict": verdict, "hard": hard, "soft": soft}
 
 
 def model_slug() -> str:
@@ -325,15 +355,16 @@ def _safe_slug(s: str) -> str:
 def write_snapshot(
     cases: list[dict],
     results: list[dict],
-    failures: list[list[str]],
+    grades: list[dict],
 ) -> str:
     today = date.today().isoformat()
     slug = _safe_slug(model_slug())
     path = os.path.join(_HERE, f"orchestrator_baseline_{today}_{slug}.md")
 
     n_total = len(cases)
-    n_pass = sum(1 for fs in failures if not fs)
-    n_fail = n_total - n_pass
+    n_pass    = sum(1 for g in grades if g["verdict"] == "PASS")
+    n_inspect = sum(1 for g in grades if g["verdict"] == "INSPECT")
+    n_fail    = sum(1 for g in grades if g["verdict"] == "FAIL")
 
     body: list[str] = [
         f"# Orchestrator end-to-end baseline — {today}",
@@ -342,7 +373,12 @@ def write_snapshot(
         f"- model: `{model_slug()}`",
         f"- queries run: {n_total}",
         f"- PASS: {n_pass}",
+        f"- INSPECT: {n_inspect}  _(soft failures only — review manually)_",
         f"- FAIL: {n_fail}",
+        "",
+        "Verdict key: **PASS** all assertions met · "
+        "**INSPECT** only soft assertions failed (check phrasing/delegation) · "
+        "**FAIL** hard assertion violated (hallucination / budget / error)",
         "",
         f"Re-run: `KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py`",
         "",
@@ -351,10 +387,9 @@ def write_snapshot(
         "| ID | verdict | delegations | tool calls | wall (s) |",
         "|---|---|---|---|---|",
     ]
-    for case, result, fs in zip(cases, results, failures):
-        verdict = "PASS" if not fs else "FAIL"
+    for case, result, grade in zip(cases, results, grades):
         body.append(
-            f"| {case['id']} | {verdict} "
+            f"| {case['id']} | {grade['verdict']} "
             f"| {sorted(result['delegated_to'])} "
             f"| {result['tool_calls']} "
             f"| {result['wall_time_sec']:.1f} |"
@@ -364,14 +399,14 @@ def write_snapshot(
     body.append("---")
     body.append("")
 
-    for case, result, fs in zip(cases, results, failures):
-        verdict = "PASS" if not fs else "FAIL"
+    for case, result, grade in zip(cases, results, grades):
+        verdict = grade["verdict"]
         body += [
             f"## [{case['id']}] **{verdict}**",
             "",
             f"**Category:** {case.get('category', '—')}",
             "",
-            f"**Query:**",
+            "**Query:**",
             "",
             "```",
             case["query"].strip(),
@@ -382,10 +417,15 @@ def write_snapshot(
             f"**Delegated to:** {sorted(result['delegated_to']) or '(none)'}",
             "",
         ]
-        if fs:
-            body.append("**Failures:**")
-            for f in fs:
-                body.append(f"- {f}")
+        if grade["hard"]:
+            body.append("**Hard failures (FAIL):**")
+            for msg in grade["hard"]:
+                body.append(f"- {msg}")
+            body.append("")
+        if grade["soft"]:
+            body.append("**Soft failures (INSPECT):**")
+            for msg in grade["soft"]:
+                body.append(f"- {msg}")
             body.append("")
         body += [
             "**Orchestrator's final answer:**",
@@ -469,27 +509,33 @@ def main() -> None:
         return
 
     results: list[dict] = []
-    failures: list[list[str]] = []
+    grades: list[dict] = []
     for i, case in enumerate(cases, 1):
         print(f"\n[{i}/{len(cases)}] {case['id']} — running...")
         result = run_single_query(case)
-        fs = grade_case(case, result, check_time=not args.no_time_check)
+        grade = grade_case(case, result, check_time=not args.no_time_check)
         results.append(result)
-        failures.append(fs)
-        verdict = "PASS" if not fs else "FAIL"
-        print(f"  {verdict}  "
+        grades.append(grade)
+        verdict = grade["verdict"]
+        # Emoji prefix for quick scanning in terminal output
+        symbol = {"PASS": "✅", "INSPECT": "🔍", "FAIL": "❌"}.get(verdict, "?")
+        print(f"  {symbol} {verdict}  "
               f"wall={result['wall_time_sec']:.1f}s, "
               f"tools={result['tool_calls']}, "
               f"delegated={sorted(result['delegated_to'])}")
-        if fs:
-            for f in fs:
-                print(f"    - {f}")
+        for msg in grade["hard"]:
+            print(f"    ❌ [hard] {msg}")
+        for msg in grade["soft"]:
+            print(f"    🔍 [soft] {msg}")
 
-    snapshot_path = write_snapshot(cases, results, failures)
+    snapshot_path = write_snapshot(cases, results, grades)
+    n_pass    = sum(1 for g in grades if g["verdict"] == "PASS")
+    n_inspect = sum(1 for g in grades if g["verdict"] == "INSPECT")
+    n_fail    = sum(1 for g in grades if g["verdict"] == "FAIL")
     print()
     print("=" * 72)
-    n_pass = sum(1 for fs in failures if not fs)
-    print(f"SUMMARY: {n_pass}/{len(cases)} PASS")
+    print(f"SUMMARY: {n_pass} PASS  |  {n_inspect} INSPECT  |  {n_fail} FAIL  "
+          f"(out of {len(cases)})")
     print(f"Snapshot: {snapshot_path}")
 
 

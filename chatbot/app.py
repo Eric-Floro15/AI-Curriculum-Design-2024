@@ -1,9 +1,10 @@
 """
 app.py — Chainlit frontend for the AI Curriculum Design Chatbot.
 
-Step 9 of the build. Wires the existing 4-agent CrewAI stack
-(Orchestrator + Analyst + University Programs + News) to a chat UI
-with live per-agent step indicators and an in-UI model selector.
+Step 9 of the build. Wires the 5-agent CrewAI stack
+(Orchestrator + Analyst + University Programs + News +
+Cluster Interpreter) to a chat UI with live per-agent step
+indicators and an in-UI model selector.
 
 Run:
     cd chatbot
@@ -62,7 +63,6 @@ load_dotenv(os.path.join(_HERE, ".env"))
 # Heavy imports (crewai, faiss, etc.) — once at startup, not per message.
 from agents.analyst import make_analyst                                # noqa: E402
 from agents.cluster_interpreter import make_cluster_interpreter        # noqa: E402
-from agents.curriculum import make_curriculum_agent                    # noqa: E402
 from agents.news import make_news_agent                                # noqa: E402
 from agents.orchestrator import make_orchestrator                      # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
@@ -181,9 +181,6 @@ _AGENT_META: dict[str, tuple[str, str]] = {
     ),
     "AI Industry News Researcher": (
         "📰", "Scanning recent AI/ML news corpus…",
-    ),
-    "Curriculum Architect": (
-        "🗺️", "Fetching program curriculum from the web…",
     ),
     "Cluster Interpreter": (
         "🔬", "Analysing skill cluster gaps…",
@@ -362,9 +359,6 @@ async def on_message(message: cl.Message) -> None:
             news = make_news_agent()
             news.step_callback = _make_callback("AI Industry News Researcher")
 
-            curriculum = make_curriculum_agent()
-            curriculum.step_callback = _make_callback("Curriculum Architect")
-
             cluster_interp = make_cluster_interpreter()
             cluster_interp.step_callback = _make_callback("Cluster Interpreter")
 
@@ -376,7 +370,7 @@ async def on_message(message: cl.Message) -> None:
                 agent=orch,
             )
             crew = Crew(
-                agents=[orch, analyst, univ, news, curriculum, cluster_interp],
+                agents=[orch, analyst, univ, news, cluster_interp],
                 tasks=[task],
                 verbose=False,
             )

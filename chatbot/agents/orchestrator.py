@@ -2,11 +2,16 @@
 orchestrator.py — The Orchestrator agent + multi-agent crew assembly.
 
 Role: receives the professor's natural-language query, decides which
-sub-agents (Analyst, University Programs) to consult, and synthesises
-their outputs into a single coherent recommendation.
+sub-agents to consult, and synthesises their outputs into a single
+coherent recommendation.
 
-This is the multi-agent test gate — first real read on whether the
-chosen LLM can coordinate sub-agents reliably across multiple hops.
+Crew composition (5 agents total):
+  Orchestrator + Skills Taxonomy Analyst + University AI Programs
+  Researcher + AI Industry News Researcher + Cluster Interpreter.
+
+The University AI Programs Researcher handles BOTH comparative-program
+queries AND structured curriculum-fetch tasks (for gap analysis).
+The old Curriculum Architect agent has been merged into it.
 
 Delegation pattern: the Orchestrator has `allow_delegation=True`, which
 in CrewAI auto-injects two tools — "Delegate work to coworker" and
@@ -26,20 +31,19 @@ from crewai import Agent, Crew, Task  # noqa: E402
 
 from agents.analyst import make_analyst  # noqa: E402
 from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
-from agents.curriculum import make_curriculum_agent  # noqa: E402
 from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
 from llm import get_llm  # noqa: E402
 
 
 ORCHESTRATOR_BACKSTORY = """\
-You are a senior curriculum advisor coordinating three specialist
+You are a senior curriculum advisor coordinating four specialist
 researchers to help a university professor design or update an AI/ML
 Master's program. You do NOT answer the professor directly from your
 own knowledge — you delegate to your specialists and synthesise their
 outputs.
 
-YOUR FIVE SPECIALISTS:
+YOUR FOUR SPECIALISTS:
 
 1. **Skills Taxonomy Analyst** — knows what skills are in demand in
    the AI/ML job market. Backed by 10,600+ job postings, ~871 canonical
@@ -47,9 +51,13 @@ YOUR FIVE SPECIALISTS:
    demand, skill frequencies, in-demand topics, or cluster themes.
 
 2. **University AI Programs Researcher** — knows what peer institutions
-   teach in their AI/ML Master's programs. Backed by public web search.
-   Use when the question touches benchmarking, comparing curricula,
-   peer-program coverage, or recent program additions.
+   teach in their AI/ML Master's programs AND can fetch and structure
+   the curriculum of a specific program for gap analysis. Backed by
+   public web search. Use for:
+     • Benchmarking / comparing curricula across peer institutions.
+     • Fetching and structuring the course list of a specific program
+       (ask explicitly for "structured output" so it returns the
+       course list in the format the Cluster Interpreter expects).
 
 3. **AI Industry News Researcher** — knows what's been happening in AI
    recently. Backed by a small corpus (~100 articles) of recent
@@ -58,27 +66,23 @@ YOUR FIVE SPECIALISTS:
    recent developments, new model releases, emerging applied-AI trends,
    or "what's new in AI that the curriculum should reflect?".
 
-4. **Curriculum Architect** — fetches and structures the existing
-   curriculum of a SPECIFIC program from the public web. Returns a
-   clean course list and topic areas. Use FIRST when the professor
-   asks about their OWN program ("what does our program cover?",
-   "fetch our curriculum"). Does NOT do gap analysis — that is the
-   Cluster Interpreter's job.
-
-5. **Cluster Interpreter** — takes a curriculum summary (typically
-   the output from the Curriculum Architect, which you pass as context)
-   and produces a systematic gap analysis using the CSPA ensemble
+4. **Cluster Interpreter** — takes a curriculum summary (from the
+   University AI Programs Researcher, passed by you as context) and
+   produces a systematic gap analysis using the CSPA ensemble
    clustering results: which of the 10 skill clusters are covered,
    underrepresented, or missing, with specific skill recommendations
-   ranked by market frequency. Use AFTER the Curriculum Architect, or
-   whenever the professor asks "what are we missing?", "do a gap
-   analysis", "which skill clusters does our program lack?".
+   ranked by market frequency. Use AFTER fetching the curriculum from
+   the University AI Programs Researcher, whenever the professor asks
+   "what are we missing?", "do a gap analysis", or "which skill
+   clusters does our program lack?".
 
    IMPORTANT COOPERATION PATTERN: For full curriculum gap analysis,
-   delegate to Curriculum Architect FIRST, then pass its output as
-   context when delegating to Cluster Interpreter:
-   "Given this curriculum: [paste Curriculum Architect output], identify
-   which skill clusters are missing or underrepresented."
+   delegate to University AI Programs Researcher FIRST (ask for
+   structured output), then pass its output as context when delegating
+   to Cluster Interpreter:
+   "Given this curriculum: [paste University AI Programs Researcher
+   output], identify which skill clusters are missing or
+   underrepresented."
 
 CRITICAL TOOL-USE RULES (read carefully — small models break here):
 - To consult a specialist, INVOKE the `delegate_work_to_coworker` or
@@ -91,16 +95,16 @@ CRITICAL TOOL-USE RULES (read carefully — small models break here):
 - Do NOT write things like "we will now wait for the responses" — that
   is a sign you described a plan instead of executing it.
 - The valid `coworker` values are EXACTLY: "Skills Taxonomy Analyst",
-  "University AI Programs Researcher", or "AI Industry News
-  Researcher". No other strings work.
+  "University AI Programs Researcher", "AI Industry News Researcher",
+  or "Cluster Interpreter". No other strings work.
 
 CRITICAL DELEGATION RULES:
 - You MUST ALWAYS delegate to at least one specialist before answering.
   NEVER answer directly from your own knowledge — your value is in
   synthesising grounded specialist outputs, not in recalling facts.
 - For ANY query about updating, modernising, or designing an AI/ML
-  curriculum, you MUST consult ALL THREE specialists in turn. This is
-  the canonical case. Market signal (Analyst) + peer signal (Univ
+  curriculum, you MUST consult ALL THREE core specialists in turn. This
+  is the canonical case. Market signal (Analyst) + peer signal (Univ
   Programs) + recency signal (News) together give the professor a
   defensible recommendation; missing any one is a degradation.
 - For focused/single-topic queries, consult the ONE most relevant
@@ -108,13 +112,12 @@ CRITICAL DELEGATION RULES:
     "top soft skills"              → Skills Taxonomy Analyst
     "what does MIT offer?"         → University AI Programs Researcher
     "recent AI news"               → AI Industry News Researcher
-    "fetch our curriculum"         → Curriculum Architect
-    "gap analysis of our program"  → Curriculum Architect THEN
+    "fetch our curriculum"         → University AI Programs Researcher
+                                     (ask for structured output)
+    "gap analysis of our program"  → University AI Programs Researcher
+                                     (structured fetch) THEN
                                      Cluster Interpreter (in sequence)
   Still MUST delegate — do not answer from memory.
-- The valid `coworker` values are EXACTLY: "Skills Taxonomy Analyst",
-  "University AI Programs Researcher", "AI Industry News Researcher",
-  "Curriculum Architect", or "Cluster Interpreter". No other strings work.
 - When you delegate, frame the sub-question PRECISELY. Good: "What are
   the top 10 most in-demand data engineering skills by frequency?"
   Bad: "Tell me about data engineering."
@@ -154,10 +157,10 @@ def make_orchestrator() -> Agent:
         role="Senior Curriculum Advisor",
         goal=(
             "Coordinate the Skills Taxonomy Analyst, the University AI "
-            "Programs Researcher, and the AI Industry News Researcher to "
-            "give a university professor a single coherent, data-grounded "
-            "recommendation about what skills, topics, or courses to add "
-            "to their AI/ML Master's curriculum."
+            "Programs Researcher, the AI Industry News Researcher, and the "
+            "Cluster Interpreter to give a university professor a single "
+            "coherent, data-grounded recommendation about what skills, "
+            "topics, or courses to add to their AI/ML Master's curriculum."
         ),
         backstory=ORCHESTRATOR_BACKSTORY,
         llm=get_llm(),
@@ -174,7 +177,7 @@ def make_orchestrator() -> Agent:
 
 def build_crew() -> tuple[Crew, Agent]:
     """
-    Build a fresh Crew with all six agents. Returns (crew, orchestrator)
+    Build a fresh Crew with all five agents. Returns (crew, orchestrator)
     so callers can attach a Task to the orchestrator and kick off.
 
     Agents are rebuilt per call so conversation state doesn't bleed
@@ -183,12 +186,10 @@ def build_crew() -> tuple[Crew, Agent]:
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
-    curriculum = make_curriculum_agent()
     cluster_interp = make_cluster_interpreter()
     orchestrator = make_orchestrator()
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs, news,
-                curriculum, cluster_interp],
+        agents=[orchestrator, analyst, univ_programs, news, cluster_interp],
         tasks=[],  # caller adds the task
         verbose=False,
     )
@@ -200,7 +201,6 @@ def run_query(query: str) -> str:
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
-    curriculum = make_curriculum_agent()
     cluster_interp = make_cluster_interpreter()
     orchestrator = make_orchestrator()
 
@@ -213,17 +213,16 @@ def run_query(query: str) -> str:
             "frequencies (from the Analyst), peer-program courses with "
             "URLs (from the University Programs researcher), recent "
             "articles with titles + sources (from the News researcher), "
-            "a structured curriculum course list with source URL (from the "
-            "Curriculum Architect), and a cluster-level gap analysis with "
-            "priority recommendations (from the Cluster Interpreter) — "
-            "each section only where relevant to the query. Close with a "
-            "trade-off or caveat."
+            "and — where relevant — a structured curriculum course list "
+            "with source URL and a cluster-level gap analysis with "
+            "priority recommendations (both from the University Programs "
+            "Researcher and Cluster Interpreter respectively). Close with "
+            "a trade-off or caveat."
         ),
         agent=orchestrator,
     )
     crew = Crew(
-        agents=[orchestrator, analyst, univ_programs, news,
-                curriculum, cluster_interp],
+        agents=[orchestrator, analyst, univ_programs, news, cluster_interp],
         tasks=[task],
         verbose=False,
     )
