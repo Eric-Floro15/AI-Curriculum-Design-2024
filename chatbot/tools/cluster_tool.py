@@ -32,6 +32,18 @@ from functools import lru_cache
 
 import pandas as pd
 
+# @traceable lets LangSmith record each cluster tool call as a named span,
+# showing the cluster_id argument and the returned data.  Without this,
+# all pandas CSV/XLSX reads are invisible in LangSmith.
+try:
+    from langsmith import traceable as _traceable
+except ImportError:
+    def _traceable(**_kw):
+        """No-op when langsmith is not installed."""
+        def _decorator(fn):
+            return fn
+        return _decorator
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
 if _CHATBOT_DIR not in sys.path:
@@ -105,9 +117,14 @@ def _enrich_with_freq(skills: list[str]) -> list[dict]:
 
 # ── Python API ────────────────────────────────────────────────────────────────
 
+@_traceable(name="all_clusters", run_type="tool")
 def all_clusters() -> list[dict]:
     """
     Return a summary of all 10 clusters: id, theme, skill count, top skills.
+
+    @traceable: recorded by LangSmith so every overview call shows the full
+    cluster list in the trace, making it easy to verify the agent saw the
+    right data before doing gap analysis.
     """
     df = _load_clusters()
     result = []
@@ -125,9 +142,13 @@ def all_clusters() -> list[dict]:
     return result
 
 
+@_traceable(name="cluster_detail", run_type="tool")
 def cluster_detail(cluster_id: int) -> dict:
     """
     Return all skills in a cluster, enriched with frequency data.
+
+    @traceable: recorded by LangSmith so every detail drill-down shows
+    exactly which cluster_id was queried and the ranked skill list returned.
     """
     df = _load_clusters()
     skills = df[df["Cluster"] == cluster_id]["Skill"].tolist()

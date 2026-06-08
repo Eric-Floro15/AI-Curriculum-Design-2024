@@ -20,6 +20,20 @@ import sys
 
 from ddgs import DDGS
 
+# @traceable lets LangSmith record each web_search() call as a named span,
+# showing the query string and the returned results.  Without this decorator
+# DuckDuckGo calls are completely invisible in LangSmith (they don't go
+# through any LangChain object).  The fallback no-ops gracefully if langsmith
+# is not installed.
+try:
+    from langsmith import traceable as _traceable
+except ImportError:
+    def _traceable(**_kw):
+        """No-op when langsmith is not installed."""
+        def _decorator(fn):
+            return fn
+        return _decorator
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
 if _CHATBOT_DIR not in sys.path:
@@ -30,6 +44,7 @@ DEFAULT_MAX_RESULTS = 5
 MAX_SNIPPET_CHARS = 300
 
 
+@_traceable(name="web_search_ddgs", run_type="tool")
 def web_search(query: str, max_results: int = DEFAULT_MAX_RESULTS) -> list[dict]:
     """
     Run a DuckDuckGo text search and return a list of normalised result dicts:
@@ -38,6 +53,9 @@ def web_search(query: str, max_results: int = DEFAULT_MAX_RESULTS) -> list[dict]
     DuckDuckGo occasionally rate-limits aggressive callers; we surface failures
     by returning an empty list rather than raising, so the agent can degrade
     gracefully if a single search fails.
+
+    @traceable: this function is traced by LangSmith so every DuckDuckGo call
+    appears as a named span with query + results visible in the trace timeline.
     """
     if not query or not query.strip():
         return []

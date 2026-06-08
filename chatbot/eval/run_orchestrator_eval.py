@@ -174,6 +174,8 @@ def run_single_query(case: dict) -> dict:
     # network or LLM keys present.
     from crewai import Crew, Task  # noqa: E402
     from agents.analyst import make_analyst  # noqa: E402
+    from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
+    from agents.curriculum import make_curriculum_agent  # noqa: E402
     from agents.news import make_news_agent  # noqa: E402
     from agents.orchestrator import make_orchestrator  # noqa: E402
     from agents.university_programs import make_university_programs_agent  # noqa: E402
@@ -181,8 +183,10 @@ def run_single_query(case: dict) -> dict:
     analyst = make_analyst()
     univ = make_university_programs_agent()
     news = make_news_agent()
+    curriculum = make_curriculum_agent()
+    cluster_interp = make_cluster_interpreter()
     orch = make_orchestrator()
-    for a in (orch, analyst, univ, news):
+    for a in (orch, analyst, univ, news, curriculum, cluster_interp):
         a.verbose = True
 
     task = Task(
@@ -191,7 +195,7 @@ def run_single_query(case: dict) -> dict:
         agent=orch,
     )
     crew = Crew(
-        agents=[orch, analyst, univ, news],
+        agents=[orch, analyst, univ, news, curriculum, cluster_interp],
         tasks=[task],
         verbose=True,
     )
