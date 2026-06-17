@@ -78,13 +78,13 @@ if _ls_key:
 else:
     print("⚠️  WARNING: LANGSMITH_API_KEY not found in chatbot/.env — LangSmith tracing disabled.")
 
-# ── Silence CrewAI's "Tracing is disabled" banner ─────────────────────────
-# CrewAI >= 0.80 prints a rich panel on every Crew.kickoff() when its own
-# platform tracing isn't enabled. We use LangSmith instead, so opt out of
-# CrewAI telemetry entirely — this suppresses the banner without enabling
-# their platform.
-os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
-os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+# ── Silence CrewAI's telemetry / "Tracing is disabled" banner ─────────────
+# Use direct assignment (not setdefault) so these always win, even if
+# .env or the shell environment has conflicting values. CrewAI checks
+# CREWAI_TELEMETRY_OPT_OUT at Telemetry() call time; OTEL_SDK_DISABLED
+# shuts down the OpenTelemetry SDK before any tracer is registered.
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "true"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -139,6 +139,8 @@ def _substring_match(needle: str, haystack: str) -> bool:
     return False
 
 import yaml
+import litellm
+from langsmith.run_trees import RunTree
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
@@ -187,6 +189,27 @@ def run_single_query(case: dict) -> dict:
     for a in (orch, analyst, univ, news, cluster_interp):
         a.verbose = True
 
+    # ── Delegation detection via step_callback (robust) ───────────────────
+    # Parsing the verbose log for coworker arguments is brittle — the log
+    # format changes across CrewAI versions and Rich panel rendering corrupts
+    # multi-word role names. Instead, we attach a step_callback to each
+    # specialist: the callback fires whenever that agent actually executes a
+    # step, which only happens when the Orchestrator has delegated to it.
+    # This is version-agnostic and semantically correct.
+    delegated_to: set[str] = set()
+
+    def _make_step_tracker(role: str) -> callable:
+        def _tracker(_output) -> None:
+            delegated_to.add(role)
+        return _tracker
+
+    analyst.step_callback       = _make_step_tracker("Skills Taxonomy Analyst")
+    univ.step_callback          = _make_step_tracker("University AI Programs Researcher")
+    news.step_callback          = _make_step_tracker("AI Industry News Researcher")
+    cluster_interp.step_callback = _make_step_tracker("Cluster Interpreter")
+    # Note: orch (Orchestrator) is intentionally excluded — we only track
+    # specialists to reflect which agents were *delegated to*.
+
     task = Task(
         description=case["query"],
         expected_output=DEFAULT_EXPECTED_OUTPUT,
@@ -203,10 +226,6 @@ def run_single_query(case: dict) -> dict:
     answer = ""
     error: str | None = None
     try:
-        # contextlib.redirect_stdout catches `print()`. CrewAI's rich
-        # console output also goes through stdout, so this captures
-        # both. If a future CrewAI version moves to direct tty writes,
-        # we'll need to switch to subprocess.
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
             answer = str(crew.kickoff())
     except Exception as e:
@@ -214,18 +233,16 @@ def run_single_query(case: dict) -> dict:
         traceback.print_exc(file=buf)
     elapsed = time.time() - t0
 
-    # Clean log: strip ANSI codes AND rich box-drawing characters before
-    # parsing. Box chars (│, ─ …) are injected mid-string when CrewAI
-    # renders verbose output inside a panel, corrupting role names like
-    # 'AI Industry News │\n│  Researcher'. See _clean_log() / _normalize_role().
     log = _clean_log(buf.getvalue())
     tool_calls = len(re.findall(r"Tool Execution Started", log))
-    delegated_to: set[str] = set()
-    # Both delegation tools share the same Args shape; capture both.
-    for m in re.finditer(r"'coworker':\s*'([^']+)'", log):
-        role = _normalize_role(m.group(1))
-        if role:
-            delegated_to.add(role)
+
+    # ── DEBUG: dump verbose log to /tmp for format inspection ─────────────
+    # Uncomment the two lines below if delegated_to still shows empty after
+    # a run where LangSmith/CrewAI platform confirms delegation happened.
+    # Inspect /tmp/orch_verbose_log.txt to see the actual captured format,
+    # then remove the debug lines.
+    # with open("/tmp/orch_verbose_log.txt", "w") as _f:
+    #     _f.write(log)
 
     return {
         "answer": answer,
@@ -508,14 +525,70 @@ def main() -> None:
                   f"budget={c.get('budget', {})}")
         return
 
+    # ── LangSmith: eval-level parent run ──────────────────────────────────────
+    # Wraps the entire script execution as one top-level run in LangSmith.
+    # Structure: eval run → query run (per case) → LLM calls (via LiteLLM cb)
+    # Gracefully disabled when LANGCHAIN_API_KEY is absent.
+    _ls_enabled = bool(os.getenv("LANGCHAIN_API_KEY"))
+    eval_run: "RunTree | None" = None
+    if _ls_enabled:
+        eval_run = RunTree(
+            name=f"eval / {date.today().isoformat()} / {model_slug()}",
+            run_type="chain",
+            inputs={
+                "model": model_slug(),
+                "case_ids": [c["id"] for c in cases],
+            },
+            project_name=os.getenv("LANGCHAIN_PROJECT", "mitacs-agents-research"),
+        )
+        eval_run.post()
+
     results: list[dict] = []
     grades: list[dict] = []
     for i, case in enumerate(cases, 1):
         print(f"\n[{i}/{len(cases)}] {case['id']} — running...")
-        result = run_single_query(case)
-        grade = grade_case(case, result, check_time=not args.no_time_check)
+
+        # ── LangSmith: query-level child run ──────────────────────────────────
+        # Creates a child run under eval_run for this specific query. Passing
+        # its ID to litellm.metadata makes every LLM call during crew.kickoff()
+        # appear nested under it rather than as isolated top-level runs.
+        query_run: "RunTree | None" = None
+        if eval_run is not None:
+            query_run = eval_run.create_child(
+                name=case["id"],
+                run_type="chain",
+                inputs={
+                    "query": case["query"].strip(),
+                    "category": case.get("category", ""),
+                },
+            )
+            query_run.post()
+            litellm.metadata = {"parent_run_id": str(query_run.id)}
+
+        try:
+            result = run_single_query(case)
+            grade = grade_case(case, result, check_time=not args.no_time_check)
+        finally:
+            # Always clear LiteLLM metadata so the next query doesn't inherit
+            # a stale parent_run_id (even if run_single_query raised somehow).
+            litellm.metadata = {}
+
         results.append(result)
         grades.append(grade)
+
+        # ── Close query run ───────────────────────────────────────────────────
+        if query_run is not None:
+            query_run.end(outputs={
+                "verdict": grade["verdict"],
+                "answer": result["answer"],
+                "tool_calls": result["tool_calls"],
+                "wall_time_sec": round(result["wall_time_sec"], 1),
+                "delegated_to": sorted(result["delegated_to"]),
+                "hard_failures": grade["hard"],
+                "soft_failures": grade["soft"],
+            })
+            query_run.patch()
+
         verdict = grade["verdict"]
         # Emoji prefix for quick scanning in terminal output
         symbol = {"PASS": "✅", "INSPECT": "🔍", "FAIL": "❌"}.get(verdict, "?")
@@ -532,6 +605,17 @@ def main() -> None:
     n_pass    = sum(1 for g in grades if g["verdict"] == "PASS")
     n_inspect = sum(1 for g in grades if g["verdict"] == "INSPECT")
     n_fail    = sum(1 for g in grades if g["verdict"] == "FAIL")
+
+    # ── Close eval-level run ──────────────────────────────────────────────────
+    if eval_run is not None:
+        eval_run.end(outputs={
+            "n_pass": n_pass,
+            "n_inspect": n_inspect,
+            "n_fail": n_fail,
+            "summary": f"{n_pass} PASS | {n_inspect} INSPECT | {n_fail} FAIL",
+        })
+        eval_run.patch()
+
     print()
     print("=" * 72)
     print(f"SUMMARY: {n_pass} PASS  |  {n_inspect} INSPECT  |  {n_fail} FAIL  "

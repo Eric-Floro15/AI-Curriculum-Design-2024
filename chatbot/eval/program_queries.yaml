@@ -1,0 +1,97 @@
+# program_queries.yaml — Eval queries for tools/program_rag_tool.py (the
+# university program/curriculum RAG). NOT the same file as queries.yaml,
+# which is for the skills RAG (tools/rag_tool.py) — different tool,
+# different result schema, different test design.
+#
+# Each case:
+#   id            short slug, used as a section header in the report
+#   query         natural-language search string
+#   expected      substrings expected inside the MATCHED PROGRAM'S TITLE
+#                 (the `program` metadata field returned by retrieve(),
+#                 e.g. "Master of Management in Artificial Intelligence
+#                 (MMAI), Smith School of Business, Queen's University") —
+#                 NOT matched against free body/content text. Matched
+#                 case-insensitively after stripping non-alphanumerics.
+#                 Use [] only together with expect_empty: true.
+#   expect_empty  optional, default false. When true this case is a
+#                 NEGATIVE CONTROL: the query is deliberately about a
+#                 program/topic that should NOT be in the local corpus,
+#                 and the case PASSES only if retrieve() returns zero
+#                 hits — i.e. PROGRAM_RAG_MAX_DISTANCE correctly rejected
+#                 every candidate, which is the signal that tells the
+#                 agent to fall back to web_search_tool. `expected` is
+#                 ignored when this is true.
+#
+# Design note (updated 2026-06-16): corpus now has 6 programs (Queen's,
+# MIT, CMU, Georgia Tech, UofT Rotman, Stanford). Several of these share
+# very similar title language ("Master of Science in Computer Science",
+# "Artificial Intelligence Specialization" appears in BOTH the Georgia
+# Tech and Stanford titles) — `expected` substrings below were chosen to
+# be unique to one program's title after normalization (lowercased,
+# non-alphanumerics stripped) to avoid false-positive matches. Before
+# adding a new case, grep the candidate substring against every existing
+# **Program:** line in data/program_and_curriculum/*.txt to confirm it
+# doesn't collide (see the mit-direct/mit-by-topic note below for a
+# worked example of this exact failure mode: "mit" matches inside
+# "S-mit-h School", and "mma" would match inside "mmai").
+#
+# Maintenance note: negative-control-stanford (query: "Stanford MSCS
+# admission requirements") was RETIRED 2026-06-16 because a real Stanford
+# program file was added to the corpus that same day, breaking its
+# premise (confirmed: it started returning genuine Stanford hits, which
+# is correct behavior, not a regression). Replaced with
+# negative-control-uw below. If a Washington program is ever added to
+# this corpus, repeat this swap.
+
+- id: queens-direct
+  query: "Queen's University MMAI curriculum requirements"
+  expected: ["queen", "mmai", "smith school"]
+
+- id: mit-direct
+  query: "MIT 6-4 MEng Artificial Intelligence and Decision Making requirements"
+  # NOTE: deliberately NOT "mit" — that 3-letter substring false-positive
+  # matches inside Queen's title via "Smith School" (s-MIT-h), which masked
+  # real cross-contamination in the 2026-06-16 baseline run. "6-4" and
+  # "meng"/"electrical engineering" are unique to the MIT title and contain
+  # no such collision (Queen's title has no digits at all).
+  expected: ["meng", "electrical engineering", "6-4"]
+
+- id: queens-by-topic
+  query: "AI master's program with business strategy courses and team leadership training"
+  expected: ["queen", "mmai"]
+
+- id: mit-by-topic
+  query: "graduate AI program requiring an engineering thesis with reinforcement learning electives"
+  # See note on mit-direct above re: avoiding bare "mit".
+  expected: ["meng", "6-4"]
+
+- id: cmu-direct
+  query: "Carnegie Mellon MSAII curriculum requirements"
+  expected: ["msaii", "carnegie mellon"]
+
+- id: georgia-tech-direct
+  query: "Georgia Tech MS CS Artificial Intelligence specialization requirements"
+  # NOTE: deliberately NOT "computer science" or "artificial intelligence
+  # specialization" alone — both phrases also appear in Stanford's title.
+  # "georgia tech" and "college of computing" are unique to this title.
+  expected: ["georgia tech", "college of computing"]
+
+- id: rotman-direct
+  query: "University of Toronto Rotman Master of Management Analytics requirements"
+  # NOTE: deliberately NOT "mma" — that 3-letter substring false-positive
+  # matches inside Queen's "MMAI" title (m-m-a-i contains "mma"). "rotman"
+  # and "toronto" are unique to this title.
+  expected: ["rotman", "toronto"]
+
+- id: stanford-direct
+  query: "Stanford MS CS Artificial Intelligence depth requirements"
+  # NOTE: "stanford" is the only substring in this title that's unique —
+  # "ms cs" / "computer science" / "artificial intelligence specialization"
+  # all collide with Georgia Tech's title. Single-term expected lists are
+  # an established pattern already (see queens-by-topic, mit-by-topic).
+  expected: ["stanford"]
+
+- id: negative-control-uw
+  query: "University of Washington Master's in Computer Science Artificial Intelligence track requirements"
+  expected: []
+  expect_empty: true

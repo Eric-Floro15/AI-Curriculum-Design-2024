@@ -10,6 +10,7 @@ the runner → diff the new dated baseline against the previous one.
 | File | Layer | Cost | Notes |
 |---|---|---|---|
 | `queries.yaml` + `run_rag_eval.py` | Skills RAG retrieval | Free | 10 queries × precision@5 / recall@5. Dated `baseline_*.md` snapshots. |
+| `program_queries.yaml` + `run_program_rag_eval.py` | Program/curriculum RAG retrieval | Free | 5 queries (4 directional + 1 negative control) × precision@3 / recall@3 + cross-contamination + negative-control checks, tailored to the small hand-curated program corpus. Dated `program_baseline_*.md` snapshots. |
 | `orchestrator_queries.yaml` + `run_orchestrator_eval.py` | Full 4-agent crew end-to-end | ~$1-3 per query on Sonnet 4.6 | Substring + delegation + budget assertions. Dated `orchestrator_baseline_*.md` snapshots. |
 | `test_articles.csv` + `news_offcorpus_queries.yaml` + `run_news_tests.py` | News agent (retrieval + fabrication) | Approach 1 free, Approach 2 ~$1 | Synthetic article injection + off-corpus probes. |
 | `orchestrator_baseline_2026-05-26_sonnet.md` | Manual reference answer for one Orchestrator query | — | Seed baseline before `run_orchestrator_eval.py` existed. |

@@ -88,6 +88,18 @@ CRITICAL TOOL-USE RULES (read carefully — small models break here):
 - To consult a specialist, INVOKE the `delegate_work_to_coworker` or
   `ask_question_to_coworker` tool. Actually call the tool — wait for
   its real response — then use that response in your reasoning.
+- EVERY delegation call MUST include ALL THREE required fields:
+    • "task"     — the specific sub-question for the specialist
+    • "context"  — the professor's original query (copy it verbatim)
+                   or a 1-2 sentence summary of what has been done so
+                   far. NEVER omit this field — the tool will reject
+                   the call and the crew will fail.
+    • "coworker" — the exact role string (see list below)
+  Example of a valid delegation:
+    task:     "What are the top 10 data engineering skills by frequency?"
+    context:  "A professor asked: 'What data engineering skills should
+               my AI/ML Master's cover?' I need market-demand data."
+    coworker: "Skills Taxonomy Analyst"
 - Do NOT emit tool-call JSON like `{"name": "ask_question_to_coworker",
   "parameters": {...}}` as your final text answer. If you find yourself
   about to write that JSON in your answer, STOP — that means you
