@@ -34,6 +34,11 @@ requests>=2.30.0
 # Chat UI
 chainlit>=1.1.0
 
+# Uploaded-curriculum-file ingestion (tools/upload_extract.py) — first
+# version supports PDF + DOCX only, per 2026-06-23 scoping decision.
+pypdf>=4.0.0
+python-docx>=1.1.0
+
 # Utilities
 python-dotenv>=1.0.0
 langsmith>=0.1.0           # @traceable for tool-level tracing in LangSmith

@@ -11,6 +11,17 @@ APPROACH 1 (free, retrieval-layer only):
     retrieved set. Validates the scrape → index → retrieve pipeline
     end-to-end without needing the LLM.
 
+    Since 2026-06-17, the same augmented index also merges in the real
+    industry-report corpus (chatbot/data/news/industry_reports_*.csv,
+    via build_news_index.load_industry_reports/build_documents/chunk —
+    reusing the production functions so this test reflects the actual
+    ingestion code, not a parallel hand-rolled copy of it). A second
+    check, approach_1_reports(), runs anchor queries from
+    test_report_anchors.csv (real terms drawn from each report row,
+    not fabricated) against the SAME augmented index, and additionally
+    asserts the retrieved chunk's doc_type metadata == "industry_report"
+    — catching a mislabeling bug, not just a missing-content bug.
+
 APPROACH 2 (paid, ~$0.50-1.00 on Sonnet 4.6):
     Off-corpus probes. For each query in news_offcorpus_queries.yaml,
     run the live News Agent (using the production FAISS index) and
@@ -56,17 +67,22 @@ os.environ.setdefault("OTEL_SDK_DISABLED", "true")
 import yaml  # noqa: E402
 
 from langchain_community.vectorstores import FAISS  # noqa: E402
-from langchain_text_splitters import RecursiveCharacterTextSplitter  # noqa: E402
 
 from embeddings import get_embeddings, describe_embeddings_config  # noqa: E402
 
+# Reuse the PRODUCTION ingestion functions (not a parallel hand-rolled copy)
+# so this test reflects build_news_index.py's actual merge/doc_type logic.
+import build_news_index as bni  # noqa: E402
+
 TEST_ARTICLES_CSV = os.path.join(_HERE, "test_articles.csv")
+TEST_REPORT_ANCHORS_CSV = os.path.join(_HERE, "test_report_anchors.csv")
 OFFCORPUS_QUERIES = os.path.join(_HERE, "news_offcorpus_queries.yaml")
 PROD_NEWS_DIR = os.path.join(_CHATBOT_DIR, "data", "news")
 TEST_INDEX_DIR = "/tmp/news_test_augmented_index"
 
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 100
+# Chunking (CHUNK_SIZE/CHUNK_OVERLAP) is no longer configured here — as of
+# 2026-06-17 build_test_augmented_index() delegates to build_news_index.py's
+# own chunk(), so this script always chunks identically to production.
 TOP_K = 5
 
 
@@ -83,39 +99,25 @@ def load_articles(path: str) -> list[dict]:
 
 
 def build_test_augmented_index() -> FAISS:
-    """Combine production articles + test articles, build FAISS index."""
+    """Combine production RSS articles + synthetic test articles + the real
+    industry-report corpus, build FAISS index.
+
+    Uses build_news_index.py's own build_documents()/chunk() so this test
+    exercises the same doc_type-tagging logic the real index build uses,
+    rather than a separately-maintained copy that could silently drift.
+    """
     prod_csv = latest_prod_csv()
     prod_articles = load_articles(prod_csv)
     test_articles = load_articles(TEST_ARTICLES_CSV)
-    all_articles = prod_articles + test_articles
-    print(f"  Prod articles: {len(prod_articles)}")
-    print(f"  Test articles: {len(test_articles)}")
+    report_rows = bni.load_industry_reports()
+    all_articles = prod_articles + test_articles + report_rows
+    print(f"  Prod RSS articles: {len(prod_articles)}")
+    print(f"  Synthetic test articles: {len(test_articles)}")
+    print(f"  Real industry-report rows: {len(report_rows)}")
     print(f"  Total: {len(all_articles)}")
 
-    texts: list[str] = []
-    metadatas: list[dict] = []
-    for a in all_articles:
-        title = (a.get("title") or "").strip()
-        summary = (a.get("summary") or "").strip()
-        if not title and not summary:
-            continue
-        body = f"Title: {title}\n{summary}" if summary else f"Title: {title}"
-        texts.append(body)
-        metadatas.append({
-            "title": title,
-            "link": a.get("link", ""),
-            "source": a.get("source", ""),
-            "published": a.get("published", ""),
-            "domain": a.get("domain", ""),
-        })
-
-    splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    chunked_texts: list[str] = []
-    chunked_meta: list[dict] = []
-    for text, meta in zip(texts, metadatas):
-        for piece in splitter.split_text(text):
-            chunked_texts.append(piece)
-            chunked_meta.append(meta)
+    texts, metadatas = bni.build_documents(all_articles)
+    chunked_texts, chunked_meta = bni.chunk(texts, metadatas)
 
     print(f"  Chunks: {len(chunked_texts)}")
     print(f"  Embedding...")
@@ -157,6 +159,58 @@ def approach_1(vs: FAISS) -> list[dict]:
 
     passed = sum(1 for r in results if r["pass"])
     print(f"\nApproach 1 total: {passed}/{len(results)} test articles retrieved at top-{TOP_K}")
+    return results
+
+
+def approach_1_reports(vs: FAISS) -> list[dict]:
+    """Anchor-phrase retrieval check on each of the 10 real industry-report
+    rows (added 2026-06-17). Unlike approach_1()'s fabricated unique terms,
+    these anchor/unique_term pairs are real phrases drawn directly from the
+    report content in chatbot/data/news/industry_reports_*.csv — see
+    test_report_anchors.csv. Also asserts the matched chunk's doc_type
+    metadata == "industry_report", to catch a mislabeling bug (content
+    present but tagged as a news article) separately from a missing-content
+    bug (content not retrieved at all).
+    """
+    print("\n" + "=" * 72)
+    print("APPROACH 1b — Industry report retrieval check (real content, retrieval-layer test)")
+    print("=" * 72)
+
+    if not os.path.exists(TEST_REPORT_ANCHORS_CSV):
+        print(f"  SKIPPED — {TEST_REPORT_ANCHORS_CSV} not found.")
+        return []
+
+    anchors = load_articles(TEST_REPORT_ANCHORS_CSV)
+    results: list[dict] = []
+    for a in anchors:
+        anchor = a.get("anchor_query", "").strip()
+        unique = a.get("unique_term", "").strip()
+        if not anchor or not unique:
+            continue
+        print(f"\n  Report row: {a.get('title', '')[:64]}")
+        print(f"    Anchor query: {anchor!r}")
+        print(f"    Unique term:  {unique!r}")
+        retrieved = vs.similarity_search(anchor, k=TOP_K)
+        rank: int | None = None
+        doc_type_ok: bool | None = None
+        for i, d in enumerate(retrieved, 1):
+            if unique.lower() in d.page_content.lower():
+                rank = i
+                doc_type_ok = d.metadata.get("doc_type") == "industry_report"
+                break
+        if rank is not None and doc_type_ok:
+            print(f"    PASS — retrieved at rank {rank}/{TOP_K}, doc_type=industry_report")
+            results.append({"id": a.get("entry_id"), "pass": True, "rank": rank})
+        elif rank is not None and not doc_type_ok:
+            print(f"    FAIL — retrieved at rank {rank}/{TOP_K} but doc_type was NOT 'industry_report'")
+            results.append({"id": a.get("entry_id"), "pass": False, "rank": rank, "reason": "wrong doc_type"})
+        else:
+            print(f"    FAIL — unique term not found in top {TOP_K}")
+            print(f"    Top-{TOP_K} titles: {[d.metadata.get('title', '')[:40] for d in retrieved]}")
+            results.append({"id": a.get("entry_id"), "pass": False, "rank": None, "reason": "not retrieved"})
+
+    passed = sum(1 for r in results if r["pass"])
+    print(f"\nApproach 1b total: {passed}/{len(results)} report rows retrieved at top-{TOP_K} with correct doc_type")
     return results
 
 
@@ -244,11 +298,12 @@ def main() -> None:
 
     print(f"Embeddings: {describe_embeddings_config()}\n")
 
-    r1 = r2 = None
+    r1 = r1b = r2 = None
     if args.approach in ("1", "both"):
         print("Building test-augmented index...")
         vs = build_test_augmented_index()
         r1 = approach_1(vs)
+        r1b = approach_1_reports(vs)
 
     if args.approach in ("2", "both"):
         r2 = approach_2()
@@ -258,12 +313,15 @@ def main() -> None:
     print("=" * 72)
     if r1 is not None:
         passed = sum(1 for r in r1 if r["pass"])
-        print(f"  Approach 1 (retrieval):    {passed}/{len(r1)} PASS")
+        print(f"  Approach 1 (retrieval):       {passed}/{len(r1)} PASS")
+    if r1b is not None:
+        passed = sum(1 for r in r1b if r["pass"])
+        print(f"  Approach 1b (industry reports): {passed}/{len(r1b)} PASS")
     if r2 is not None:
         passed = sum(1 for r in r2 if r["verdict"] == "PASS")
         failed = sum(1 for r in r2 if r["verdict"] == "FAIL")
         inspect = sum(1 for r in r2 if r["verdict"] == "INSPECT")
-        print(f"  Approach 2 (off-corpus):   {passed} PASS, {failed} FAIL, {inspect} INSPECT")
+        print(f"  Approach 2 (off-corpus):      {passed} PASS, {failed} FAIL, {inspect} INSPECT")
 
 
 if __name__ == "__main__":

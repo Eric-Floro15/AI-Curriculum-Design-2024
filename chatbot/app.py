@@ -68,6 +68,22 @@ from agents.orchestrator import make_orchestrator                      # noqa: E
 from agents.university_programs import make_university_programs_agent  # noqa: E402
 from crewai import Crew, Task                                          # noqa: E402
 
+# Uploaded-curriculum-file ingestion (added 2026-06-23) — one-off,
+# in-conversation analysis only, see tools/upload_extract.py's module
+# docstring. No new tool, no new persistent index: extracted text is
+# injected straight into this turn's Task description (see on_message).
+from tools.upload_extract import (                                     # noqa: E402
+    ExtractionError,
+    UnsupportedFileTypeError,
+    build_uploaded_document_block,
+    extract_text,
+)
+
+# Filenames ending in any of these (case-insensitive) are treated as a
+# curriculum upload. Anything else attached to a message is reported back
+# to the user as unsupported rather than silently ignored or crashed on.
+_SUPPORTED_UPLOAD_EXTENSIONS = (".pdf", ".docx")
+
 # Thread pool — crew.kickoff() is sync; run in a thread so the async
 # event loop stays responsive.
 _EXECUTOR = ThreadPoolExecutor(max_workers=2)
@@ -212,8 +228,60 @@ I coordinate three specialist agents to help you design or update an AI/ML Maste
 - *What recent AI developments should shape my curriculum?*
 - *Should I add a cloud infrastructure module?*
 
+📎 **Have an unpublished or draft curriculum?** Attach a PDF or DOCX with the 📎 icon and ask me to compare it against peer programs — I'll analyze it directly in this conversation (not added to any saved index), and I'll always cite it as professor-provided, not independently verified.
+
 > ⏱ Each query consults all three agents. Click **⚙️** (bottom-left of the input bar) to choose your model.
 """
+
+
+async def _process_uploaded_elements(elements: list) -> list[str]:
+    """
+    Inspect a Chainlit message's attached elements for PDF/DOCX curriculum
+    uploads, extract their text, and return a list of labeled "ATTACHED
+    UPLOADED CURRICULUM DOCUMENT" blocks (see tools/upload_extract.py)
+    ready for injection into this turn's Task description.
+
+    Anything attached that isn't a supported type, or that fails to
+    extract (corrupted file, scanned/image-only PDF, etc.), gets a
+    friendly chat message explaining why — this never raises, so one bad
+    attachment can't crash the whole crew run.
+    """
+    blocks: list[str] = []
+    for el in elements:
+        path = getattr(el, "path", None)
+        if not path:
+            continue  # not a file-backed element (e.g. an inline image)
+        name = getattr(el, "name", None) or os.path.basename(path)
+        ext = os.path.splitext(name)[1].lower()
+
+        if ext not in _SUPPORTED_UPLOAD_EXTENSIONS:
+            await cl.Message(
+                content=(
+                    f"⚠️ **{name}** wasn't analyzed — this version only "
+                    "supports PDF and DOCX curriculum uploads."
+                ),
+                author="Curriculum Advisor",
+            ).send()
+            continue
+
+        try:
+            text = extract_text(path)
+        except (UnsupportedFileTypeError, ExtractionError, FileNotFoundError) as exc:
+            await cl.Message(
+                content=f"⚠️ Couldn't read **{name}**: {exc}",
+                author="Curriculum Advisor",
+            ).send()
+            continue
+        except Exception as exc:  # noqa: BLE001 — never let a bad upload crash the chat
+            await cl.Message(
+                content=f"⚠️ Unexpected error reading **{name}**: {exc}",
+                author="Curriculum Advisor",
+            ).send()
+            continue
+
+        blocks.append(build_uploaded_document_block(name, text))
+
+    return blocks
 
 
 # ── Chainlit lifecycle ─────────────────────────────────────────────────────
@@ -270,8 +338,44 @@ async def on_settings_update(settings: dict) -> None:
 async def on_message(message: cl.Message) -> None:
     """Handle an incoming professor query end-to-end."""
     query = message.content.strip()
+
+    # ── Attached PDF/DOCX curriculum uploads (added 2026-06-23) ────────────
+    # Chainlit already accepts attachments (see .chainlit/config.toml's
+    # spontaneous_file_upload); this is the integration point that actually
+    # reads them. One-off, in-conversation analysis only — see
+    # tools/upload_extract.py's module docstring for why there's no new
+    # persistent index here.
+    upload_blocks = await _process_uploaded_elements(getattr(message, "elements", None) or [])
+
+    if upload_blocks:
+        label = "file" if len(upload_blocks) == 1 else "files"
+        await cl.Message(
+            content=(
+                f"📎 Picked up {len(upload_blocks)} uploaded curriculum "
+                f"{label} — analyzing it alongside your question below."
+            ),
+            author="Curriculum Advisor",
+        ).send()
+        if not query:
+            # A file with no typed question is still a valid request — the
+            # old behavior here was to silently `return` on empty content,
+            # which dropped file-only uploads entirely. Default to a
+            # sensible analysis prompt instead.
+            query = (
+                "Analyze the attached uploaded curriculum document(s) "
+                "below: summarize their structure, and compare them "
+                "against peer AI/ML Master's programs and current "
+                "industry/skills demand."
+            )
+
     if not query:
         return
+
+    # The orchestrator/university-programs backstories pattern-match on the
+    # literal marker text inside each block (see build_uploaded_document_block)
+    # — prepend the block(s) ahead of the professor's own question, don't
+    # merge/summarize them into it.
+    full_query = "\n\n".join(upload_blocks + [query]) if upload_blocks else query
 
     history: list[dict] = cl.user_session.get("history", [])
     history.append({"role": "user", "content": query})
@@ -365,7 +469,7 @@ async def on_message(message: cl.Message) -> None:
             orch = make_orchestrator()
 
             task = Task(
-                description=query,
+                description=full_query,
                 expected_output=_TASK_EXPECTED_OUTPUT,
                 agent=orch,
             )
