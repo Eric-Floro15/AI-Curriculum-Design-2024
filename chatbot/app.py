@@ -208,29 +208,42 @@ _TASK_EXPECTED_OUTPUT = (
     "Open with a 2-3 sentence executive summary. Then a structured body "
     "of concrete recommendations citing specific skills with frequencies "
     "(from the Analyst), peer-program courses with URLs (from the "
-    "University Programs researcher), and recent articles with titles + "
-    "sources (from the News researcher) where each is relevant. Close "
-    "with a trade-off or caveat."
+    "University Programs researcher), recent articles with titles + "
+    "sources (from the News researcher), and — where relevant — a "
+    "structured curriculum course list with source URL and a "
+    "cluster-level gap analysis with priority recommendations (both from "
+    "the University Programs Researcher and Cluster Interpreter "
+    "respectively). Close with a trade-off or caveat."
 )
+# Kept in sync with agents/orchestrator.py's own run_query() expected_output
+# string — both describe the same 5-agent crew's deliverable. Fixed
+# 2026-06-25: this constant had drifted out of sync after Cluster
+# Interpreter was added as the 4th specialist (it never mentioned the
+# cluster-gap-analysis deliverable at all), even though the crew built a
+# few lines below in _kickoff_crew() already included cluster_interp — the
+# agent itself was always wired in correctly, only this description text
+# was stale.
 
 _WELCOME = """\
 👋 **Welcome to the AI/ML Curriculum Advisor**
 
-I coordinate three specialist agents to help you design or update an AI/ML Master's curriculum:
+I coordinate four specialist agents to help you design or update an AI/ML Master's curriculum:
 
 - 📊 **Skills Taxonomy Analyst** — 10,600+ job postings, ~871 canonical skills across 10 skill clusters
 - 🎓 **University Programs Researcher** — what peer institutions teach (live web search)
 - 📰 **Industry News Researcher** — recent AI/ML developments from MIT TR, TechCrunch, VentureBeat, HuggingFace & The Decoder
+- 🔬 **Cluster Interpreter** — takes a fetched program's course list and maps it against the 10 skill clusters to flag what's missing or underrepresented
 
 **Try asking:**
 - *What data engineering skills should my program cover?*
 - *How does Queen's MMAI compare to peer programs on MLOps coverage?*
 - *What recent AI developments should shape my curriculum?*
 - *Should I add a cloud infrastructure module?*
+- *Fetch Queen's MMAI curriculum and do a skill-cluster gap analysis.*
 
 📎 **Have an unpublished or draft curriculum?** Attach a PDF or DOCX with the 📎 icon and ask me to compare it against peer programs — I'll analyze it directly in this conversation (not added to any saved index), and I'll always cite it as professor-provided, not independently verified.
 
-> ⏱ Each query consults all three agents. Click **⚙️** (bottom-left of the input bar) to choose your model.
+> ⏱ Most questions consult the three core specialists (Analyst, University Programs, News); gap-analysis questions also bring in the Cluster Interpreter. Click **⚙️** (bottom-left of the input bar) to choose your model.
 """
 
 

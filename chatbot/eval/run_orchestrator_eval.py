@@ -53,6 +53,7 @@ import io
 import os
 import re
 import sys
+import threading
 import time
 import traceback
 from datetime import date
@@ -160,7 +161,7 @@ DEFAULT_EXPECTED_OUTPUT = (
 )
 
 
-def run_single_query(case: dict) -> dict:
+def run_single_query(case: dict, hard_timeout_sec: float = 2700) -> dict:
     """Build a fresh 5-agent crew, run the query verbose, capture metrics.
 
     Returns a dict with:
@@ -170,6 +171,33 @@ def run_single_query(case: dict) -> dict:
         tool_calls        int  — total `Tool Execution Started` events
         delegated_to      set[str]  — sub-agent role names invoked
         error             str | None
+
+    hard_timeout_sec: a hard kill-switch around `crew.kickoff()`, added
+    2026-06-25 in response to a real, reported incident — a qwen3:14b run
+    of the SIMPLEST query in this file (single-specialist, the lightest
+    case) sat completely silent for ~1 hour with no result. Root cause of
+    the silence-while-possibly-still-working ambiguity: `Crew(verbose=True)`
+    output is captured via `contextlib.redirect_stdout`/`redirect_stderr`
+    into the in-memory `buf` below for clean snapshot logging, so NOTHING
+    reaches the console between this query's "running..." print and
+    `crew.kickoff()` actually returning — a slow-but-working run and a
+    genuinely hung one look IDENTICAL from outside. Worse, before this fix,
+    there was no timeout at all: `max_wall_time_sec` (the budget field) was
+    only ever checked AFTER `crew.kickoff()` returned (see `grade_case()`),
+    purely for grading — never enforced live — so a truly stuck call could
+    block the entire eval run indefinitely with no recovery.
+    Default of 2700s (45 min) is deliberately well above the ~35-minute
+    full 3-specialist orchestrator run documented for qwen2.5:14b in
+    CLAUDE.md's Model Comparison table, so a legitimately slow-but-working
+    local CPU run isn't cut off before it would have finished anyway — but
+    it IS finite, so a genuine hang (like the one that triggered this fix)
+    eventually gets killed and recorded as an honest FAIL instead of an
+    unbounded silent wait. Python cannot forcibly kill a thread blocked
+    inside a network/LLM call, so on timeout the worker thread is abandoned
+    (daemon=True — it will not block process exit, but it also keeps
+    running/consuming resources in the background until it eventually
+    finishes or errors on its own). This unblocks the EVAL LOOP, which is
+    the actual goal — not a true kill of the underlying call.
     """
     # Lazy imports — these touch crewai + ollama / anthropic and we want
     # all-importable-before-actually-running so --help works without
@@ -225,14 +253,73 @@ def run_single_query(case: dict) -> dict:
     t0 = time.time()
     answer = ""
     error: str | None = None
-    try:
-        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-            answer = str(crew.kickoff())
-    except Exception as e:
-        error = f"{type(e).__name__}: {e}"
-        traceback.print_exc(file=buf)
+
+    result_box: dict = {}
+
+    def _kickoff() -> None:
+        try:
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                result_box["answer"] = str(crew.kickoff())
+        except Exception as e:
+            result_box["error"] = f"{type(e).__name__}: {e}"
+            traceback.print_exc(file=buf)
+
+    worker = threading.Thread(target=_kickoff, daemon=True)
+    worker.start()
+    # hard_timeout_sec <= 0 (or None) means "no hard timeout" — block forever,
+    # i.e. the pre-2026-06-25 behavior. This is the supported way to run a
+    # debugging/long-test session without the kill-switch getting in the way
+    # (e.g. when deliberately testing a query you expect to be slow, not
+    # hung). Pass `--hard-timeout-sec 0` on the CLI for this.
+    no_timeout = hard_timeout_sec is None or hard_timeout_sec <= 0
+    worker.join(timeout=None if no_timeout else hard_timeout_sec)
+
+    if (not no_timeout) and worker.is_alive():
+        # crew.kickoff() did not return within the hard timeout — treat as
+        # a hard FAIL via the existing "runtime error" path in grade_case()
+        # rather than blocking the rest of the eval run. See this function's
+        # docstring for the full incident this responds to. The worker
+        # thread itself is left running in the background (can't be force-
+        # killed from here) — if timeouts recur across multiple queries in
+        # the same run, consider restarting the Ollama server before the
+        # next attempt, in case a wedged request is occupying its single
+        # processing slot.
+        error = (
+            f"TimeoutError: crew.kickoff() did not return within the hard "
+            f"timeout of {hard_timeout_sec:.0f}s — most likely hung, not "
+            f"just slow (see CLAUDE.md's documented qwen3:14b <-> CrewAI "
+            f"native-tool-calling reliability issues as the first thing to "
+            f"check). Abandoning this query so the eval loop can continue; "
+            f"the worker thread may still be running in the background."
+        )
+        # Defensive: the abandoned thread's redirect_stdout/redirect_stderr
+        # `with` blocks never got to exit (they're blocked mid-kickoff), so
+        # sys.stdout/sys.stderr may still be globally pointed at THIS query's
+        # `buf` even as we move on to the next query. Force them back to the
+        # real streams now so later queries' output isn't silently swallowed.
+        # This does NOT fully close the race: if the orphaned thread later
+        # unblocks on its own, its `with` block will try to restore
+        # sys.stdout/stderr to whatever they were when IT started — which
+        # could clobber a LATER query's redirect if that restore lands
+        # mid-run. Low-probability (requires the original hang to resolve
+        # itself at exactly the wrong moment) and a known residual risk of
+        # redirecting process-wide streams across threads; a full fix would
+        # mean capturing CrewAI's verbose output without swapping sys.stdout/
+        # sys.stderr at all, which is out of scope here.
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+    else:
+        answer = result_box.get("answer", "")
+        error = result_box.get("error")
+
     elapsed = time.time() - t0
 
+    # NOTE: on the timeout path above, `buf` is still owned by the abandoned
+    # background thread, which may (rarely) still be mid-write to it right
+    # now. Reading it here is best-effort — the captured log for a timed-out
+    # query may occasionally be truncated or (very rarely) interleaved, but
+    # this is just a diagnostic log for an already-FAILed case, not something
+    # grading depends on.
     log = _clean_log(buf.getvalue())
     tool_calls = len(re.findall(r"Tool Execution Started", log))
 
@@ -492,6 +579,29 @@ def main() -> None:
             "is a hardware constraint, not a quality signal."
         ),
     )
+    parser.add_argument(
+        "--hard-timeout-sec",
+        type=float,
+        default=2700.0,
+        help=(
+            "Hard kill-switch (in seconds) around each query's crew.kickoff() "
+            "call, added 2026-06-25 after a reported qwen3:14b run sat fully "
+            "silent for ~1 hour with no result and no way to recover short of "
+            "killing the whole process. Default 2700s (45 min) is generous "
+            "above the ~35-min full 3-specialist Ollama run documented in "
+            "CLAUDE.md's Model Comparison table. Lower this for fast-fail "
+            "debugging (e.g. --hard-timeout-sec 120 to quickly confirm a "
+            "single query at least starts producing tool calls). Pass 0 (or "
+            "any value <= 0) to DISABLE the kill-switch entirely and block "
+            "forever, i.e. the pre-2026-06-25 behavior — use this if you "
+            "deliberately want to let a known-slow (not hung) run finish on "
+            "its own, e.g. a first-time qwen run on new hardware where you "
+            "don't yet have a wall-time baseline to set a sensible timeout "
+            "against. See run_single_query()'s docstring for the full "
+            "incident + the honest limitation that a blocked thread can't "
+            "be force-killed, only abandoned so the eval loop can move on."
+        ),
+    )
     args = parser.parse_args()
 
     if args.provider:
@@ -515,6 +625,12 @@ def main() -> None:
     print(f"Loaded {len(cases)} queries from {os.path.basename(QUERIES_FILE)}.")
     print(f"LLM: provider={os.getenv('LLM_PROVIDER', 'anthropic')}, "
           f"model={model_slug()}.")
+    if args.hard_timeout_sec <= 0:
+        print("Hard timeout per query: DISABLED (--hard-timeout-sec <= 0) — "
+              "will block forever on a hang, same as before 2026-06-25.")
+    else:
+        print(f"Hard timeout per query: {args.hard_timeout_sec:.0f}s "
+              f"(override with --hard-timeout-sec, or pass 0 to disable).")
 
     if args.dry_run:
         print("\n--dry-run: would run these queries:")
@@ -566,7 +682,7 @@ def main() -> None:
             litellm.metadata = {"parent_run_id": str(query_run.id)}
 
         try:
-            result = run_single_query(case)
+            result = run_single_query(case, hard_timeout_sec=args.hard_timeout_sec)
             grade = grade_case(case, result, check_time=not args.no_time_check)
         finally:
             # Always clear LiteLLM metadata so the next query doesn't inherit

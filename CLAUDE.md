@@ -386,10 +386,252 @@ bottom were both corrected to reflect this.
   any production prompt change. Run on your machine with:
   `KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/agents/test_uploaded_curriculum.py`
 
+### `chatbot/app.py` welcome-message/expected-output staleness fix (2026-06-25)
+
+User noticed the Chainlit welcome message only described 3 specialist
+agents and never mentioned Cluster Interpreter, despite this project
+having 4 specialists (Skills Taxonomy Analyst, University AI Programs
+Researcher, AI Industry News Researcher, Cluster Interpreter) plus the
+Orchestrator. Root cause confirmed by reading `app.py` directly: the
+runtime wiring was always correct — `_kickoff_crew()` has built
+`cluster_interp = make_cluster_interpreter()` and included it in
+`Crew(agents=[orch, analyst, univ, news, cluster_interp], ...)` since
+Cluster Interpreter was added as the 4th specialist (see tasks #13/#15 in
+the historical task list), and `_AGENT_META` already had its emoji/step
+text. Only two **human-facing text constants** had drifted stale, never
+updated when Cluster Interpreter was added:
+- `_WELCOME` (the Chainlit chat-start message) said "I coordinate three
+  specialist agents," listed only 3, and its closing tip said "consults
+  all three agents."
+- `_TASK_EXPECTED_OUTPUT` (the actual `Task(expected_output=...)` string
+  used by the live Chainlit app — distinct from, and less complete than,
+  `agents/orchestrator.py`'s own `run_query()` helper's equivalent string,
+  which already correctly mentioned Cluster Interpreter) never asked for
+  a cluster-level gap analysis at all. This one is more than cosmetic —
+  if the production app's own Task never described that deliverable,
+  the Orchestrator had less reason to format/include it well even when a
+  professor explicitly asked for a gap analysis through the real UI.
+
+**Fix:** updated both constants in `chatbot/app.py`. `_WELCOME` now lists
+all 4 specialists (including 🔬 Cluster Interpreter) with an accurate
+"four specialist agents" count, added a "try asking" example for gap
+analysis, and the closing tip now says core questions consult the three
+"core" specialists while gap-analysis questions also bring in Cluster
+Interpreter (matching `orchestrator.py`'s own delegation-rule language —
+Cluster Interpreter is NOT part of the "always consult ALL THREE" rule,
+it's used specifically for gap-analysis asks, so "all four, always" would
+have been equally wrong in the other direction). `_TASK_EXPECTED_OUTPUT`
+now matches `orchestrator.py`'s `run_query()` wording, explicitly
+mentioning the structured-curriculum-list + cluster-gap-analysis
+deliverable. `python3 -m py_compile app.py` passed.
+
+**Agent relationship — answered the user's follow-up the same way:** this
+is a strict hub-and-spoke / one-to-many topology, not a peer-to-peer mesh.
+Confirmed by grep: only the Orchestrator has `allow_delegation=True`
+(`orchestrator.py` line ~214); all 4 specialists (`analyst.py`,
+`university_programs.py`, `news.py`, `cluster_interpreter.py`) are built
+with `allow_delegation=False`, meaning CrewAI never auto-injects the
+"Delegate work to coworker"/"Ask question to coworker" tools onto any of
+them — they cannot delegate to the Orchestrator, to each other, or
+receive delegations from anyone but the Orchestrator. The one place
+specialist output flows into another specialist's input is NOT a direct
+specialist-to-specialist delegation — it's the Orchestrator manually
+relaying it, per the explicit "IMPORTANT COOPERATION PATTERN" in
+`orchestrator.py`'s backstory (University AI Programs Researcher's
+structured output is pasted by the Orchestrator into the `context` field
+when it separately delegates to Cluster Interpreter). Same pattern for
+the uploaded-curriculum feature: the Orchestrator relays the uploaded
+block into University Programs Researcher's delegation context; the two
+never talk directly.
+
 ### Orchestrator (capped Sonnet 4.6, validated 2026-05-26)
 
 - 3.3 min, 17 tool calls, 3/3 sub-agents, 0 errors, ~$1.50–3/query.
 - Real URLs, 5-program peer table, real news citations, honest gap-flagging.
+
+**Specialist-coverage audit of `orchestrator_queries.yaml` (2026-06-25).**
+User asked whether the orchestrator eval (`run_orchestrator_eval.py` +
+`orchestrator_queries.yaml`) actually exercises all 4 specialists. Mapped
+every one of the (then-)12 real query cases to its `must_delegate_to`
+role(s):
+
+| Query id | Specialist(s) tested |
+|---|---|
+| `pure-market-soft-skills` | Skills Taxonomy Analyst |
+| `pure-peer-mit` | University AI Programs Researcher |
+| `pure-news-ai-agents` | AI Industry News Researcher |
+| `data-eng-curriculum-update` | Analyst + Univ Programs + News |
+| `soft-skills-curriculum-update` | Analyst + Univ Programs + News |
+| `mlops-coverage-benchmark` | Analyst + Univ Programs + News |
+| `cloud-infra-curriculum` | Analyst + Univ Programs + News |
+| `broad-improve-curriculum` | Analyst + Univ Programs + News |
+| `off-scope-python-tutorial` | none (tests no fan-out) |
+| `narrow-jax-demand` | Skills Taxonomy Analyst |
+| `curriculum-fetch-mmai` | University AI Programs Researcher |
+| `curriculum-cluster-gap-analysis` | Univ Programs + **Cluster Interpreter** |
+
+**Finding: Cluster Interpreter was drastically under-tested** — only 1 of
+12 cases (`curriculum-cluster-gap-analysis`) exercised it, vs. 6–8 cases
+each for the other three specialists. That one case's assertions were
+also weaker/more generic ("Queen", "cluster", "Missing") than the
+real-data-grounded checks used elsewhere in the file (e.g. "4,278",
+"39,040").
+
+**Fix: added a second Cluster Interpreter case,
+`curriculum-cluster-gap-analysis-rotman`**, using a different local-corpus
+program (UofT Rotman MMA, a business-analytics program) instead of
+re-running Queen's MMAI again, so it's a genuinely distinct gap-analysis
+scenario rather than a duplicate. Verified by reading
+`uoft-rotman-mma.txt` in full: its courses cover ML/predictive analytics,
+data visualization, optimization, LLMs/GenAI, and several
+analytics-vertical electives (finance, marketing, supply chain,
+healthcare) but never mention cloud platforms or data-pipeline/streaming
+infrastructure anywhere — making Clusters 2 (Cloud Databases & Storage)
+and 4 (Data Infrastructure & Streaming) strong real candidates for a
+genuine ❌/⚠️ gap, distinct from whatever gap pattern Queen's MMAI has.
+
+**Incidental finding while grounding the new case's assertions in real
+data (not yet acted on — flagged here for future investigation):** a live
+`cluster_detail(2)` / `cluster_detail(4)` pull from
+`chatbot/tools/cluster_tool.py` showed nearly every skill in Clusters 2
+and 4 has `frequency=0` in `Grouped_Skills_Categorized_Updated.xlsx`
+(only "Oracle" at freq=7 in Cluster 2 is non-zero) — likely a skill-name
+lookup mismatch between `clust_ensembled_results.csv`'s skill strings and
+the frequency XLSX's skill strings (e.g. exact-string-match issues with
+compound names like "Columnar databases (HBase Apache Kudu)"), since it
+seems implausible that real job postings genuinely never mention any
+cloud-storage or streaming-infrastructure skill. **Not fixed here** —
+fixing `_load_frequencies()`'s matching logic was out of scope for this
+eval-coverage task and deserves its own investigation (would need
+re-validating frequency-grounded assertions across this whole file if
+fixed, since several existing checks rely on current — possibly
+partially-broken — frequency numbers).
+Practical consequence for the new test case: rather than anchor on a real
+frequency number for clusters 2/4 (too brittle given the freq=0 issue),
+`curriculum-cluster-gap-analysis-rotman`'s `expected_substrings` anchors
+on `"Data Engineering"` — the literal theme name of Cluster 8, which the
+Cluster Interpreter backstory's required OUTPUT FORMAT ("Cluster
+Coverage Assessment: for each of the 10 clusters...") makes near-certain
+to appear verbatim regardless of which specific skill the model ends up
+recommending — a more robust check than betting on one stochastic skill
+pick, at the cost of being a weaker/more structural assertion than the
+ones this file uses elsewhere.
+
+**Validated:** `python3 -c "import yaml; yaml.safe_load(...)"` confirms
+the file parses, the new id doesn't collide with any existing id (13
+real cases total, all unique), and the `*SHARED_FORBIDDEN` anchor
+resolves correctly on the new entry (same 9 known-failure-mode strings
+as every other case). **Not yet validated by a live run** — this
+sandbox's `run_orchestrator_eval.py --dry-run` failed with
+`ModuleNotFoundError: No module named 'litellm'` (production dependency
+not installed here, same category of sandbox limitation documented
+elsewhere in this file for Ollama-dependent steps) before reaching the
+query-listing code, so the dry-run's own per-case print output was not
+confirmed, only the underlying YAML structure it would read from.
+**Action needed on the user's machine:** run
+`KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py --dry-run`
+to confirm the new case lists correctly, then optionally
+`--only curriculum-cluster-gap-analysis-rotman` for a real (costed) run
+to see whether it actually grades PASS and to refine
+`expected_substrings` per this file's standard "refine after first run"
+workflow.
+
+**Hard timeout added to `run_orchestrator_eval.py` (2026-06-25), after the
+user reported repeatedly killing a stuck run by hand.** User report: a
+qwen3:14b run sat at `[1/13] pure-market-soft-skills — running...` for
+~1 hour with zero further console output, and confirmed this had happened
+"several times before, not just once" when asked.
+
+- **Root cause (confirmed by reading the code, not guessed):** two compounding
+  issues. (1) `run_single_query()` wraps `crew.kickoff()` in
+  `contextlib.redirect_stdout`/`redirect_stderr` into an in-memory `io.StringIO()`
+  buffer, for clean snapshot logging — so `Crew(verbose=True)`'s normal
+  progress output never reaches the console at all during a run. A
+  healthy-but-slow Ollama run and a genuinely hung one are indistinguishable
+  from outside for this reason alone. (2) There was no live timeout —
+  `max_wall_time_sec` (the per-case `budget` field in `orchestrator_queries.yaml`)
+  was only ever checked in `grade_case()` AFTER `crew.kickoff()` had already
+  returned, purely as a post-hoc grading signal. A truly stuck call had no way
+  to be recovered from short of killing the whole Python process, which is
+  exactly what the user had been doing.
+- **Side-note, resolved the same day:** the "model=ollama-qwen3:14b" string in
+  the user's console output is `model_slug()`'s cosmetic filename-slug (used
+  only for naming snapshot files), not `llm.py`'s `describe_llm_config()` —
+  confirmed by reading `chatbot/llm.py` in full that `get_llm()`'s ollama
+  branch still correctly uses the `ollama_chat/` prefix fix documented above.
+  The slug string was never evidence of a routing regression; no action needed
+  there.
+- **Fix, `chatbot/eval/run_orchestrator_eval.py`:** `run_single_query()` now
+  takes a `hard_timeout_sec` parameter (default **2700s / 45 min** — chosen to
+  sit comfortably above the ~35-minute full 3-specialist orchestrator run this
+  file's own Model Comparison table documents for qwen2.5:14b, so a
+  legitimately slow-but-working local CPU run isn't cut off before it would
+  have finished anyway). `crew.kickoff()` now runs inside a
+  `threading.Thread(daemon=True)`; the main thread does
+  `worker.join(timeout=hard_timeout_sec)` and, if the worker is still alive
+  afterward, records a `TimeoutError` string into the existing `error` field —
+  which `grade_case()` already turns into an unconditional hard FAIL via
+  `hard.append(f"runtime error: ...")`, so no grading-logic changes were
+  needed. A new `--hard-timeout-sec` CLI flag (also wired into the one call
+  site in `main()`) lets this default be overridden, e.g. a short value for
+  fast-fail debugging.
+- **Explicit, honest limitation (consistent with this project's documentation
+  norms elsewhere — flag what a fix does NOT do, not just what it does):**
+  Python cannot forcibly kill a thread blocked inside a network/LLM call. On
+  timeout the worker thread is abandoned (`daemon=True` so it won't block
+  process exit) but may keep running/consuming resources in the background
+  until it eventually finishes or errors on its own. This fix unblocks the
+  **eval loop's forward progress** across all 13 queries — it does not
+  actually stop the underlying stuck call. If timeouts recur across multiple
+  queries in the same run, restarting the Ollama server before the next
+  attempt is the cleanest way to clear a possibly-wedged request occupying
+  Ollama's processing slot.
+- **A second, smaller residual risk documented inline (not fixed, just
+  flagged):** `redirect_stdout`/`redirect_stderr` swap the process-wide
+  `sys.stdout`/`sys.stderr`, which is a global, not a thread-local — so an
+  abandoned worker thread's redirect `with` block never exits (it's stuck
+  mid-kickoff), and could in principle still be holding `sys.stdout` pointed
+  at its own query's buffer when the main thread moves on. Added an explicit
+  `sys.stdout = sys.__stdout__` / `sys.stderr = sys.__stderr__` reset on the
+  timeout path so later queries' console output isn't silently swallowed.
+  This does not fully close the race — if the orphaned thread ever does
+  unblock on its own and its `with` block finally exits, it will try to
+  restore `sys.stdout`/`sys.stderr` to whatever they were when it started,
+  which could in theory clobber a *later* query's active redirect if that
+  restoration happens to land mid-run. Low-probability (requires the original
+  hang to resolve itself at exactly the wrong moment) and not fully closeable
+  without redesigning verbose-output capture to avoid swapping process-wide
+  streams across threads at all — out of scope for this fix.
+- **`--hard-timeout-sec 0` to disable entirely (added same day, in response
+  to a user follow-up asking how to temporarily turn the limit off for a
+  deliberate long/slow test run).** `hard_timeout_sec <= 0` (or `None`) is
+  treated as "no hard timeout" — `worker.join(timeout=None)` blocks forever,
+  i.e. exactly the pre-2026-06-25 behavior, and the `is_alive()` check is
+  skipped so a legitimately-slow run can never be mis-flagged as a
+  `TimeoutError`. Intended use: deliberately testing a query you expect to
+  be slow but not hung (e.g. a first qwen run on new/untested hardware,
+  before you have a wall-time baseline to set a sensible finite timeout
+  against) — Ctrl+C remains the manual escape hatch if it turns out to
+  actually be stuck. Verified with a standalone threading simulation
+  (mirrors `run_single_query()`'s worker/join/is_alive structure exactly,
+  no crewai/litellm involved): disabled + slow work → waits it out and
+  returns the real result (not flagged TIMEOUT); normal finite timeout +
+  fast work → completes normally; normal finite timeout + work exceeding it
+  → correctly flagged TIMEOUT. All 4 cases behaved as expected.
+- **Validation status:** `python3 -m py_compile` passed on the edited file;
+  also re-parsed via `ast.parse()` and cross-checked that the function
+  signature, the new `--hard-timeout-sec` argparse block, and the
+  `run_single_query(case, hard_timeout_sec=args.hard_timeout_sec)` call site
+  all agree, in this sandbox (no `litellm` here, so no live `--dry-run` or
+  real kickoff was possible — same sandbox limitation as elsewhere in this
+  file). The disable-path logic itself was verified via the standalone
+  threading simulation above (no CrewAI needed for that part). **The
+  CrewAI-integrated behavior is NOT yet validated against a real hang.**
+  Action needed on the user's machine: rerun the eval (optionally with a
+  short `--hard-timeout-sec`, e.g. `--hard-timeout-sec 120 --only
+  pure-market-soft-skills`, to deliberately trigger and confirm the timeout
+  path quickly) and confirm the run now produces an honest FAIL + moves on to
+  the next query instead of hanging forever.
 
 ### Model Comparison
 
