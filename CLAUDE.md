@@ -633,12 +633,32 @@ qwen3:14b run sat at `[1/13] pure-market-soft-skills — running...` for
   path quickly) and confirm the run now produces an honest FAIL + moves on to
   the next query instead of hanging forever.
 
+### Gemini free-tier API trial (2026-07-06) — reverted same day
+
+Attempted to use the Google Gemini free-tier API as a cost-free alternative to local Ollama (to avoid the `qwen3:14b` grounding / instruction-following issues documented above). Installed `crewai[google-genai]` (required by CrewAI's native Gemini provider), updated `chatbot/.env` to `LLM_PROVIDER=gemini` / `LLM_MODEL=gemini-2.0-flash`, `GEMINI_API_KEY` set. Key and commented-out config preserved in `.env` for future use.
+
+**Outcome: reverted.** The free-tier rate limits are structurally insufficient for this project's multi-agent architecture:
+
+- `gemini-3.5-flash` free tier: **5 RPM** — a single `queens-rag-hit` case (1 agent) consumed the entire per-minute quota; the immediately-following second case failed with 429 at 3.8s.
+- `gemini-2.0-flash` free tier: **15 RPM** — better, but still not enough for a full Orchestrator + specialist run. Each CrewAI multi-agent query makes 10–20+ sequential LLM calls (each agent "thought" = one call); at 2–3s API latency per call, 10–15 calls complete in ~30 seconds, all within the same 60-second rate-limit window. `test_uploaded_curriculum.py` hit 429 mid-first-case even at 15 RPM.
+
+**What partial results were obtained before hitting rate limits:**
+- `test_university_programs.py` `queens-rag-hit` — completed cleanly at 41.8s wall time. **This was the first run that confirmed `direct_function_patch` detection signal works** (tool sequence shown as `University Program RAG -> Web Search` via the primary signal, not the fallback). RAG-first behavior confirmed. INSPECT verdict because Web Search was also called (allowed per backstory; worth a manual check). The extra Web Search is a minor behavioral note, not a failure.
+- `test_university_programs.py` `fallback-clean-miss` — 429 crash (3.8s), invalid result.
+- `test_uploaded_curriculum.py` both cases — 429 crash, all three hard fails are rate-limit artifacts, not real behavioral failures.
+
+**Current `.env` state:** reverted to `LLM_PROVIDER=ollama` / `LLM_MODEL=qwen3:14b`. Gemini config preserved as commented-out block for future use (e.g. paid tier, or single-agent-only tests where 15 RPM suffices).
+
+**To use Gemini again:** comment out the two Ollama lines and uncomment the three Gemini lines in `chatbot/.env`. Note: `crewai[google-genai]` is now installed in the `mitacs-ai` conda environment.
+
 ### Model Comparison
 
 | Model | Multi-agent | Grounding | Cost | Wall time |
 |---|---|---|---|---|
 | Sonnet 4.6 (capped) | ✅ 3/3 | ✅ real URLs + freqs | ~$1.50–3 | ~3 min |
 | qwen2.5:14b (Ollama) | ✅ 3/3 | ⚠️ fabricates some URLs | $0 | ~35 min |
+| qwen3:14b (Ollama) | ✅ tool order correct | ⚠️ drops content on broad queries | $0 | ~40 min |
+| Gemini 2.0 Flash (free) | ❌ rate-limited | n/a | $0 | n/a |
 | llama3.1:8b (Ollama) | ❌ fails | ❌ hallucinated tooling | $0 | — |
 
 ### Security
