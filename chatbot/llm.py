@@ -29,15 +29,31 @@ Default is Claude Sonnet 4.6 (anthropic/claude-sonnet-4-6) — see the
 
 import os
 
-# ── Disable CrewAI telemetry before importing crewai ─────────────────────────
-# CrewAI phones home to telemetry.crewai.com on every crew run. When there is
-# no internet access (sandbox, CI, local Ollama-only dev) this produces noisy
-# timeout errors and slows down startup. Setting these two vars disables both
-# the OpenTelemetry exporter and the CrewAI-specific telemetry opt-in.
-# Must be set BEFORE `from crewai import ...` — once the module is loaded the
-# telemetry client is already initialised.
+# ── Telemetry configuration (must happen before any crewai/litellm import) ───
+#
+# Two separate concerns:
+#   1. CREWAI_TELEMETRY_OPT_OUT — application-level: tells CrewAI's own
+#      telemetry client not to collect or send data to telemetry.crewai.com.
+#      Always kept true regardless of whether Phoenix OTel is active.
+#
+#   2. OTEL_SDK_DISABLED — transport-level kill-switch for the entire OTel SDK.
+#      Only set to "true" when Phoenix OTel is NOT active (the default).
+#      When OTEL_PHOENIX_ENABLED=true, the OTel SDK must be left live so that
+#      phoenix.otel.register() and the CrewAI/litellm instrumentors can attach
+#      to it. In that mode, CREWAI_TELEMETRY_OPT_OUT alone is enough to stop
+#      data from reaching telemetry.crewai.com.
+#
+# Note: these must be set BEFORE `from crewai import ...` and `import litellm`
+# because both modules read these env vars at import time.
 os.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
-os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
+_phoenix_enabled = os.getenv("OTEL_PHOENIX_ENABLED", "false").lower() == "true"
+if not _phoenix_enabled:
+    os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+else:
+    # Remove OTEL_SDK_DISABLED (which may have been set in .env) so the OTel
+    # SDK actually initialises when litellm/crewai are imported below.
+    os.environ.pop("OTEL_SDK_DISABLED", None)
 
 # ── LangSmith tracing ─────────────────────────────────────────────────────────
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -67,6 +83,42 @@ litellm.success_callback = ["langsmith"]
 litellm.failure_callback = ["langsmith"]
 
 from crewai import LLM
+
+# ── Phoenix OTel instrumentation (optional, activated by OTEL_PHOENIX_ENABLED) ─
+# Runs once at module-import time. All subsequent get_llm() calls in the same
+# process are automatically instrumented — no per-call setup needed.
+# View traces at http://localhost:6006 after starting Phoenix with:
+#   python -m phoenix.server.main serve
+if _phoenix_enabled:
+    try:
+        from phoenix.otel import register as _phoenix_register
+        from openinference.instrumentation.crewai import CrewAIInstrumentor as _CrewAIInst
+        from openinference.instrumentation.litellm import LiteLLMInstrumentor as _LiteLLMInst
+
+        _phoenix_endpoint = os.getenv("PHOENIX_ENDPOINT", "http://localhost:6006/v1/traces")
+        _phoenix_project = os.getenv("LANGCHAIN_PROJECT", "mitacs-research")
+
+        _tracer_provider = _phoenix_register(
+            project_name=_phoenix_project,
+            endpoint=_phoenix_endpoint,
+        )
+        _CrewAIInst().instrument(tracer_provider=_tracer_provider)
+        _LiteLLMInst().instrument(tracer_provider=_tracer_provider)
+
+        print(
+            f"✅ Phoenix OTel active  →  http://localhost:6006  "
+            f"(project: {_phoenix_project})\n"
+            "   Phoenix not running? Start it: python -m phoenix.server.main serve"
+        )
+    except ImportError as e:
+        print(
+            f"⚠️  OTEL_PHOENIX_ENABLED=true but a required package is missing:\n"
+            f"   {e}\n"
+            "   Fix: pip install arize-phoenix openinference-instrumentation-crewai "
+            "openinference-instrumentation-litellm --break-system-packages"
+        )
+    except Exception as e:
+        print(f"⚠️  Phoenix OTel setup failed ({e}) — continuing without instrumentation.")
 
 
 _DEFAULT_MODELS = {

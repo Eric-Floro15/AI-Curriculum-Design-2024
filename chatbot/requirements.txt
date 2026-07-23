@@ -43,3 +43,10 @@ python-docx>=1.1.0
 python-dotenv>=1.0.0
 langsmith>=0.1.0           # @traceable for tool-level tracing in LangSmith
 litellm>=1.40.0            # direct dep: LiteLLM → LangSmith callback in llm.py
+
+# OpenTelemetry / Phoenix instrumentation (token-level visibility per agent)
+# Activated by OTEL_PHOENIX_ENABLED=true in .env.
+# Start the UI separately: python -m phoenix.server.main serve → http://localhost:6006
+arize-phoenix>=4.0.0
+openinference-instrumentation-crewai>=0.1.0
+openinference-instrumentation-litellm>=0.1.0

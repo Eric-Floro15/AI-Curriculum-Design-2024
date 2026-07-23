@@ -33,10 +33,15 @@
 #                            all the 2026-05-26 test runs.
 #
 # Budget per query:
-#   - max_tool_calls         total tool dispatches across the crew.
-#                            Calibrated to the agent max_iter caps:
-#                            Orchestrator 8 + Analyst 10 + Univ 6 + News 6
-#                            ≈ 30 worst case. Failing budget = early kill.
+#   - max_tool_calls         total step_callback invocations across the crew.
+#                            NOTE: step_callback fires on ALL CrewAI steps
+#                            (reasoning, tool calls, responses) — not only
+#                            external tool dispatches. Recalibrated 2026-07-14
+#                            after first live Sonnet 4.6 run showed 63 steps /
+#                            666s for a 3-specialist query (vs. old estimate of
+#                            ≈30 based on max_iter caps alone). New baselines:
+#                            ~70 steps / ~900s per single-specialist query;
+#                            ~90 steps / ~1200s per 3-specialist query.
 #   - max_wall_time_sec      hard cap on a single query's runtime.
 
 # ── Shared baseline forbidden substrings (referenced by anchors below) ──
@@ -79,8 +84,8 @@
     - "soft"
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 15
-    max_wall_time_sec: 300
+    max_tool_calls: 70    # recalibrated 2026-07-14: observed 63 steps on a 3-specialist run
+    max_wall_time_sec: 900  # observed 667s; +33% headroom
 
 - id: pure-peer-mit
   query: "What does MIT's AI / data science Master's program offer? Cite specific URLs for the program page."
@@ -92,8 +97,8 @@
     - "mit.edu"
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 12
-    max_wall_time_sec: 300
+    max_tool_calls: 70    # recalibrated 2026-07-14 (single-specialist, Sonnet 4.6 baseline)
+    max_wall_time_sec: 900
 
 - id: pure-news-ai-agents
   query: "What are the most important recent developments in AI agents according to the indexed news?"
@@ -114,8 +119,8 @@
     - "Quantum AI Quarterly"
     - "RadiologyAI Quarterly"
   budget:
-    max_tool_calls: 12
-    max_wall_time_sec: 300
+    max_tool_calls: 70    # recalibrated 2026-07-14 (single-specialist, Sonnet 4.6 baseline)
+    max_wall_time_sec: 900
 
 # ── UPDATE / DESIGN QUERIES (all three specialists required) ────────────
 
@@ -147,8 +152,8 @@
     #          qwen uses "Recommendations" / "Conclusion" / "Caveats" instead
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 30
-    max_wall_time_sec: 600
+    max_tool_calls: 90    # recalibrated 2026-07-14: 3-specialist run, ~1.4× observed 63-step baseline
+    max_wall_time_sec: 1200
 
 - id: soft-skills-curriculum-update
   query: |
@@ -170,8 +175,8 @@
     # the model uses "Considerations" or "Caveats" on a future run.
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 30
-    max_wall_time_sec: 600
+    max_tool_calls: 90    # recalibrated 2026-07-14: 3-specialist
+    max_wall_time_sec: 1200
 
 - id: mlops-coverage-benchmark
   query: |
@@ -190,8 +195,8 @@
     # which passes, but removing avoids fragility on future runs.
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 30
-    max_wall_time_sec: 600
+    max_tool_calls: 90    # recalibrated 2026-07-14: 3-specialist
+    max_wall_time_sec: 1200
 
 - id: cloud-infra-curriculum
   query: |
@@ -212,8 +217,8 @@
     # Removed: "Trade-off" — style heading, same reasoning as other queries.
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 30
-    max_wall_time_sec: 600
+    max_tool_calls: 90    # recalibrated 2026-07-14: 3-specialist
+    max_wall_time_sec: 1200
 
 - id: broad-improve-curriculum
   query: "I want to improve my AI/ML Master's curriculum. What should I focus on?"
@@ -236,8 +241,8 @@
     # Removed: "Executive Summary", "Trade-off" — style headings, not content
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 30
-    max_wall_time_sec: 600
+    max_tool_calls: 90    # recalibrated 2026-07-14: 3-specialist
+    max_wall_time_sec: 1200
 
 # ── EDGE / ADVERSARIAL QUERIES ──────────────────────────────────────────
 
@@ -288,8 +293,8 @@
     # Refine after first run.
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 15
-    max_wall_time_sec: 300
+    max_tool_calls: 70    # recalibrated 2026-07-14 (single-specialist, Sonnet 4.6 baseline)
+    max_wall_time_sec: 900
 
 # ── CURRICULUM + CLUSTER QUERIES (new agents) ───────────────────────────────
 
@@ -315,8 +320,8 @@
     - "MMOAI"
     - '"name": "delegate_work_to_coworker"'
   budget:
-    max_tool_calls: 10
-    max_wall_time_sec: 300
+    max_tool_calls: 70    # recalibrated 2026-07-14 (single-specialist, Sonnet 4.6 baseline)
+    max_wall_time_sec: 900
 
 - id: curriculum-cluster-gap-analysis
   query: |
@@ -346,8 +351,8 @@
     - '"name": "delegate_work_to_coworker"'
     - '"name": "ask_question_to_coworker"'
   budget:
-    max_tool_calls: 25   # Univ Programs: 2 web searches; Cluster: 1 overview + 4 details
-    max_wall_time_sec: 600
+    max_tool_calls: 80    # recalibrated 2026-07-14: 2-specialist (Univ + Cluster)
+    max_wall_time_sec: 1200
 
 - id: curriculum-cluster-gap-analysis-rotman
   query: |
@@ -406,5 +411,5 @@
     - "Data Engineering"
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
-    max_tool_calls: 25   # Univ Programs: 2 web searches; Cluster: 1 overview + 4 details
-    max_wall_time_sec: 600
+    max_tool_calls: 80    # recalibrated 2026-07-14: 2-specialist (Univ + Cluster)
+    max_wall_time_sec: 1200
