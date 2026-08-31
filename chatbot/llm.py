@@ -23,7 +23,7 @@ on the process that runs `ollama serve` (or via `launchctl setenv` on
 macOS if Ollama runs as the menu-bar app) — see the comment in get_llm()'s
 ollama branch and CLAUDE.md, "Ollama Context Window", for the full history.
 
-Default is Claude Sonnet 4.6 (anthropic/claude-sonnet-4-6) — see the
+Default is Claude Sonnet 5 (anthropic/claude-sonnet-5) — see the
 "LLM Choice" section in CLAUDE.md for rationale.
 """
 
@@ -122,7 +122,7 @@ if _phoenix_enabled:
 
 
 _DEFAULT_MODELS = {
-    "anthropic": "claude-sonnet-4-6",
+    "anthropic": "claude-sonnet-5",
     "openai": "gpt-4o",
     "gemini": "gemini-1.5-pro",
     "ollama": "llama3.1:8b",

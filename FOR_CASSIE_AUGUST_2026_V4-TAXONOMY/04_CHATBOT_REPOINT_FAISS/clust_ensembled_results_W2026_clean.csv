@@ -1,0 +1,963 @@
+Cluster,Skill
+1,Machine Learning
+1,Ai Frameworks
+1,Ai Model Development
+1,Model Deployment
+1,LLMOps
+1,PEFT
+1,YOLO
+1,Knowledge Representation
+1,spaCy
+1,NLTK
+1,MapReduce
+1,Multi-Armed Bandit
+1,SLAM
+1,Lidar
+1,Apple Silicon
+1,Core ML
+1,Ai/Ml Solutions
+1,Algorithm Development
+1,TensorRT
+1,Survival Analysis
+1,Autonomous Vehicles
+1,Small Language Models
+1,Image Processing
+1,LLM-as-a-Judge
+1,Few-Shot Learning
+1,Knowledge Distillation
+1,Representation Learning
+1,AIOps
+1,cuDNN
+1,Digital Twins
+1,Google Bigtable
+1,Named Entity Recognition
+1,Natural Language Generation
+1,Artificial General Intelligence (Agi)
+1,Model Versioning
+1,Probabilistic Graphical Models
+1,GraphRAG
+1,NLP Preprocessing
+1,TF-IDF
+1,Visual Question Answering
+1,Gaussian Splatting
+1,Neo4j
+1,H2O.ai
+1,Optical Character Recognition
+1,Econometrics
+1,Counterfactual Analysis
+1,Conda
+1,Medical Imaging
+1,Aws Solutions
+1,Bayesian Methods
+1,Transformer Architecture
+1,RLHF
+1,Model Quantization
+1,DSPy
+1,Weak Supervision
+1,Apache Beam
+1,Vector Search
+1,LlamaIndex
+1,Semantic Search
+1,XGBoost
+1,Gradient Boosting
+1,Decision Tree
+1,Logistic Regression
+1,K-Nearest Neighbors
+1,Naive Bayes
+1,Classification (ML)
+1,Anthropic
+1,Cohere
+1,Ray
+1,Knowledge Graphs
+1,ControlNet
+1,IP-Adapter
+1,FAISS
+1,Qdrant
+1,SHAP
+1,Diffusion Models
+1,Stable Diffusion
+1,Vision Language Models
+1,Weights & Biases
+1,Feature Stores
+1,ML Embeddings
+1,Milvus
+1,NumPy
+1,Causal Inference
+1,BERT
+1,Llama
+1,Mistral
+1,Gemini
+1,LangGraph
+1,CrewAI
+1,AutoGen
+1,Transformer Models
+1,Transformers
+1,Unsupervised Learning
+1,Tensorflow
+1,Supervised Fine-Tuning
+1,Clinical Trial Design And Execution
+1,Cnn
+1,Solution Deployment
+1,Spark Mllib
+1,Speech Recognition
+1,Scientific Thinking
+1,Scikit-Learn
+1,Scipy
+1,Rnn
+1,Sagemaker
+1,Research And Development
+1,Research Publication
+1,Recommendation Systems
+1,Reinforcement Learning
+1,Publication Record
+1,Pytorch
+1,Computational Biology
+1,Computer Vision
+1,Patents And Publications
+1,Personalization
+1,Open Source Frameworks
+1,Opensearch
+1,Operating Laboratory Equipment
+1,Multimodal Systems
+1,Mxnet
+1,Natural Language Processing
+1,Natural Language Understanding
+1,Neural Networks
+1,Nlp Techniques
+1,Object Storage
+1,Ml Pipelines
+1,Ml Solutions Deployment
+1,Mlflow
+1,Mlops
+1,Model Architecture Design
+1,Model Evaluation
+1,Model Training
+1,Multimodal Learning
+1,Contextual Reasoning
+1,Machine Translation
+1,Maintenance Of Laboratory Equipment
+1,Metrics Development
+1,Ml Frameworks
+1,Langchain
+1,Llm Architectures
+1,Lstm
+1,Jax
+1,Kubeflow
+1,Cuda
+1,Inference Engines
+1,Information Retrieval
+1,Interdisciplinary Teamwork
+1,Hugging Face
+1,Gpu
+1,Grant Proposal Preparation
+1,High-Performance Computing
+1,Apache Flink
+1,Foundation Models
+1,Gans
+1,Generative Ai
+1,Genai Technologies
+1,Ethical Ai Practices
+1,Distributed Training
+1,Deep Learning
+1,Data Preprocessing
+1,Data Curation
+1,Agentic Frameworks
+1,Model Monitoring
+1,Model Serving
+1,Algorithmic Fairness
+1,Model Interpretability
+1,vLLM
+1,ONNX
+1,OpenCV
+1,Neural Network Architectures
+1,AWS Trainium
+1,Imitation Learning
+1,Video Processing
+2,Azure Cosmos DB
+2,Matplotlib
+2,Parallel And Distributed Computing
+2,Penetration Testing
+2,Perl
+2,Phd Or Master'S Degree
+2,Object-Oriented Design
+2,Objective-C
+2,Observability
+2,Open Source Contributions
+2,Open Source software
+2,Operating Systems
+2,Multithreading
+2,Nemo
+2,Network Security
+2,Networking
+2,Prometheus
+2,Datadog
+2,Flask
+2,Github
+2,Git
+2,OpenAI
+2,Active Directory
+2,Adherence To Laws And Policies
+2,Agentic Ai
+2,Claude (Anthropic)
+2,Ai Engineering
+2,Ai And Automation
+2,Ai Agent Systems Architecture
+2,Artificial Intelligence
+2,Agile Methodologies
+2,FastAPI
+2,Simulation
+2,OAuth2
+2,Azure AI
+2,Copilot Studio
+2,Customer Obsession
+2,Cybersecurity
+2,Xml
+2,Vertex AI
+2,AWS Bedrock
+2,GPT-4
+2,Pinecone
+2,Weaviate
+2,ChromaDB
+2,Vector Databases
+2,Virtualization
+2,Vulnerability Management
+2,Designing And Architecting
+2,Devops
+2,Devsecops
+2,Digital Accessibility
+2,Disaster Recovery
+2,Web Content Accessibility Guidelines (Wcag) Aa Standards
+2,Web Development
+2,Web Services
+2,Workflow Automation
+2,Top Secret Clearance
+2,Typescript
+2,Ui Design
+2,Unix
+2,Us Citizenship
+2,User Experience Design
+2,Ux Design
+2,technical Roadmaps
+2,technical Solutions
+2,technical Strategy
+2,technical Support
+2,technical Training
+2,Telemetry
+2,Test-Driven Development (Tdd)
+2,Testing Frameworks
+2,Threat Intelligence
+2,Threat Modeling
+2,Team Building
+2,Embedded Systems
+2,Emerging Technologies
+2,Debugging
+2,Design And Architecture
+2,Design Patterns
+2,System Administration
+2,Angular
+2,Api Development
+2,Api Integration
+2,Azure AI Services
+2,Encryption
+2,Engineering Best Practices
+2,Engineering Or Computer Science
+2,Enterprise Architecture
+2,Distributed Systems
+2,Dynamodb
+2,Edge Computing
+2,Eks
+2,Elasticsearch
+2,Electrical Engineering
+2,Electrical Systems
+2,Systems Development
+2,Systems Engineering
+2,Aws Professional Level Certifications
+2,Azure Devops
+2,Backend Development
+2,Ai/Ml
+2,technical Architecture
+2,technical Communication
+2,technical Design
+2,technical Excellence
+2,technical Expertise
+2,technical Guidance
+2,technical Leadership
+2,technical Presentations
+2,Streaming Technologies
+2,Swift
+2,Firmware Development
+2,Full-Stack Development
+2,Github Actions
+2,Gitlab
+2,Event-Driven Architectures
+2,Bash
+2,Benchmarking
+2,Bias For Action
+2,Cloud Automation Scripting
+2,Cloud Certifications
+2,Cloud Migration
+2,Cloud Security
+2,Cloudformation
+2,Code Quality
+2,System Integration
+2,Systems Design
+2,Identity Management
+2,Incident Management
+2,Golang
+2,GPU Computing
+2,Graphql
+2,Growth Mindset
+2,Grpc
+2,Code Reviews
+2,software Design
+2,software Engineering Principles
+2,software Solutions Implementation
+2,software Testing
+2,Solution Architecture
+2,Version Control Systems
+2,Hardware Engineering
+2,Hipaa
+2,Html
+2,Splunk
+2,Spring
+2,Spring Boot
+2,Security And Compliance Standards
+2,Security Certifications
+2,Security Clearance
+2,Security Engineering
+2,Security Frameworks
+2,Security Services Best Practices
+2,Security Tooling
+2,Server Systems
+2,Serverless
+2,Hybrid Cloud Integrations
+2,Iam
+2,Iat Level Ii Certification
+2,Shell Scripting
+2,software Architecture
+2,Sap S/Hana
+2,MySQL
+2,Signal Processing
+2,IoT
+2,Speech Analytics
+2,AWS Lambda
+2,Conversational Ai
+2,Css
+2,Information Security
+2,Infrastructure Architecture
+2,Infrastructure As Code (Iac)
+2,Infrastructure Management
+2,Infrastructure Security
+2,Infrastructure-As-Code
+2,Linux
+2,Java
+2,Javascript
+2,Kibana
+2,Knowledge Sharing
+2,Kotlin
+2,Robotic Process Automation
+2,Sensor Fusion
+2,Scalability
+2,Scalable Solutions
+2,Scalable Systems
+2,Scrum
+2,Sdlc
+2,Restful Apis
+2,Retrieval-Augmented Generation (Rag)
+2,Service-Oriented Architecture
+2,Rds
+2,React
+2,Real-Time Systems
+2,Mentorship And Career Growth
+2,Microservices
+2,Large Language Models
+2,software Development
+2,Large-Scale System Design
+2,Licensed Professional Engineer
+2,Robotics
+2,Root Cause Analysis
+2,Ruby On Rails
+2,Rust
+2,Safety Compliance
+2,Reliability And Scaling
+2,Remote Work
+2,GitHub Copilot
+2,OpenShift
+2,OCI
+2,Container Orchestration
+2,Containerization
+2,Containers
+2,Continuous Integration
+2,Continuous Learning
+2,Prompt Engineering
+2,Proof-Of-Concept Development
+2,Coding Standards
+2,Collaboration Skills
+2,Commissioning
+2,Responsible Ai
+2,Rest
+2,Quantum Computing
+2,Troubleshooting
+2,Multi-Agent Systems
+2,ELK Stack
+2,Streamlit
+2,Computer Architecture
+2,Computer Science Fundamentals
+2,Concurrency
+2,Configuration Management
+2,Application Development
+2,Application Security
+2,Architecting Solutions
+2,Authentication
+2,Autocad Civil 3D
+2,Automated Testing
+2,Security Assessments
+2,Google Model Garden
+2,Next.Js
+2,Node.Js
+2,Nosql
+2,Mobile
+2,Automating Security Operations
+2,Automation And Scripting
+2,Automation Frameworks
+2,Predictive Maintenance
+2,Professional Engineer (Pe) License
+2,Programming Languages
+2,Php
+2,Pl/Sql
+2,Postgresql
+2,Modern Frameworks
+2,Modern Web Technologies
+2,Mongodb
+2,Biostatistics
+2,C++
+2,Cad software
+2,Cdn
+2,Ci/Cd
+2,Ci/Cd Pipelines
+2,Cissp
+2,Civil Engineering Concepts
+2,Data Center Operations
+2,Jenkins
+2,C#
+2,Decision Automation
+2,Bitbucket
+2,Build Processes
+2,Helm
+2,Grafana
+2,Orchestration Tools
+2,Process Automation
+2,Powershell
+2,Ai Integration
+2,Prompt Orchestration
+2,Ai-Powered Solutions
+2,Ai Tools
+2,Ai Technologies
+2,Ai Solutions Development
+2,.Net
+3,Electronic Health Records
+3,Data Engineering
+3,Data Exploration
+3,Data Platforms
+3,Data Preparation
+3,Data Privacy
+3,Data Processing
+3,Data Quality
+3,Data Querying Languages
+3,Data Strategy
+3,Bigquery
+3,Database Technologies
+3,Databricks
+3,Dataops
+3,Metabase
+3,Redash
+3,ThoughtSpot
+3,Plotly
+3,Performance Tuning
+3,Multivariate Analysis
+3,Unstructured Data
+3,ArcGIS
+3,Gurobi
+3,GCP Cloud Functions
+3,Cloud Data Fusion
+3,LookML
+3,Polars
+3,Snowflake
+3,Operations Automation
+3,Operations Research
+3,Aws
+3,Secoda
+3,Pipeline Management
+3,Optimization
+3,Dataiku
+3,Medallion Architecture
+3,Sigma Computing
+3,Slowly Changing Dimensions
+3,Data Architecture
+3,Data Cleansing
+3,Data Structures
+3,Data Transformation
+3,Terraform
+3,Emr
+3,Dimensional Modeling
+3,Data Contracts
+3,Comptia Security+
+3,Modern Data Stack
+3,Generalized Linear Model
+3,Great Expectations
+3,Palantir Foundry
+3,Pyspark
+3,Python
+3,Etl
+3,Etl Pipelines
+3,Etl Processes
+3,Docker
+3,Warehousing
+3,DataRobot
+3,Talend
+3,Apache Hudi
+3,Debezium
+3,Prescriptive Analytics
+3,Quicksight
+3,Rdbms
+3,Real-Time Data Streaming
+3,Redshift
+3,Regex
+3,Relational Databases
+3,Metadata Management
+3,Experimentation
+3,Feature Engineering
+3,Airflow
+3,AWS Aurora
+3,Firehose
+3,Semantic Modeling
+3,Delta Lake
+3,Fivetran
+3,Dataform
+3,Unity Catalog
+3,Microsoft Fabric
+3,Cloud Computing
+3,Cloud Data Warehouses
+3,Aws Glue
+3,Aws Step Functions
+3,Aws Technologies
+3,Azure
+3,Azure Data Factory
+3,Experimental Design
+3,Gcp
+3,Gdpr
+3,Data Warehouse Architecture
+3,Data Warehouses/Sql
+3,Data Warehousing
+3,Database Design
+3,Pandas
+3,S3
+3,Redis
+3,AWS Athena
+3,Data Lineage
+3,Kafka
+3,Kinesis
+3,Kubernetes
+3,Iam Roles And Permissions
+3,Graph Databases
+3,Sql Databases
+3,Sql Server
+3,Ssis
+3,Storage Systems
+3,Hadoop
+3,Healthcare Knowledge
+3,Teradata
+3,Azure Data Lake
+3,Matillion
+3,Data Mesh
+3,Schema Design
+3,Scala
+3,FHIR
+3,Apache Impala
+3,Apache Iceberg
+3,Parquet
+3,Row-Level Security
+3,SSAS
+3,Web Scraping
+3,ELT
+3,Cloud Composer
+3,Dataflow
+3,Pub/Sub
+3,Data Marts
+3,Informatica
+3,Apache Hive
+3,Spotfire
+3,Sql
+3,Data Security
+3,R Shiny
+3,Azure Synapse Analytics
+3,Datastage
+3,Apache NiFi
+3,A/B Testing
+3,GCP Dataproc
+3,Dagster
+3,Jupyter Notebook
+3,Random Forest
+3,Linear Regression
+3,Support Vector Machine
+3,Clustering (ML)
+3,Big Data Technologies
+3,Data Governance
+3,Data Infrastructure
+3,Data Ingestion
+3,Data Integration
+3,Data Lakes
+3,Logical Data Model
+3,Physical Data Model
+3,Data Modeling
+3,Data Pipelines
+3,Dbt
+3,Advanced Incident Response
+3,Data Science
+4,Data Migration
+4,Data Management
+4,Data Integrity
+4,Interpersonal Skills
+4,Sap
+4,Problem-Solving
+4,Critical Thinking
+4,Innovative Solutions
+4,SSRS
+4,Kpi Development
+4,Jira
+4,Self-Motivated
+4,Independent Work
+4,Self-Starter
+4,Healthcare Experience
+4,Industry Knowledge
+4,Looker
+4,Issue Resolution
+4,MicroStrategy
+4,Learning Agility
+4,Supervisory Skills
+4,Business To technical Requirements Translation
+4,Business Process Analysis
+4,Tableau
+4,Excellent Communication
+4,Financial Services
+4,T-Sql
+4,Data Validation
+4,Business Savvy
+4,Data-Driven Insights
+4,Business Requirements
+4,Microsoft Power Platform
+4,DAX
+4,technical Writing
+4,technical Specifications
+4,Verbal And Written Communication
+4,Oracle
+4,Professional Development
+4,Power Bi
+4,Confluence
+4,Dashboard Development
+4,Ability To Work Independently
+4,Payroll Experience
+4,Performance Metrics
+4,Operational Support
+4,Qlik
+4,Detail-Oriented
+4,Attention To Detail
+4,Erp Systems
+4,Quality Assurance
+4,Quality Control
+4,Engineering Degree
+4,Process Improvement
+4,Communication Skills
+4,Regulatory Requirements
+4,Collaboration With Stakeholders
+4,Regulatory Standards Compliance
+4,Collaborative Work
+4,Migration Strategies
+4,Analytical Problem Solving
+4,Analytical Skills
+4,Analytical Thinking
+4,Team Player
+4,technical Proficiency
+4,Agile Environments
+4,KNIME
+4,Alteryx
+4,Workday
+4,Work-Life Balance
+4,Operational Efficiency
+4,Decision Making
+5,Report Preparation
+5,Business Analysis
+5,Budget Management
+5,Report Writing
+5,Business Process Mapping/Reengineering
+5,Systems Analysis
+5,Backup And Recovery
+5,Power Query
+5,Supplier Management
+5,Tcp/Ip
+5,Requirement Analysis
+5,Functional Specifications
+5,Sharepoint
+5,Administrative Support
+5,Data Mapping
+5,Organizational Skills
+5,Interpersonal Communication
+5,Independent Research
+5,Servicenow
+5,Requirements Management
+5,Gap Analysis
+5,Inventory Management
+5,Stress Management
+5,Safety Procedures
+5,Laboratory Experience
+5,Computer Skills
+5,Process Documentation
+5,Financial Reporting
+5,Subject Matter Expertise
+5,Lean Six Sigma
+5,Laboratory Procedures
+5,Vmware
+5,Contract Management
+5,Financial Management
+5,Microsoft Office
+5,Microsoft Word
+5,Financial Planning Model Design
+5,Microsoft Outlook
+5,Vue
+5,Writing Skills
+5,Equipment Maintenance
+5,Policy Development
+5,Work Ethic
+5,Project Coordination
+5,Drafting
+5,Vba
+5,Construction Management
+5,Documentation Skills
+5,Test Plans Creation
+5,Process Design
+5,Powerpoint
+5,Time Management
+5,Cognos
+5,Data Entry
+6,Cross-Functional Collaboration
+6,Data-Driven Analysis
+7,Data Collection
+7,Data Storytelling
+7,Excel
+7,Advanced Analytics
+7,Accounting
+7,SPSS
+7,Data Mining
+7,Statistical Sampling
+7,Descriptive Statistics
+7,Pattern Recognition
+7,Data Interpretation
+7,Visualization Tools
+7,Data Analysis
+7,Health Informatics
+7,Economics
+7,Data Annotation
+7,Algorithms
+7,Chemistry
+7,Text Mining
+7,Forecasting
+7,Anomaly Detection
+7,Analytics Tools
+7,Analytical Tools
+7,Analytical Modeling
+7,Clinical Laboratory Testing
+7,Financial Modeling
+7,Financial Analysis
+7,Finance
+7,Data Visualization
+7,Data-Driven Decision Making
+7,Data Trend Analysis
+7,Bi Tools
+7,Business Intelligence
+7,Flow Cytometry
+7,Statistics
+7,Statistical/Mathematical software
+7,Statistical Modeling
+7,Statistical Methodologies
+7,Statistical Analysis
+7,Immunology
+7,Cost Analysis
+7,Variance Analysis
+7,Geospatial Analysis
+7,R
+7,Linear Mixed-Effects Model
+7,Sas
+7,Scripting Languages
+7,Reporting Tools
+7,Research And Analysis
+7,Bioinformatics
+7,Quantitative Finance
+7,Reporting And Analytics
+7,Report Generation
+7,Risk Analysis
+7,Matlab
+7,Quantitative Analysis
+7,Model Development
+7,Qualitative Research
+7,Mathematics
+7,Survey Methodology
+7,Physics
+7,People Analytics
+7,Data Manipulation
+7,Data Analytics
+7,Data Reporting
+7,Data Extraction And Processing
+7,Predictive Modeling
+7,Predictive Analytics
+7,Stata
+8,Training And Development
+8,Community Engagement
+9,Ab Experiments
+9,NVIDIA NIM
+9,Data Drift Monitoring
+9,Segment Anything Model (SAM)
+9,Arize AI
+9,Word2Vec
+9,Partner/Channel Marketing
+9,Nlp/Nlu Ivr Chat Solutions
+9,Fraud Detection
+9,Genai/Ml Applications
+9,Genai/Ml Solutions
+9,Apache Pig
+10,HubSpot
+10,SAP S/4HANA
+10,Account Management
+10,Agile Development Practices
+10,Capacity Planning
+10,Career Development
+10,Change Management
+10,Client Communication
+10,Vendor Management
+10,Willingness To Travel
+10,User Research
+10,Valid Driver'S License
+10,Thought Leadership
+10,Team Development
+10,Team Management
+10,Business Acumen
+10,Business Judgment
+10,Business Development
+10,Business Case Development
+10,Agile Delivery
+10,B2B Marketing
+10,Client Engagement
+10,Content Creation
+10,Client Relationship Management
+10,Stakeholder Management
+10,Storytelling
+10,Strategic Leadership
+10,Coaching
+10,Strategic Planning
+10,Strategic Thinking
+10,Strategy Development
+10,Strategic Vision
+10,Solution Design
+10,Specimen Collection
+10,Salesforce
+10,Amplitude
+10,Scalable Tools
+10,Revenue Growth
+10,Risk Mitigation
+10,Roadmap Strategy Definition
+10,Saas
+10,Sales
+10,Relationship Building
+10,Resource Management
+10,Regulatory Knowledge
+10,Project Delivery
+10,Project Leadership
+10,technical Customer-Facing Engagements
+10,technical Depth
+10,technical Problem Solving
+10,Supply Chain Management
+10,Project Management
+10,"Architecting Complex, Scalable, Secure Solutions"
+10,Risk Management
+10,Public Speaking
+10,Proposal Development
+10,Project Lifecycle Management
+10,Product Launch
+10,Aws Application Migration Service
+10,Product Delivery
+10,Product Roadmap Development
+10,Product Strategy
+10,Professional And technical Standards
+10,Program Management
+10,Presentation Skills
+10,Product Lifecycle Management
+10,Product Design
+10,Product Development
+10,Segmentation
+10,Prioritization
+10,Partnership Development
+10,Application Architecture/Design/Modernization Projects
+10,Performance Management
+10,Performance Tracking
+10,Operational Excellence
+10,Payment Processing
+10,Opportunity Identification
+10,Negotiation Skills
+10,Conflict Resolution
+10,Consensus Building
+10,Consultative Expertise
+10,Pricing Strategy
+10,Product Management
+10,Product Marketing
+10,Content Development
+10,Consumer Insights
+10,Consulting
+10,Continuous Improvement
+10,Leadership Skills
+10,Lean
+10,Market Research
+10,Manufacturing Processes
+10,Kpis
+10,Creative Thinking
+10,Crm
+10,Crm Tools
+10,Cross-Functional Team Leadership
+10,Customer Advocacy
+10,Logistics
+10,Marketing Strategy
+10,Customer Engagement
+10,Customer Collaboration
+10,Customer Focus
+10,Customer Interaction
+10,Influencing Skills
+10,Human-Centered Design
+10,Industry Standards
+10,Industry Trends
+10,Implementing Security Policies In Code
+10,Human-Robotic Interaction
+10,Google Ads
+10,Go-To-Market Strategies
+10,Executive Communication
+10,Feature Delivery Trade-Offs
+10,Ambiguity Management
+10,Adobe Analytics
+10,Engineering Collaboration
+10,Enterprise Cloud Transformation Initiatives
+10,Entrepreneurial Mindset
+10,Enterprise Security Solutions
+10,E-Commerce
+10,Demand Planning
+10,Developing Strategic Insights
+10,Entrepreneurial Spirit
+10,Digital Transformation
+10,Google Tag Manager
+10,Shopify
+10,Customer Needs Analysis
+10,Relationship Management
+10,Customer Satisfaction
+10,Customer Service
+10,Digital Marketing
+10,Customer-Centric Mindset
+10,Customer-Facing Experience
+10,Google Analytics
+10,Customer-Facing Role
+10,Anaplan

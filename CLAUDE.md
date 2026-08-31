@@ -490,24 +490,27 @@ infrastructure anywhere — making Clusters 2 (Cloud Databases & Storage)
 and 4 (Data Infrastructure & Streaming) strong real candidates for a
 genuine ❌/⚠️ gap, distinct from whatever gap pattern Queen's MMAI has.
 
-**Incidental finding while grounding the new case's assertions in real
-data (not yet acted on — flagged here for future investigation):** a live
+**Incidental finding (now resolved, 2026-07-27):** a live
 `cluster_detail(2)` / `cluster_detail(4)` pull from
 `chatbot/tools/cluster_tool.py` showed nearly every skill in Clusters 2
-and 4 has `frequency=0` in `Grouped_Skills_Categorized_Updated.xlsx`
-(only "Oracle" at freq=7 in Cluster 2 is non-zero) — likely a skill-name
-lookup mismatch between `clust_ensembled_results.csv`'s skill strings and
-the frequency XLSX's skill strings (e.g. exact-string-match issues with
-compound names like "Columnar databases (HBase Apache Kudu)"), since it
-seems implausible that real job postings genuinely never mention any
-cloud-storage or streaming-infrastructure skill. **Not fixed here** —
-fixing `_load_frequencies()`'s matching logic was out of scope for this
-eval-coverage task and deserves its own investigation (would need
-re-validating frequency-grounded assertions across this whole file if
-fixed, since several existing checks rely on current — possibly
-partially-broken — frequency numbers).
+and 4 returning `frequency=0` from `Grouped_Skills_Categorized_Updated.xlsx`
+— root cause: skill-name string-matching mismatch between
+`clust_ensembled_results.csv`'s skill strings and the XLSX's skill strings
+(compound names like "Columnar databases (HBase Apache Kudu)" never matched).
+**FIXED 2026-07-27** as part of the FOR_CASSIE bundle integration:
+`cluster_tool.py`'s `_load_frequencies()` now reads from the V2 taxonomy
+JSONL (`FOR_CASSIE/01_FAISS_ADDITIONS/documents/v2_taxonomy_skills.jsonl`)
+where frequencies are precomputed and joined on `canonical_key`. Case-
+insensitive matching gives 100% coverage (1,058/1,058 W2026 skills matched,
+0 misses). Also switched `CLUSTER_RESULTS_FILE` from the old 766-skill V1
+`clust_ensembled_results.csv` to the W2026 `cluster_assignments_w2026.csv`
+(1,058 skills); updated `CLUSTER_THEMES` and `FOCUSED_CLUSTERS` to reflect
+the new W2026 cluster structure (themes are provisional — formally assigned
+as future work). Smoke-tested: GenAI=434, AWS=378, MLOps=134, Communication
+Skills=976, with 94/148 skills in Cluster 4 now non-zero (vs. ~0 before).
 Practical consequence for the new test case: rather than anchor on a real
-frequency number for clusters 2/4 (too brittle given the freq=0 issue),
+frequency number for clusters 2/4 (too brittle given the freq=0 issue,
+which is now moot for new runs),
 `curriculum-cluster-gap-analysis-rotman`'s `expected_substrings` anchors
 on `"Data Engineering"` — the literal theme name of Cluster 8, which the
 Cluster Interpreter backstory's required OUTPUT FORMAT ("Cluster

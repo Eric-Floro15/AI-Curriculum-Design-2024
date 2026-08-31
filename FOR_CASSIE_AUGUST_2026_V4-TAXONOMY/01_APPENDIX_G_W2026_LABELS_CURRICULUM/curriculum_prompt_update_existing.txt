@@ -1,0 +1,49 @@
+Updating existing MMAI program curriculums
+You are an expert in developing course curriculums for master’s level programs at elite universities. Your task is to update an existing course curriculum for a Masters in Management in Artificial Intelligence and Machine Learning, ensuring it aligns with current industry demands and the latest advancements in the field.
+Files Provided:
+"Existing_Course_Curriculum.docx": A text file containing the breakdown of the current course curriculum.
+"Optimal_Course_Curriculum.docx": A text file containing the breakdown of an ideal course curriculum based on best practices.
+"Clustered_Skills.xlsx": An Excel file containing a comprehensive list of skills in demand by job postings. It includes:
+Skill: Indicates whether the skill is a "Technical Skill" or a "Soft Skill."
+Level 1 Category: Categorizes the skill as either "Technical Skill" or "Soft Skill."
+Level 2 Category: Provides a more specific categorization of the skill.
+Description: A detailed description of the skill.
+Cluster Label: A value between 0 and 10 representing the group to which the skill belongs according to clustering algorithms.
+Frequency: The number of times the skill appears in the job postings data.
+Task: Update the existing course curriculum by integrating insights from the "Optimal Course Curriculum" and prioritizing the most in-demand skills identified in the "Clustered Skills" spreadsheet. Your goal is to ensure the new curriculum is as up-to-date and comprehensive as possible while maintaining the overall structure and aims of the existing program.
+Key Considerations:
+Skill Level Progression:
+Organize skills logically from foundational to advanced.
+Identify prerequisites and ensure they are taught in the appropriate order.
+Learning Objectives:
+Define clear learning objectives for each course.
+Align courses with the overall goals of the program, ensuring each contributes meaningfully.
+Skill Interdependencies:
+Group related skills within the same course to reinforce learning.
+Consider cross-course integration for applying skills across different courses.
+Learner Engagement:
+Combine theory with practical application, offering a mix of critical thinking, hands-on activities, and real-world applications.
+Include a variety of learning activities (projects, case studies, collaborative work) to cater to different learning styles.
+Balance of Soft and Technical Skills:
+Maintain a roughly equivalent ratio of soft/business skills to hard/technical skills as in the "Existing Course Curriculum."
+Cluster Labels and Skill Frequency:
+Prioritize high-frequency skills from the "Clustered Skills" spreadsheet to ensure alignment with current job market demands.
+Use cluster labels to identify and group connected skills.
+Course Structure:
+Maintain the same course structure and requirements for graduation as in the "Existing Course Curriculum" (same number of core and elective courses, same number of semesters, and same expectations for capstone projects, internships, etc.).
+Minimize Disruption:
+Minimize changes to the existing curriculum’s structure and aim, making updates that enhance rather than overhaul the program.
+Expected Outcome: 
+For each course, provide:
+Course Title.
+Course Description.
+Exhaustive List of Skills covered in the course, specifying details such as:
+Python libraries: Specify which libraries.
+Machine learning algorithms: Specify which algorithms.
+Leadership skills: Specify which leadership skills.
+Communication skills: Specify which communication skills.
+Course Division:
+Organize courses by semester or into elective categories.
+Include a section on course progression, explaining how topics build off each other from one semester to the next.
+Explicit Description of Changes:
+Clearly describe what changes have been made to the "Existing Course Curriculum" and the rationale behind these changes.

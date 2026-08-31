@@ -438,78 +438,104 @@ async def on_message(message: cl.Message) -> None:
                 return " ".join(str(x) for x in v.values())
         return str(obj) if obj else ""
 
-    # ── Root step ─────────────────────────────────────────────────────────
-    async with cl.Step(name="🧠 Curriculum Advisor", type="run") as root_step:
-        root_step.input = query
+    # ── Immediate acknowledgement — keeps the WebSocket alive during long runs ──
+    # Without this, a 10-min crew run on a quiet connection can cause the
+    # browser's WebSocket to go stale, and the final cl.Message.send() is
+    # never received by the client even though the server sends it.
+    await cl.Message(
+        content="⏳ Routing your question to the specialist agents… "
+                "(multi-specialist queries typically take **3–10 minutes**).",
+        author="Curriculum Advisor",
+    ).send()
 
-        def _run_crew() -> str:
-            """Build a fresh crew, temporarily override env vars for the
-            session's chosen model, run, then restore original env vars."""
-            with _ENV_LOCK:
-                old_provider = os.environ.get("LLM_PROVIDER")
-                old_model    = os.environ.get("LLM_MODEL")
-                os.environ["LLM_PROVIDER"] = active_provider
-                os.environ["LLM_MODEL"]    = active_model
-                try:
-                    return _kickoff_crew()
-                finally:
-                    # Always restore — even if crew raises
-                    if old_provider is not None:
-                        os.environ["LLM_PROVIDER"] = old_provider
-                    else:
-                        os.environ.pop("LLM_PROVIDER", None)
-                    if old_model is not None:
-                        os.environ["LLM_MODEL"] = old_model
-                    else:
-                        os.environ.pop("LLM_MODEL", None)
+    # ── Crew runner helpers ────────────────────────────────────────────────
+    def _run_crew() -> str:
+        """Build a fresh crew, temporarily override env vars for the
+        session's chosen model, run, then restore original env vars."""
+        with _ENV_LOCK:
+            old_provider = os.environ.get("LLM_PROVIDER")
+            old_model    = os.environ.get("LLM_MODEL")
+            os.environ["LLM_PROVIDER"] = active_provider
+            os.environ["LLM_MODEL"]    = active_model
+            try:
+                return _kickoff_crew()
+            finally:
+                # Always restore — even if crew raises
+                if old_provider is not None:
+                    os.environ["LLM_PROVIDER"] = old_provider
+                else:
+                    os.environ.pop("LLM_PROVIDER", None)
+                if old_model is not None:
+                    os.environ["LLM_MODEL"] = old_model
+                else:
+                    os.environ.pop("LLM_MODEL", None)
 
-        def _kickoff_crew() -> str:
-            # LangSmith tracing is active via env vars set at module load —
-            # LangChain picks them up automatically for every LLM call.
-            # No manual tracer/callback injection needed or supported here.
-            analyst = make_analyst()
-            analyst.step_callback = _make_callback("Skills Taxonomy Analyst")
+    def _kickoff_crew() -> str:
+        # LangSmith tracing is active via env vars set at module load —
+        # LangChain picks them up automatically for every LLM call.
+        # No manual tracer/callback injection needed or supported here.
+        analyst = make_analyst()
+        analyst.step_callback = _make_callback("Skills Taxonomy Analyst")
 
-            univ = make_university_programs_agent()
-            univ.step_callback = _make_callback("University AI Programs Researcher")
+        univ = make_university_programs_agent()
+        univ.step_callback = _make_callback("University AI Programs Researcher")
 
-            news = make_news_agent()
-            news.step_callback = _make_callback("AI Industry News Researcher")
+        news = make_news_agent()
+        news.step_callback = _make_callback("AI Industry News Researcher")
 
-            cluster_interp = make_cluster_interpreter()
-            cluster_interp.step_callback = _make_callback("Cluster Interpreter")
+        cluster_interp = make_cluster_interpreter()
+        cluster_interp.step_callback = _make_callback("Cluster Interpreter")
 
-            orch = make_orchestrator()
+        orch = make_orchestrator()
 
-            task = Task(
-                description=full_query,
-                expected_output=_TASK_EXPECTED_OUTPUT,
-                agent=orch,
-            )
-            crew = Crew(
-                agents=[orch, analyst, univ, news, cluster_interp],
-                tasks=[task],
-                verbose=False,
-            )
-            return str(crew.kickoff())
+        task = Task(
+            description=full_query,
+            expected_output=_TASK_EXPECTED_OUTPUT,
+            agent=orch,
+        )
+        crew = Crew(
+            agents=[orch, analyst, univ, news, cluster_interp],
+            tasks=[task],
+            verbose=False,
+        )
+        return str(crew.kickoff())
 
-        try:
-            answer = await loop.run_in_executor(_EXECUTOR, _run_crew)
-        except Exception as exc:  # noqa: BLE001
-            answer = (
-                f"❌ **An error occurred while running the crew:**\n\n"
-                f"```\n{exc}\n```\n\n"
-                f"Check that your `.env` is configured and that Ollama is "
-                f"running if you selected a local model."
-            )
+    # ── Root step + crew execution ─────────────────────────────────────────
+    answer: str = ""
+    try:
+        async with cl.Step(name="🧠 Curriculum Advisor", type="run") as root_step:
+            root_step.input = query
 
-        for role in list(agent_steps.keys()):
-            await _close_step(role, "⚠️ Incomplete")
+            try:
+                answer = await loop.run_in_executor(_EXECUTOR, _run_crew)
+            except Exception as exc:  # noqa: BLE001
+                answer = (
+                    f"❌ **An error occurred while running the crew:**\n\n"
+                    f"```\n{exc}\n```\n\n"
+                    f"Check that your `.env` is configured and that Ollama is "
+                    f"running if you selected a local model."
+                )
 
-        root_step.output = "Synthesis complete." if "❌" not in answer else "Error."
+            for role in list(agent_steps.keys()):
+                await _close_step(role, "⚠️ Incomplete")
 
-    # ── Final answer ──────────────────────────────────────────────────────
+            root_step.output = "Synthesis complete." if "❌" not in answer else "Error."
+
+    except Exception:
+        # Step visualisation failed (e.g. stale session after a very long run)
+        # — don't let that prevent the final answer from being delivered.
+        pass
+
+    # ── Final answer — always runs, even if the Step wrapper above failed ──
+    if not answer:
+        answer = "❌ The crew did not return an answer. Please try again."
+
     history.append({"role": "assistant", "content": answer})
     cl.user_session.set("history", history)
 
-    await cl.Message(content=answer, author="Curriculum Advisor").send()
+    try:
+        await cl.Message(content=answer, author="Curriculum Advisor").send()
+    except Exception as exc:
+        # Last-resort: at least log it so the answer isn't silently lost
+        print(f"[app.py] Failed to send final message to UI: {exc}")
+        print(f"[app.py] Answer was:\n{answer[:500]}")

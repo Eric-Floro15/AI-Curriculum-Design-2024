@@ -1,31 +1,41 @@
 """
 cluster_tool.py — Tools for the Cluster Interpreter agent.
 
-Reads chatbot/data/clust_ensembled_results.csv (766 skills, 10 CSPA
-ensemble clusters) and chatbot/data/Grouped_Skills_Categorized_Updated.xlsx
-(frequency data) to produce cluster-level gap analysis inputs.
+Reads chatbot/data/cluster_assignments_w2026.csv (1,058 skills, 10 CSPA
+ensemble clusters, Winter 2026 run) and derives frequency data from the
+V2 taxonomy JSONL at FOR_CASSIE/01_FAISS_ADDITIONS/documents/v2_taxonomy_skills.jsonl.
 
 The co-occurrence CSVs in final_implementation/ are not used here because
 the row index was not preserved during export, making skill-to-skill lookup
 unreliable. The cluster membership file is the clean source of truth.
 
-Cluster themes (derived from inspection of skill contents):
-  1  — Collaboration & leadership core (12 skills)
-  2  — Cloud databases & storage (20 skills)
-  3  — Large mixed: diverse soft + technical (263 skills)
-  4  — Data infrastructure & streaming (17 skills)
-  5  — Mixed: responsible AI, dev tools, analytics (60 skills)
-  6  — Business & management core (4 skills)
-  7  — ML algorithms & statistical modelling (50 skills)
-  8  — Data engineering: pipelines, big data (22 skills)
-  9  — Core analytical tools: Excel, BI, Data Analysis (23 skills)
- 10  — Large mixed: ethics, soft skills, communication (295 skills)
+Frequency lookup change (2026-07-27):
+  Previously read from Grouped_Skills_Categorized_Updated.xlsx (V1 taxonomy,
+  no canonical_key column) using raw .lower() string matching, which caused
+  most skills to return frequency=0 due to compound-name mismatches. Now reads
+  from the V2 taxonomy JSONL where frequencies are precomputed and joined on
+  canonical_key. Case-insensitive matching gives 100% coverage (1,058/1,058).
+
+Cluster themes (Winter 2026 CSPA ensemble — provisional labels derived from
+top-frequency skills per cluster; formal theme assignment is flagged as future
+work in the paper):
+  1  — Security & Applied AI Engineering (22 skills)
+  2  — Software Architecture & Human-Centered Design (5 skills)
+  3  — Leadership, Program Management & Strategy (137 skills)
+  4  — AI/ML Core — Generative AI, NLP & LLMs (148 skills)
+  5  — Cloud, Infrastructure & Systems Engineering (332 skills)
+  6  — Software Dev Tools — Mobile & Scientific (6 skills)
+  7  — Data Analytics, Science & Engineering (212 skills)
+  8  — Communication, Problem-Solving & Office Tools (127 skills)
+  9  — DevOps, Agile & Automation (33 skills)
+ 10  — Business Intelligence & Analytical Thinking (36 skills)
 
 Exposes:
   Python API   — all_clusters(), cluster_detail(id), skill_frequency(name)
   CrewAI tools — all_clusters_tool, cluster_detail_tool
 """
 
+import json
 import os
 import sys
 from functools import lru_cache
@@ -46,29 +56,44 @@ except ImportError:
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
+_PROJECT_ROOT = os.path.dirname(_CHATBOT_DIR)
 if _CHATBOT_DIR not in sys.path:
     sys.path.insert(0, _CHATBOT_DIR)
 
 # ── File paths ────────────────────────────────────────────────────────────────
 
-CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "clust_ensembled_results.csv")
-SKILLS_FILE = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_Updated.xlsx")
+# Winter 2026 CSPA ensemble clustering (1,058 skills, 10 clusters).
+# Supersedes the old clust_ensembled_results.csv (766 skills, V1 clustering).
+CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "cluster_assignments_w2026.csv")
 
+# V2 taxonomy JSONL — source of truth for skill frequencies.
+# Frequencies are precomputed and joined on canonical_key, so no raw-string
+# matching issues. Reading from here avoids the frequency=0 bug that affected
+# the old Grouped_Skills_Categorized_Updated.xlsx (V1) path.
+V2_TAXONOMY_JSONL = os.path.join(
+    _PROJECT_ROOT, "FOR_CASSIE", "01_FAISS_ADDITIONS", "documents", "v2_taxonomy_skills.jsonl"
+)
+
+# Provisional cluster themes for the Winter 2026 CSPA ensemble.
+# Derived from top-frequency skills per cluster; formal labels are flagged as
+# future work in the paper — update this dict once official labels are assigned.
 CLUSTER_THEMES = {
-    1:  "Collaboration & Leadership Core",
-    2:  "Cloud Databases & Storage",
-    3:  "Large Mixed — Diverse Soft + Technical",
-    4:  "Data Infrastructure & Streaming",
-    5:  "Mixed — Responsible AI, Dev Tools, Analytics",
-    6:  "Business & Management Core",
-    7:  "ML Algorithms & Statistical Modelling",
-    8:  "Data Engineering — Pipelines & Big Data",
-    9:  "Core Analytical Tools (Excel, BI, Data Analysis)",
-    10: "Large Mixed — Ethics, Soft Skills, Communication",
+    1:  "Security & Applied AI Engineering",
+    2:  "Software Architecture & Human-Centered Design",
+    3:  "Leadership, Program Management & Strategy",
+    4:  "AI/ML Core — Generative AI, NLP & LLMs",
+    5:  "Cloud, Infrastructure & Systems Engineering",
+    6:  "Software Dev Tools — Mobile & Scientific",
+    7:  "Data Analytics, Science & Engineering",
+    8:  "Communication, Problem-Solving & Office Tools",
+    9:  "DevOps, Agile & Automation",
+    10: "Business Intelligence & Analytical Thinking",
 }
 
-# Clusters worth highlighting in gap analysis (focused, high-signal)
-FOCUSED_CLUSTERS = {2, 4, 7, 8, 9}
+# Clusters worth highlighting in gap analysis (focused, high-signal technical areas).
+# Excludes the large, broad-spectrum clusters (3, 5, 8) which contain diverse
+# soft/general skills and are less discriminative for targeted recommendations.
+FOCUSED_CLUSTERS = {1, 4, 7, 9, 10}
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -84,22 +109,26 @@ def _load_clusters() -> pd.DataFrame:
 
 @lru_cache(maxsize=1)
 def _load_frequencies() -> dict[str, int]:
-    """Build skill-name → frequency lookup from the taxonomy XLSX."""
+    """Build skill-name → frequency lookup from the V2 taxonomy JSONL.
+
+    Frequencies are already precomputed and joined on canonical_key in the
+    JSONL, so this is a simple read — no raw-string matching, no frequency=0
+    mismatch from compound skill names. Keyed by skill.lower() for
+    case-insensitive lookup (confirmed 100% coverage against W2026 cluster CSV).
+    """
     try:
-        df = pd.read_excel(SKILLS_FILE)
-        # Column names from the XLSX
-        skill_col = "Skills"
-        freq_col = "Frequency"
-        if skill_col not in df.columns or freq_col not in df.columns:
-            return {}
-        lookup = {}
-        for _, row in df.iterrows():
-            name = str(row[skill_col]).strip().lower()
-            freq = int(row[freq_col]) if pd.notna(row[freq_col]) else 0
-            if name not in lookup:
-                lookup[name] = freq
-            else:
-                lookup[name] += freq
+        lookup: dict[str, int] = {}
+        with open(V2_TAXONOMY_JSONL, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                doc = json.loads(line)
+                meta = doc.get("metadata", {})
+                skill = str(meta.get("skill", "")).strip().lower()
+                freq = int(meta.get("frequency", 0))
+                if skill and skill not in lookup:
+                    lookup[skill] = freq
         return lookup
     except Exception:
         return {}
@@ -179,9 +208,9 @@ try:
         doing gap analysis. Each cluster represents a group of skills that
         co-occur in AI/ML job postings.
 
-        Focused clusters (most discriminative for gap analysis): 2, 4, 7, 8, 9.
-        Clusters 3 and 10 are large catch-all groups — less useful for targeted
-        recommendations.
+        Focused clusters (most discriminative for gap analysis): 1, 4, 7, 9, 10.
+        Clusters 3, 5, and 8 are large, broad-spectrum groups — less useful for
+        targeted gap-analysis recommendations.
         """
         clusters = all_clusters()
         lines = ["CSPA Ensemble Skill Clusters (10 total)\n"]
@@ -240,12 +269,12 @@ if __name__ == "__main__":
         flag = "⭐" if c["focused"] else "  "
         print(f"{flag} Cluster {c['cluster_id']:2d} | {c['theme']:45s} | {c['skill_count']:3d} skills | top: {c['top_skills_by_frequency'][:3]}")
 
-    print("\n=== Cluster 7 detail (ML Algorithms) ===")
-    d = cluster_detail(7)
+    print("\n=== Cluster 4 detail (AI/ML Core) ===")
+    d = cluster_detail(4)
     for s in d["skills"][:10]:
         print(f"  {s['skill']:40s} freq={s['frequency']}")
 
-    print("\n=== Cluster 8 detail (Data Engineering) ===")
-    d = cluster_detail(8)
+    print("\n=== Cluster 7 detail (Data Analytics, Science & Engineering) ===")
+    d = cluster_detail(7)
     for s in d["skills"][:10]:
         print(f"  {s['skill']:40s} freq={s['frequency']}")

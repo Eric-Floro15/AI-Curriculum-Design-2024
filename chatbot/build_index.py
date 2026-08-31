@@ -1,15 +1,25 @@
 """
-build_index.py — One-time script to build the FAISS vector index from the skills taxonomy.
+build_index.py — Build the FAISS vector index from the skills taxonomy.
 
-Run this once before starting the chatbot:
+Run once before starting the chatbot (and re-run if the taxonomy or FOR_CASSIE
+documents change):
     python build_index.py
 
-Reads:  data/Grouped_Skills_Categorized_Updated.xlsx  (4,824 rows × 7 cols)
-        data/clust_ensembled_results.csv               (optional — adds cluster labels)
+Reads:  data/Grouped_Skills_Categorized_Updated.xlsx        (4,824 rows × 7 cols, V1 taxonomy)
+        data/clust_ensembled_results.csv                    (optional — adds V1 cluster labels)
+        ../FOR_CASSIE/01_FAISS_ADDITIONS/documents/*.jsonl  (1,058 V2 taxonomy skill docs)
+        ../FOR_CASSIE/01_FAISS_ADDITIONS/documents/*.md     (4 prose summary docs)
 Writes: faiss_index/index.faiss
         faiss_index/index.pkl
+
+The FOR_CASSIE documents are appended to the V1 taxonomy content. V2 skill docs
+are tagged taxonomy_version=V2, status=current in their metadata so the Analyst
+agent can prefer them over untagged V1 entries when both surface for the same skill.
+If the FOR_CASSIE directory is missing, the build proceeds with V1 content only
+(graceful degradation — not an error).
 """
 
+import json
 import os
 import re
 import sys
@@ -24,12 +34,19 @@ from embeddings import get_embeddings, describe_embeddings_config
 load_dotenv()
 
 # ── paths ──────────────────────────────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-INDEX_DIR = os.path.join(BASE_DIR, "faiss_index")
+BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR    = os.path.join(BASE_DIR, "data")
+INDEX_DIR   = os.path.join(BASE_DIR, "faiss_index")
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-SKILLS_FILE = os.path.join(DATA_DIR, "Grouped_Skills_Categorized_Updated.xlsx")
+SKILLS_FILE  = os.path.join(DATA_DIR, "Grouped_Skills_Categorized_Updated.xlsx")
 CLUSTER_FILE = os.path.join(DATA_DIR, "clust_ensembled_results.csv")
+
+# FOR_CASSIE additions — V2 taxonomy JSONL + 4 prose summary markdown files.
+# Path is relative to the project root (one level above chatbot/).
+FOR_CASSIE_DOCS_DIR = os.path.join(
+    PROJECT_ROOT, "FOR_CASSIE", "01_FAISS_ADDITIONS", "documents"
+)
 
 EXPECTED_COLUMNS = {
     "Skills", "Alternate Spellings", "Date (2024 or 2025)",
@@ -224,15 +241,104 @@ def chunk_documents(raw_docs: list[dict]) -> tuple[list[str], list[dict]]:
     return texts, metadatas
 
 
+def load_for_cassie_documents() -> tuple[list[str], list[dict]]:
+    """Load V2 taxonomy skills + prose summaries from FOR_CASSIE/01_FAISS_ADDITIONS/documents/.
+
+    Returns parallel (texts, metadatas) lists ready to append to the index.
+    Gracefully skips if the directory or individual files are missing — the
+    build still succeeds with V1-only content in that case.
+
+    Documents loaded:
+      v2_taxonomy_skills.jsonl — 1,058 V2 skill docs (unchunked; already short).
+                                  Each tagged taxonomy_version=V2, status=current.
+      *.md files               — 4 prose summaries (trend analysis, salary/education,
+                                  clustering stability, source mix caveat).
+                                  Chunked at 800 chars / 100 overlap to stay
+                                  compatible with the RAG retriever's window.
+    """
+    if not os.path.isdir(FOR_CASSIE_DOCS_DIR):
+        print(f"  FOR_CASSIE docs dir not found ({FOR_CASSIE_DOCS_DIR}) — skipping.")
+        return [], []
+
+    texts: list[str] = []
+    metadatas: list[dict] = []
+
+    # ── 1. JSONL: one V2 skill doc per line, already short — no chunking needed ──
+    jsonl_path = os.path.join(FOR_CASSIE_DOCS_DIR, "v2_taxonomy_skills.jsonl")
+    if os.path.exists(jsonl_path):
+        skill_count = 0
+        with open(jsonl_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                doc = json.loads(line)
+                texts.append(doc["text"])
+                metadatas.append(doc["metadata"])
+                skill_count += 1
+        print(f"  FOR_CASSIE JSONL: {skill_count} V2 skill documents loaded.")
+    else:
+        print(f"  FOR_CASSIE JSONL not found — skipping V2 skill docs.")
+
+    # ── 2. Markdown prose summaries (chunked) ──────────────────────────────────
+    md_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+    for md_file in sorted(os.listdir(FOR_CASSIE_DOCS_DIR)):
+        if not md_file.endswith(".md"):
+            continue
+        md_path = os.path.join(FOR_CASSIE_DOCS_DIR, md_file)
+        raw = open(md_path, encoding="utf-8").read()
+
+        # Parse YAML-ish frontmatter (--- key: value --- block at top of file)
+        meta: dict = {"source_file": md_file}
+        body = raw
+        if raw.startswith("---"):
+            end = raw.find("\n---", 3)
+            if end != -1:
+                for line in raw[3:end].strip().splitlines():
+                    if ":" in line:
+                        k, _, v = line.partition(":")
+                        meta[k.strip()] = v.strip()
+                body = raw[end + 4:].strip()
+
+        chunks = md_splitter.split_text(body)
+        for chunk in chunks:
+            texts.append(chunk)
+            metadatas.append({**meta, "doc_type": meta.get("doc_type", "summary")})
+        print(f"  FOR_CASSIE MD: {md_file} → {len(chunks)} chunks.")
+
+    return texts, metadatas
+
+
+EMBED_BATCH_SIZE = 150  # Ollama can OOM/EOF if sent too many texts at once
+
+
 def build_faiss_index(texts: list[str], metadatas: list[dict], index_dir: str) -> None:
     print(f"Using {describe_embeddings_config()}")
     try:
         embeddings = get_embeddings()
     except (ImportError, RuntimeError, ValueError) as e:
         sys.exit(f"ERROR: {e}")
-    print(f"Embedding {len(texts):,} text chunks …")
+    print(f"Embedding {len(texts):,} text chunks in batches of {EMBED_BATCH_SIZE} …")
 
-    vectorstore = FAISS.from_texts(texts, embeddings, metadatas=metadatas)
+    # Build the vectorstore from the first batch, then add subsequent batches.
+    # Sending all texts at once to Ollama causes a 400/EOF error on large inputs.
+    vectorstore = FAISS.from_texts(
+        texts[:EMBED_BATCH_SIZE],
+        embeddings,
+        metadatas=metadatas[:EMBED_BATCH_SIZE],
+    )
+    print(f"  Batch 1/{-(-len(texts) // EMBED_BATCH_SIZE)}: "
+          f"{min(EMBED_BATCH_SIZE, len(texts))}/{len(texts)} done.")
+
+    for batch_start in range(EMBED_BATCH_SIZE, len(texts), EMBED_BATCH_SIZE):
+        batch_end = min(batch_start + EMBED_BATCH_SIZE, len(texts))
+        vectorstore.add_texts(
+            texts[batch_start:batch_end],
+            metadatas=metadatas[batch_start:batch_end],
+        )
+        batch_num = batch_start // EMBED_BATCH_SIZE + 1
+        total_batches = -(-len(texts) // EMBED_BATCH_SIZE)
+        print(f"  Batch {batch_num}/{total_batches}: {batch_end}/{len(texts)} done.")
 
     os.makedirs(index_dir, exist_ok=True)
     vectorstore.save_local(index_dir)
@@ -251,12 +357,21 @@ def main():
 
     print("\nChunking documents …")
     texts, metadatas = chunk_documents(raw_docs)
-    print(f"  Produced {len(texts):,} chunks (chunk_size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP}).")
+    print(f"  V1 taxonomy: {len(texts):,} chunks (chunk_size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP}).")
+
+    print("\nLoading FOR_CASSIE V2 taxonomy + prose summaries …")
+    fc_texts, fc_metadatas = load_for_cassie_documents()
+    if fc_texts:
+        texts.extend(fc_texts)
+        metadatas.extend(fc_metadatas)
+        print(f"  Total after FOR_CASSIE additions: {len(texts):,} chunks.")
+    else:
+        print("  No FOR_CASSIE documents added (directory missing or empty).")
 
     print()
     build_faiss_index(texts, metadatas, INDEX_DIR)
 
-    print("\nDone. Run the chatbot with: chainlit run main.py")
+    print("\nDone. Run the chatbot with: chainlit run app.py")
 
 
 if __name__ == "__main__":
