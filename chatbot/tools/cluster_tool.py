@@ -1,41 +1,32 @@
 """
 cluster_tool.py — Tools for the Cluster Interpreter agent.
 
-Reads chatbot/data/cluster_assignments_w2026.csv (1,058 skills, 10 CSPA
-ensemble clusters, Winter 2026 run) and derives frequency data from the
-V2 taxonomy JSONL at FOR_CASSIE/01_FAISS_ADDITIONS/documents/v2_taxonomy_skills.jsonl.
+Repointed 2026-09-03 from the pre-clean W2026 partition to the CLEAN W2026
+CSPA ensemble (see chatbot_integration_prep/build_index_V4_repoint.md Step 2).
+Reads chatbot/data/clust_ensembled_results_W2026_clean.csv and derives
+frequency data from the V4 taxonomy xlsx (V2 JSONL is retired, see build_index.py).
 
 The co-occurrence CSVs in final_implementation/ are not used here because
 the row index was not preserved during export, making skill-to-skill lookup
 unreliable. The cluster membership file is the clean source of truth.
 
-Frequency lookup change (2026-07-27):
-  Previously read from Grouped_Skills_Categorized_Updated.xlsx (V1 taxonomy,
-  no canonical_key column) using raw .lower() string matching, which caused
-  most skills to return frequency=0 due to compound-name mismatches. Now reads
-  from the V2 taxonomy JSONL where frequencies are precomputed and joined on
-  canonical_key. Case-insensitive matching gives 100% coverage (1,058/1,058).
-
-Cluster themes (Winter 2026 CSPA ensemble — provisional labels derived from
-top-frequency skills per cluster; formal theme assignment is flagged as future
-work in the paper):
-  1  — Security & Applied AI Engineering (22 skills)
-  2  — Software Architecture & Human-Centered Design (5 skills)
-  3  — Leadership, Program Management & Strategy (137 skills)
-  4  — AI/ML Core — Generative AI, NLP & LLMs (148 skills)
-  5  — Cloud, Infrastructure & Systems Engineering (332 skills)
-  6  — Software Dev Tools — Mobile & Scientific (6 skills)
-  7  — Data Analytics, Science & Engineering (212 skills)
-  8  — Communication, Problem-Solving & Office Tools (127 skills)
-  9  — DevOps, Agile & Automation (33 skills)
- 10  — Business Intelligence & Analytical Thinking (36 skills)
+⚠️ CLUSTER_THEMES and FOCUSED_CLUSTERS below are STALE — they're the old
+labels for the pre-clean partition (kept verbatim from before this repoint,
+per build_index_V4_repoint.md's guidance that this step is deferred to a
+paid Cluster Interpreter relabel run, not blocking). The clean partition's
+cluster IDs hold DIFFERENT skills — per CLAUDE.md, clean-W2026 cluster 2 is
+now the 282-skill agentic core, which does not correspond to old cluster 2's
+"Software Architecture & Human-Centered Design" label below. Do not trust
+these theme names or the focused-cluster set until relabeled; skill_count
+per cluster_id will also differ from what's written here since it was
+computed on the old file. Run the eyeball snippet in the repoint doc (Step
+1e/2c) for provisional labels, or wait for the production relabel run.
 
 Exposes:
   Python API   — all_clusters(), cluster_detail(id), skill_frequency(name)
   CrewAI tools — all_clusters_tool, cluster_detail_tool
 """
 
-import json
 import os
 import sys
 from functools import lru_cache
@@ -62,17 +53,15 @@ if _CHATBOT_DIR not in sys.path:
 
 # ── File paths ────────────────────────────────────────────────────────────────
 
-# Winter 2026 CSPA ensemble clustering (1,058 skills, 10 clusters).
-# Supersedes the old clust_ensembled_results.csv (766 skills, V1 clustering).
-CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "cluster_assignments_w2026.csv")
+# Clean Winter 2026 CSPA ensemble clustering (post description-cleaning
+# re-cluster, see CLAUDE.md decisions #46). Supersedes both the old
+# clust_ensembled_results.csv (766 skills, V1 clustering) and the pre-clean
+# cluster_assignments_w2026.csv this file used before the V4 repoint.
+CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "clust_ensembled_results_W2026_clean.csv")
 
-# V2 taxonomy JSONL — source of truth for skill frequencies.
-# Frequencies are precomputed and joined on canonical_key, so no raw-string
-# matching issues. Reading from here avoids the frequency=0 bug that affected
-# the old Grouped_Skills_Categorized_Updated.xlsx (V1) path.
-V2_TAXONOMY_JSONL = os.path.join(
-    _PROJECT_ROOT, "FOR_CASSIE", "01_FAISS_ADDITIONS", "documents", "v2_taxonomy_skills.jsonl"
-)
+# V4 taxonomy xlsx — source of truth for skill frequencies (V2 JSONL retired
+# with the V4 repoint, see build_index.py module docstring).
+V4_TAXONOMY_XLSX = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx")
 
 # Provisional cluster themes for the Winter 2026 CSPA ensemble.
 # Derived from top-frequency skills per cluster; formal labels are flagged as
@@ -109,26 +98,19 @@ def _load_clusters() -> pd.DataFrame:
 
 @lru_cache(maxsize=1)
 def _load_frequencies() -> dict[str, int]:
-    """Build skill-name → frequency lookup from the V2 taxonomy JSONL.
+    """Build skill-name → frequency lookup from the V4 taxonomy xlsx.
 
-    Frequencies are already precomputed and joined on canonical_key in the
-    JSONL, so this is a simple read — no raw-string matching, no frequency=0
-    mismatch from compound skill names. Keyed by skill.lower() for
-    case-insensitive lookup (confirmed 100% coverage against W2026 cluster CSV).
+    Keyed by raw Skills.lower() (not canonical_key) to match the cluster
+    CSV's raw skill names, same lookup convention _enrich_with_freq() already
+    uses. Per build_index_V4_repoint.md Step 2b.
     """
     try:
         lookup: dict[str, int] = {}
-        with open(V2_TAXONOMY_JSONL, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                doc = json.loads(line)
-                meta = doc.get("metadata", {})
-                skill = str(meta.get("skill", "")).strip().lower()
-                freq = int(meta.get("frequency", 0))
-                if skill and skill not in lookup:
-                    lookup[skill] = freq
+        df = pd.read_excel(V4_TAXONOMY_XLSX)
+        for _, r in df.iterrows():
+            name = str(r.get("Skills", "")).strip().lower()
+            if name and name not in lookup:
+                lookup[name] = int(r.get("Frequency", 0) or 0)
         return lookup
     except Exception:
         return {}

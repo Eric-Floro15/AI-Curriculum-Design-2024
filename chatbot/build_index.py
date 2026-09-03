@@ -5,18 +5,28 @@ Run once before starting the chatbot (and re-run if the taxonomy or FOR_CASSIE
 documents change):
     python build_index.py
 
-Reads:  data/Grouped_Skills_Categorized_Updated.xlsx        (4,824 rows × 7 cols, V1 taxonomy)
-        data/clust_ensembled_results.csv                    (optional — adds V1 cluster labels)
-        ../FOR_CASSIE/01_FAISS_ADDITIONS/documents/*.jsonl  (1,058 V2 taxonomy skill docs)
-        ../FOR_CASSIE/01_FAISS_ADDITIONS/documents/*.md     (4 prose summary docs)
+Reads:  data/Grouped_Skills_Categorized_V4.xlsx                 (5,123 rows, V4 taxonomy;
+                                                                   1,015 canonical / 962 live)
+        data/clust_ensembled_results_W2026_clean.csv             (clean W2026 clustering)
 Writes: faiss_index/index.faiss
         faiss_index/index.pkl
 
-The FOR_CASSIE documents are appended to the V1 taxonomy content. V2 skill docs
-are tagged taxonomy_version=V2, status=current in their metadata so the Analyst
-agent can prefer them over untagged V1 entries when both surface for the same skill.
-If the FOR_CASSIE directory is missing, the build proceeds with V1 content only
-(graceful degradation — not an error).
+Repointed 2026-09-03 from V1/V2 to V4 + the clean W2026 clustering — see
+chatbot_integration_prep/build_index_V4_repoint.md for the full spec. The
+FOR_CASSIE V2 JSONL/prose-summary additions are disabled (FOR_CASSIE_DOCS_DIR
+points at a nonexistent dir so the existing graceful-skip path fires): V4's
+Description column is now the single canonical source feeding the embeddings,
+so appending the old V2 docs would double-embed skills and reintroduce
+superseded V2 descriptions.
+
+Grouping key: V4's own "Alternate Spellings" column is NOT the canonical key —
+260 of 5,123 rows use pipe-delimited multi-value spellings (e.g. new-row
+convention), so grouping directly on it yields 1,167 fragmented groups instead
+of the true 1,015 canonical skills. Group on the precomputed "canonical_key"
+column instead (verified: nunique() == 1,015, and == 962 after the is_generic
+filter — matching CLAUDE.md's stated V4 counts exactly). This applies to both
+build_documents()'s groupby and build_cluster_map()'s matching target — they
+must agree on the same key or cluster labels silently fail to attach.
 """
 
 import json
@@ -39,17 +49,17 @@ DATA_DIR    = os.path.join(BASE_DIR, "data")
 INDEX_DIR   = os.path.join(BASE_DIR, "faiss_index")
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-SKILLS_FILE  = os.path.join(DATA_DIR, "Grouped_Skills_Categorized_Updated.xlsx")
-CLUSTER_FILE = os.path.join(DATA_DIR, "clust_ensembled_results.csv")
+SKILLS_FILE  = os.path.join(DATA_DIR, "Grouped_Skills_Categorized_V4.xlsx")
+CLUSTER_FILE = os.path.join(DATA_DIR, "clust_ensembled_results_W2026_clean.csv")
 
-# FOR_CASSIE additions — V2 taxonomy JSONL + 4 prose summary markdown files.
-# Path is relative to the project root (one level above chatbot/).
-FOR_CASSIE_DOCS_DIR = os.path.join(
-    PROJECT_ROOT, "FOR_CASSIE", "01_FAISS_ADDITIONS", "documents"
-)
+# FOR_CASSIE V2 additions — disabled for V4 (see module docstring). Pointing
+# at a nonexistent dir fires the existing graceful-skip path with no logic
+# change; restore the real path only if regenerating fresh V4-based prose
+# summaries to replace these.
+FOR_CASSIE_DOCS_DIR = os.path.join(PROJECT_ROOT, "_disabled_FOR_CASSIE_V2_additions")
 
 EXPECTED_COLUMNS = {
-    "Skills", "Alternate Spellings", "Date (2024 or 2025)",
+    "Skills", "Alternate Spellings", "Date", "canonical_key", "is_generic",
     "Level 1 Category", "Level 2 Category", "Description", "Frequency"
 }
 
@@ -65,13 +75,13 @@ def load_skills(path: str) -> pd.DataFrame:
     if not os.path.exists(path):
         sys.exit(
             f"ERROR: Skills file not found at {path}\n"
-            "Copy or symlink Grouped_Skills_Categorized_Updated.xlsx into chatbot/data/"
+            "Copy or symlink Grouped_Skills_Categorized_V4.xlsx into chatbot/data/"
         )
     df = pd.read_excel(path)
     missing = EXPECTED_COLUMNS - set(df.columns)
     if missing:
         sys.exit(f"ERROR: Missing columns in skills file: {missing}")
-    print(f"  Loaded {len(df):,} rows, {df['Alternate Spellings'].nunique():,} canonical skill groups.")
+    print(f"  Loaded {len(df):,} rows, {df['canonical_key'].nunique():,} canonical skill groups.")
     return df
 
 
@@ -86,16 +96,20 @@ def _normalize(name: str) -> str:
 def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]:
     """
     Match cluster-CSV skill names to canonical XLSX groups and return
-    {canonical_group_lower: cluster_id}.
+    {canonical_key_lower: cluster_id}.
 
-    The cluster CSV (766 skills) was generated from a different skills file
-    than the XLSX we index (4,824 rows / 871 canonical groups), so the names
-    don't align exactly. Matching strategy:
+    The cluster CSV (clean W2026, ~962 skills) was generated from a different
+    skills file than the XLSX we index (5,123 rows / 1,015 canonical / 962
+    live groups), so the names don't align exactly. Matching strategy:
       1. Normalized exact match (strip non-alphanumerics, lowercase) against
          the union of XLSX Skills + Alternate Spellings columns.
       2. Fuzzy fallback via difflib with cutoff=0.9 — high enough to avoid
          wrong matches like "Brand Management" -> "Management".
     CSV skills with no confident match are skipped and counted.
+
+    Keyed on canonical_key (not the raw Alternate Spellings column) — see
+    module docstring for why the two diverge in V4, and build_documents()
+    for the matching groupby key this must agree with.
     """
     if not os.path.exists(cluster_csv_path):
         print(f"  Cluster file not found ({cluster_csv_path}) — skipping cluster labels.")
@@ -105,10 +119,10 @@ def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]
         print("  Cluster file missing expected columns (Cluster, Skill) — skipping.")
         return {}
 
-    # Normalized name → canonical-group-lower, from the XLSX taxonomy
+    # Normalized name → canonical_key-lower, from the XLSX taxonomy
     norm_to_canonical: dict[str, str] = {}
     for _, row in df.iterrows():
-        canonical = str(row["Alternate Spellings"]).strip().lower()
+        canonical = str(row["canonical_key"]).strip().lower()
         for col in ("Skills", "Alternate Spellings"):
             v = row[col]
             if pd.notna(v):
@@ -140,7 +154,7 @@ def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]
         else:
             miss += 1
 
-    total_groups = df["Alternate Spellings"].nunique()
+    total_groups = df["canonical_key"].nunique()
     print(
         f"  Cluster matching: exact={exact}, fuzzy={fuzzy}, unmatched={miss} "
         f"(CSV total={exact + fuzzy + miss})"
@@ -165,12 +179,12 @@ CLUSTER_THEMES = {
 
 def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
     """
-    Group rows by Alternate Spellings (canonical skill group) and build one
+    Group rows by canonical_key (canonical skill group) and build one
     rich text document per group.  Returns a list of {page_content, metadata} dicts.
     """
     documents = []
 
-    for canonical_group, group in df.groupby("Alternate Spellings", sort=False):
+    for canonical_group, group in df.groupby("canonical_key", sort=False):
         # Collect variant names
         variants = group["Skills"].dropna().unique().tolist()
         canonical_name = str(canonical_group).strip()
@@ -179,7 +193,7 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
         level1 = group["Level 1 Category"].dropna().iloc[0] if group["Level 1 Category"].notna().any() else "Unknown"
         level2 = group["Level 2 Category"].dropna().iloc[0] if group["Level 2 Category"].notna().any() else "Unknown"
         description = group["Description"].dropna().iloc[0] if group["Description"].notna().any() else ""
-        dates = sorted(group["Date (2024 or 2025)"].dropna().unique().tolist())
+        dates = sorted(group["Date"].dropna().unique().tolist())
         total_freq = int(group["Frequency"].fillna(0).sum())
 
         # Look up cluster for the canonical name
@@ -349,6 +363,10 @@ def main():
     print("=== Building FAISS index for skills taxonomy ===\n")
 
     df = load_skills(SKILLS_FILE)
+    if "is_generic" in df.columns:
+        before = df["canonical_key"].nunique()
+        df = df[df["is_generic"] != True].copy()  # noqa: E712 — int64 0/1, not a bool column
+        print(f"  Dropped generic skills: {before:,} -> {df['canonical_key'].nunique():,} canonical groups.")
     cluster_map = build_cluster_map(df, CLUSTER_FILE)
 
     print("\nBuilding documents from skill groups …")

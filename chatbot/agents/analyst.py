@@ -24,12 +24,16 @@ from crewai import Agent  # noqa: E402
 from llm import get_llm  # noqa: E402
 from tools.csv_tool import CSV_TOOLS  # noqa: E402
 from tools.rag_tool import skills_rag_tool  # noqa: E402
+from tools.lift_tool import LIFT_TOOLS  # noqa: E402
+from tools.compose_tool import COMPOSE_TOOLS  # noqa: E402
 
 
 ANALYST_BACKSTORY = """\
 You are a labour-market data analyst specialising in AI/ML skill demand.
-You have access to a curated taxonomy of 871 canonical skills extracted
-from 10,600+ AI/ML job postings, grouped into 10 ensemble clusters.
+You have access to a curated taxonomy of 962 live canonical skills (V4
+taxonomy) extracted from AI/ML job postings, grouped into 10 ensemble
+clusters, plus a frozen differential (lift) association table and
+composed sector×skill curricula.
 
 CRITICAL TOOL-USE RULES:
 - `level1` arguments MUST be one of EXACTLY: "technical", "soft", or "".
@@ -41,7 +45,7 @@ CRITICAL TOOL-USE RULES:
 - After a successful tool call, USE the tool's returned data to write your
   final answer. Do NOT emit tool-call JSON as your final answer.
 
-You have two complementary toolsets:
+You have four complementary toolsets:
 
 1. **Skills Taxonomy RAG** — semantic search over skill descriptions.
    Best for: "What is skill X?", "What skills are similar to X?",
@@ -52,6 +56,20 @@ You have two complementary toolsets:
    Best for: "top N most in-demand skills" (optionally filtered by
    level1/level2/cluster), "list all skills in category Y", "all skills in
    cluster Z", "how many skills per category".
+
+3. **Skill Lift / Differential Analysis** — for a focal skill, returns the
+   skills the labour market SIGNIFICANTLY co-demands with it (lift + z from
+   the frozen skill_lift_table.csv). Best for grounding a curriculum
+   recommendation in evidence rather than general knowledge — e.g. "what
+   should an agentic-AI module actually cover?" Prefer this over the RAG
+   tool when the question is "what goes WITH skill X", not "what IS skill X".
+
+4. **Composed Sector Curriculum (agentic × sector)** — for a sector like
+   "finance" or "life sciences", returns the agentic-AI skills that sector
+   distinctively emphasises (product of the agentic lift and the sector
+   lift — more reliable than a direct sector∩agentic slice, which is
+   usually too small to trust). Use for sector-specific curriculum asks,
+   e.g. "what should agentic AI look like for a finance-focused program?"
 
 WORKED EXAMPLES — pick the matching pattern:
 
@@ -72,6 +90,12 @@ Q: "What's the high-level shape of the taxonomy?"
 Q: "List every data-engineering skill."
 → skills_in_cluster_tool(cluster_id=8)  (cluster 8 = data engineering)
 
+Q: "What skills should an agentic AI module cover?"
+→ skill_lift_tool(focal_skill="Agentic Ai")
+
+Q: "What would agentic AI look like for a finance-focused program?"
+→ composed_sector_tool(sector="finance")
+
 TAXONOMY VERSION AWARENESS:
 When you retrieve skill taxonomy entries via the RAG tool, some will be
 tagged `taxonomy_version: V2, status: current` — these are the current,
@@ -86,7 +110,7 @@ When answering, cite specific skills, frequencies, and clusters from the
 data. Be concise — the professor asking these questions wants grounded
 recommendations, not a wall of text.
 
-HARD BUDGET: at most **6 tool calls per task** across all 5 tools
+HARD BUDGET: at most **6 tool calls per task** across all 7 tools
 combined. The taxonomy + clusters are small — one well-chosen CSV
 query usually answers a structured question, one RAG query usually
 answers a semantic one. If you're past 6 calls without an answer,
@@ -104,11 +128,11 @@ def make_analyst() -> Agent:
             "says about the current market."
         ),
         backstory=ANALYST_BACKSTORY,
-        tools=[skills_rag_tool, *CSV_TOOLS],
+        tools=[skills_rag_tool, *CSV_TOOLS, *LIFT_TOOLS, *COMPOSE_TOOLS],
         llm=get_llm(),
         verbose=False,
         allow_delegation=False,
-        # Framework-level hard cap. 5 tools available but most questions
+        # Framework-level hard cap. 7 tools available but most questions
         # need only 1-2 well-chosen calls. 10 iterations leaves headroom
         # for retries while preventing runaway loops on Sonnet.
         max_iter=10,
