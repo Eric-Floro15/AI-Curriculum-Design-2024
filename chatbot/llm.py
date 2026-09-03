@@ -5,7 +5,34 @@ Reads:
     LLM_PROVIDER     anthropic (default) | openai | gemini | ollama
     LLM_MODEL        model id for the provider (provider-specific default)
     ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY  per provider
-    OLLAMA_BASE_URL  for ollama (default http://localhost:11434)
+    OLLAMA_BASE_URL      generation base URL, ollama provider only
+                         (default http://localhost:11434). NOTE:
+                         embeddings.py reads this SAME var for the embedding
+                         model — do not repoint it to a cloud host to switch
+                         generation to Ollama Cloud, that would silently
+                         also move embeddings off local mxbai-embed-large.
+                         Use OLLAMA_LLM_BASE_URL below instead.
+    OLLAMA_LLM_BASE_URL  optional override of OLLAMA_BASE_URL for generation
+                         ONLY (e.g. https://ollama.com for Ollama Cloud) —
+                         leave unset to keep generation local too. Added so
+                         "generation on Ollama Cloud, embeddings local" is
+                         expressible without embeddings.py ever seeing a
+                         cloud URL.
+    OLLAMA_API_KEY       Ollama Cloud bearer token. NOT read anywhere in
+                         this file — litellm's ollama_chat completion path
+                         (litellm/main.py, ~line 4273) reads
+                         os.environ["OLLAMA_API_KEY"] directly and sets
+                         `Authorization: Bearer <key>` itself. Setting this
+                         env var (e.g. via chatbot/.env + load_dotenv) is
+                         the entire integration — no code here constructs
+                         the header. Confirmed against litellm==1.99.0
+                         source (this project's installed version) since
+                         docs.litellm.ai's Ollama page doesn't document
+                         cloud auth explicitly. Per docs.ollama.com/api/
+                         authentication, local http://localhost:11434 does
+                         NOT accept this header (can 403) — only matters
+                         when OLLAMA_LLM_BASE_URL points at a real cloud
+                         host.
 
 Ollama models are routed via the "ollama_chat/" prefix (not "ollama/"), per
 litellm's documented recommendation and a matching CrewAI bug report — see
@@ -151,7 +178,45 @@ def get_llm() -> LLM:
         key = os.getenv("GEMINI_API_KEY")
         if not key:
             raise RuntimeError("GEMINI_API_KEY not set — add it to chatbot/.env")
-        return LLM(model=f"gemini/{model}", api_key=key)
+        # CrewAI's Gemini completion class auto-enables "thinking" for
+        # gemini-2.5+ models unless thinking_config is explicitly passed
+        # (crewai/llms/providers/gemini/completion.py, ~line 106-112) — and
+        # thinking can drop tool_calls, same failure class as the qwen3
+        # issue in the ollama branch above. 2026-09-03: gemini-2.0-flash
+        # (the last non-thinking Flash) is retired API-side with no
+        # non-thinking replacement, so disable thinking explicitly instead.
+        # thinking_budget=0 is REJECTED by gemini-3.6-flash with a bare
+        # "400 INVALID_ARGUMENT" (confirmed live, isolated against the raw
+        # google-genai SDK) — this model generation doesn't support fully
+        # disabling thinking via budget. thinking_level="minimal" IS
+        # accepted and confirmed to produce thoughts_token_count=None
+        # (no thinking tokens spent) — the effective "off" for this family.
+        import re as _re
+        from google.genai import types as _genai_types
+        kwargs: dict = {}
+        version_match = _re.search(r"gemini-(\d+(?:\.\d+)?)", model.lower())
+        if version_match and float(version_match.group(1)) >= 2.5:
+            kwargs["thinking_config"] = _genai_types.ThinkingConfig(
+                thinking_level="minimal", include_thoughts=False
+            )
+        # Google's genai SDK defaults to ZERO retries (tenacity
+        # stop_after_attempt(1)) unless retry_options is explicitly set
+        # (google/genai/_api_client.py's retry_args(): "if options is None:
+        # ... never retry"). A 5-agent crew easily exceeds Gemini's
+        # per-minute rate cap (e.g. 10 RPM on gemini-2.5-flash free tier)
+        # well before the daily cap, so a transient 429 there is
+        # recoverable — it just needs to wait out the window instead of
+        # failing immediately. Passing a bare HttpRetryOptions() activates
+        # the SDK's own documented default backoff (5 attempts, ~1/2/4/8s
+        # + jitter, retries on 408/429/500/502/503/504) via client_params,
+        # which crewai's Gemini completion class forwards straight into
+        # genai.Client(**client_params) (see _initialize_client()).
+        kwargs["client_params"] = {
+            "http_options": _genai_types.HttpOptions(
+                retry_options=_genai_types.HttpRetryOptions()
+            )
+        }
+        return LLM(model=f"gemini/{model}", api_key=key, **kwargs)
 
     if provider == "ollama":
         # Routed via "ollama_chat/" (not "ollama/"): litellm's own docs
@@ -206,9 +271,16 @@ def get_llm() -> LLM:
         # environment variables on Mac"). NOT yet live-confirmed this
         # actually prevents truncation-related crashes — the original
         # truncation hypothesis itself is still unverified, per CLAUDE.md.
+        # OLLAMA_LLM_BASE_URL (generation-only) wins over OLLAMA_BASE_URL
+        # (shared default, also read by embeddings.py) — see module
+        # docstring. OLLAMA_API_KEY is NOT referenced here; litellm picks
+        # it up from the environment on its own for the Bearer header.
+        base_url = os.getenv("OLLAMA_LLM_BASE_URL") or os.getenv(
+            "OLLAMA_BASE_URL", "http://localhost:11434"
+        )
         return LLM(
             model=f"ollama_chat/{model}",
-            base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            base_url=base_url,
         )
 
     raise ValueError(f"Unsupported LLM_PROVIDER={provider!r}")
@@ -227,5 +299,9 @@ def describe_llm_config() -> str:
         # branch for why num_ctx is no longer passed as a Python kwarg.
         ctx_hint = os.getenv("OLLAMA_CONTEXT_LENGTH")
         ctx_str = f", OLLAMA_CONTEXT_LENGTH={ctx_hint} (visible to this process)" if ctx_hint else ""
-        return f"LLM: provider={provider}, model=ollama_chat/{model}{ctx_str}"
+        base_url = os.getenv("OLLAMA_LLM_BASE_URL") or os.getenv(
+            "OLLAMA_BASE_URL", "http://localhost:11434"
+        )
+        key_str = ", OLLAMA_API_KEY=set" if os.getenv("OLLAMA_API_KEY") else ""
+        return f"LLM: provider={provider}, model=ollama_chat/{model}, base_url={base_url}{key_str}{ctx_str}"
     return f"LLM: provider={provider}, model={model}"
