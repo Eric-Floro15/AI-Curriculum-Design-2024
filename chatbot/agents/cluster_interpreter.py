@@ -165,4 +165,9 @@ def make_cluster_interpreter() -> Agent:
         allow_delegation=False,
         # 1 overview + up to 5 cluster-detail calls = 6 max.
         max_iter=8,
+        # 2026-09-04 hardening: lowered from CrewAI's default (2). Full
+        # rationale in agents/analyst.py's max_retry_limit comment; the
+        # LLM-call-level retry/fail-fast decision now lives in
+        # gemini_retry.RetryAwareGeminiCompletion (see llm.py).
+        max_retry_limit=1,
     )

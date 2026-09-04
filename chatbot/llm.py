@@ -199,24 +199,31 @@ def get_llm() -> LLM:
             kwargs["thinking_config"] = _genai_types.ThinkingConfig(
                 thinking_level="minimal", include_thoughts=False
             )
-        # Google's genai SDK defaults to ZERO retries (tenacity
-        # stop_after_attempt(1)) unless retry_options is explicitly set
-        # (google/genai/_api_client.py's retry_args(): "if options is None:
-        # ... never retry"). A 5-agent crew easily exceeds Gemini's
-        # per-minute rate cap (e.g. 10 RPM on gemini-2.5-flash free tier)
-        # well before the daily cap, so a transient 429 there is
-        # recoverable — it just needs to wait out the window instead of
-        # failing immediately. Passing a bare HttpRetryOptions() activates
-        # the SDK's own documented default backoff (5 attempts, ~1/2/4/8s
-        # + jitter, retries on 408/429/500/502/503/504) via client_params,
-        # which crewai's Gemini completion class forwards straight into
-        # genai.Client(**client_params) (see _initialize_client()).
-        kwargs["client_params"] = {
-            "http_options": _genai_types.HttpOptions(
-                retry_options=_genai_types.HttpRetryOptions()
-            )
-        }
-        return LLM(model=f"gemini/{model}", api_key=key, **kwargs)
+        # 2026-09-04 hardening: retry_options is deliberately left UNSET
+        # here (google-genai's SDK-level default: stop_after_attempt(1),
+        # i.e. no SDK retry at all). An earlier version of this branch set
+        # a bare HttpRetryOptions() to get exponential backoff on 429s —
+        # but that retries ANY 429 blindly by status code alone, with no
+        # way to tell a recoverable per-MINUTE rate limit apart from a
+        # futile-to-retry per-DAY quota exhaustion (both are HTTP 429
+        # RESOURCE_EXHAUSTED; only the response BODY's quotaId differs,
+        # which HttpRetryOptions has no hook to inspect). That's exactly
+        # the compounding-retry risk this pass is meant to remove — two
+        # independent layers (this one + CrewAI's own Agent.max_retry_limit)
+        # both blindly retrying the same doomed daily-quota call. Instead,
+        # ALL retry/classification logic now lives in one place with body
+        # access: RetryAwareGeminiCompletion (gemini_retry.py), constructed
+        # directly below instead of going through crewai's LLM(...) factory
+        # (which would give us a plain GeminiCompletion with no hook to
+        # override .call()). See gemini_retry.py's module docstring for
+        # the full account, live-confirmed quotaId strings, and why
+        # CrewAI's max_retry_limit is tuned down (chatbot/agents/*.py)
+        # rather than relied on to skip retrying a known-permanent error —
+        # it has no visibility into the reason a task failed.
+        from gemini_retry import RetryAwareGeminiCompletion
+        return RetryAwareGeminiCompletion(
+            model=model, provider="gemini", api_key=key, **kwargs
+        )
 
     if provider == "ollama":
         # Routed via "ollama_chat/" (not "ollama/"): litellm's own docs

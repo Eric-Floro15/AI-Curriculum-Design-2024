@@ -261,4 +261,9 @@ def make_university_programs_agent() -> Agent:
         # (2026-05-26 incident, see CLAUDE.md setup log). DO NOT REMOVE —
         # per CLAUDE.md this cap stays even after adding program_rag_tool.
         max_iter=6,
+        # 2026-09-04 hardening: lowered from CrewAI's default (2). Full
+        # rationale in agents/analyst.py's max_retry_limit comment; the
+        # LLM-call-level retry/fail-fast decision now lives in
+        # gemini_retry.RetryAwareGeminiCompletion (see llm.py).
+        max_retry_limit=1,
     )

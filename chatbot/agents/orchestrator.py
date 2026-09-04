@@ -21,6 +21,7 @@ Crew. The LLM decides when to call them.
 
 import os
 import sys
+from datetime import datetime, timezone
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
@@ -219,6 +220,13 @@ def make_orchestrator() -> Agent:
         # the 2026-05-26 Sonnet incident where the absence of a cap let
         # CrewAI's retry listeners compound into 161+ tool dispatches.
         max_iter=8,
+        # 2026-09-04 hardening: lowered from CrewAI's default (2) — the
+        # Orchestrator is the highest-cost agent to blindly re-invoke,
+        # since a retry re-runs delegation to ALL specialists again. Full
+        # rationale in agents/analyst.py's max_retry_limit comment; the
+        # LLM-call-level retry/fail-fast decision now lives in
+        # gemini_retry.RetryAwareGeminiCompletion (see llm.py).
+        max_retry_limit=1,
     )
 
 
@@ -243,13 +251,86 @@ def build_crew() -> tuple[Crew, Agent]:
     return crew, orchestrator
 
 
+_PARTIAL_RUNS_DIR = os.path.join(_CHATBOT_DIR, "partial_runs")
+
+
+def _capture_partial_output(query: str, step_log: list[dict], error: Exception) -> str:
+    """Write whatever specialist output completed before `error` was raised.
+
+    2026-09-04 hardening: a rate-limit/quota failure part-way through a
+    5-agent crew (e.g. Gemini's per-day cap) previously meant losing every
+    tool call and partial specialist answer the run had already paid for —
+    crew.kickoff() just raised, with nothing recoverable afterward. CrewAI
+    itself gives no post-hoc access to partial results once kickoff()
+    raises, so step_callback (wired in run_query(), below) captures each
+    specialist's output PROACTIVELY as the run progresses, not
+    reconstructed after the fact. Returns the path written.
+    """
+    os.makedirs(_PARTIAL_RUNS_DIR, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    path = os.path.join(_PARTIAL_RUNS_DIR, f"partial_{ts}.md")
+    lines = [
+        f"# Partial run output — {ts}",
+        "",
+        f"**Query:** {query}",
+        "",
+        f"**Failed with:** {type(error).__name__}: {error}",
+        "",
+        f"## Steps completed before failure ({len(step_log)})",
+        "",
+    ]
+    if step_log:
+        for i, step in enumerate(step_log, 1):
+            lines += [
+                f"### Step {i} — {step['role']}",
+                "",
+                "```",
+                str(step["output"])[:4000],
+                "```",
+                "",
+            ]
+    else:
+        lines.append("_(no specialist steps completed before failure)_")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    return path
+
+
 def run_query(query: str) -> str:
-    """Run a single professor query end-to-end through the full crew."""
+    """Run a single professor query end-to-end through the full crew.
+
+    2026-09-04 hardening: wraps crew.kickoff() so a rate-limit/quota
+    failure doesn't silently discard completed tool calls and partial
+    specialist answers — see _capture_partial_output(). Currently scoped
+    to the Gemini error classes this project has live-tested retry/
+    fail-fast behaviour against (gemini_retry.py); extend the except
+    clause here with the equivalent Anthropic rate-limit exception once
+    that provider is validated the same way — do NOT widen this to bare
+    Exception, that would also swallow genuine bugs behind a misleading
+    "partial output saved" message.
+    """
+    # Function-local (not module-level) so orchestrator.py doesn't force a
+    # google-genai import for callers running LLM_PROVIDER=ollama/anthropic.
+    from gemini_retry import GeminiDailyQuotaExhaustedError
+    from google.genai.errors import APIError
+
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
     news = make_news_agent()
     cluster_interp = make_cluster_interpreter()
     orchestrator = make_orchestrator()
+
+    step_log: list[dict] = []
+
+    def _make_tracker(role: str):
+        def _tracker(output) -> None:
+            step_log.append({"role": role, "output": output})
+        return _tracker
+
+    analyst.step_callback = _make_tracker("Skills Taxonomy Analyst")
+    univ_programs.step_callback = _make_tracker("University AI Programs Researcher")
+    news.step_callback = _make_tracker("AI Industry News Researcher")
+    cluster_interp.step_callback = _make_tracker("Cluster Interpreter")
 
     task = Task(
         description=query,
@@ -273,4 +354,12 @@ def run_query(query: str) -> str:
         tasks=[task],
         verbose=False,
     )
-    return str(crew.kickoff())
+    try:
+        return str(crew.kickoff())
+    except (GeminiDailyQuotaExhaustedError, APIError) as e:
+        path = _capture_partial_output(query, step_log, e)
+        raise RuntimeError(
+            f"{type(e).__name__}: {e}\n\n"
+            f"Partial output ({len(step_log)} specialist step(s) completed "
+            f"before failure) saved to: {path}"
+        ) from e

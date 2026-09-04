@@ -122,4 +122,9 @@ def make_news_agent() -> Agent:
         # 3 retrieval calls + final answer should fit in 6 iterations.
         # Pair with the in-backstory "max 3 news_rag_tool calls" rule.
         max_iter=6,
+        # 2026-09-04 hardening: lowered from CrewAI's default (2). Full
+        # rationale in agents/analyst.py's max_retry_limit comment; the
+        # LLM-call-level retry/fail-fast decision now lives in
+        # gemini_retry.RetryAwareGeminiCompletion (see llm.py).
+        max_retry_limit=1,
     )

@@ -136,4 +136,19 @@ def make_analyst() -> Agent:
         # need only 1-2 well-chosen calls. 10 iterations leaves headroom
         # for retries while preventing runaway loops on Sonnet.
         max_iter=10,
+        # 2026-09-04 hardening: CrewAI's default max_retry_limit=2 means
+        # ANY exception (regardless of cause) re-invokes execute_task()
+        # from scratch up to 2 more times — for a delegating/tool-using
+        # agent that's the full tool loop re-run each time, 3x cost in
+        # the worst case. CrewAI has zero visibility into WHY a task
+        # failed (see crewai/agent/core.py's _check_execution_error — it
+        # only special-cases litellm exceptions and ToolExecutionFailedError,
+        # neither of which a Gemini quota/rate-limit error is), so it
+        # can't itself skip retrying a known-permanent failure like a
+        # daily quota cap. Lowered to 1 as a bounded backstop for genuine
+        # transient issues outside the LLM-call layer (network blips,
+        # parsing errors) — the LLM-call-level retry/fail-fast decision
+        # itself now lives in gemini_retry.RetryAwareGeminiCompletion,
+        # which IS reason-aware (see llm.py's gemini branch).
+        max_retry_limit=1,
     )
