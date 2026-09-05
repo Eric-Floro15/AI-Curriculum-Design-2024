@@ -2,37 +2,45 @@
 llm.py — Factory for the CrewAI LLM, configured via env vars.
 
 Reads:
-    LLM_PROVIDER     anthropic (default) | openai | gemini | ollama
+    LLM_PROVIDER     anthropic (default) | openai | gemini | ollama |
+                     ollama-cloud
     LLM_MODEL        model id for the provider (provider-specific default)
     ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY  per provider
-    OLLAMA_BASE_URL      generation base URL, ollama provider only
+    OLLAMA_BASE_URL      generation base URL, LOCAL ollama provider only
                          (default http://localhost:11434). NOTE:
                          embeddings.py reads this SAME var for the embedding
                          model — do not repoint it to a cloud host to switch
                          generation to Ollama Cloud, that would silently
                          also move embeddings off local mxbai-embed-large.
-                         Use OLLAMA_LLM_BASE_URL below instead.
-    OLLAMA_LLM_BASE_URL  optional override of OLLAMA_BASE_URL for generation
-                         ONLY (e.g. https://ollama.com for Ollama Cloud) —
-                         leave unset to keep generation local too. Added so
-                         "generation on Ollama Cloud, embeddings local" is
-                         expressible without embeddings.py ever seeing a
-                         cloud URL.
-    OLLAMA_API_KEY       Ollama Cloud bearer token. NOT read anywhere in
-                         this file — litellm's ollama_chat completion path
-                         (litellm/main.py, ~line 4273) reads
-                         os.environ["OLLAMA_API_KEY"] directly and sets
-                         `Authorization: Bearer <key>` itself. Setting this
-                         env var (e.g. via chatbot/.env + load_dotenv) is
-                         the entire integration — no code here constructs
-                         the header. Confirmed against litellm==1.99.0
-                         source (this project's installed version) since
-                         docs.litellm.ai's Ollama page doesn't document
-                         cloud auth explicitly. Per docs.ollama.com/api/
-                         authentication, local http://localhost:11434 does
-                         NOT accept this header (can 403) — only matters
-                         when OLLAMA_LLM_BASE_URL points at a real cloud
-                         host.
+                         Use LLM_PROVIDER=ollama-cloud below instead, which
+                         has its own separate base URL and never touches
+                         this var or embeddings.py.
+    OLLAMA_LLM_BASE_URL  optional override of OLLAMA_BASE_URL for the LOCAL
+                         ollama provider's generation ONLY — leave unset to
+                         keep generation local too. Historical: an earlier
+                         version of this project pointed this at Ollama
+                         Cloud to get "generation on Ollama Cloud,
+                         embeddings local" out of the plain ollama branch;
+                         that's now LLM_PROVIDER=ollama-cloud instead (a
+                         first-class separate lane, not an override on the
+                         local one) — see get_llm()'s ollama-cloud branch.
+    OLLAMA_API_KEY       Ollama Cloud bearer token, used by the
+                         ollama-cloud branch below (explicit api_key=
+                         kwarg, not env-var auto-detection). 2026-09-05:
+                         the LOCAL ollama branch now explicitly passes
+                         api_key="ollama" (Ollama's own documented no-op
+                         value for deployments that don't require auth) so
+                         it can NEVER pick this var up via CrewAI's
+                         OpenAICompatibleCompletion env-var fallback
+                         (_resolve_api_key here checks os.getenv(
+                         "OLLAMA_API_KEY") when no explicit api_key is
+                         given) — without that, having this var live in
+                         .env for the cloud lane would silently attach a
+                         Bearer header to LOCAL calls too the moment
+                         someone switches LLM_PROVIDER back to plain
+                         "ollama", which per docs.ollama.com/api/
+                         authentication can 403 a local server that
+                         doesn't expect any Authorization header at all.
 
 Ollama models are routed via the "ollama_chat/" prefix (not "ollama/"), per
 litellm's documented recommendation and a matching CrewAI bug report — see
@@ -153,6 +161,7 @@ _DEFAULT_MODELS = {
     "openai": "gpt-4o",
     "gemini": "gemini-1.5-pro",
     "ollama": "llama3.1:8b",
+    "ollama-cloud": "gpt-oss:120b",
 }
 
 
@@ -280,14 +289,79 @@ def get_llm() -> LLM:
         # truncation hypothesis itself is still unverified, per CLAUDE.md.
         # OLLAMA_LLM_BASE_URL (generation-only) wins over OLLAMA_BASE_URL
         # (shared default, also read by embeddings.py) — see module
-        # docstring. OLLAMA_API_KEY is NOT referenced here; litellm picks
-        # it up from the environment on its own for the Bearer header.
+        # docstring.
         base_url = os.getenv("OLLAMA_LLM_BASE_URL") or os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         )
+        # 2026-09-05: api_key="ollama" passed EXPLICITLY (not left unset)
+        # so CrewAI's OpenAICompatibleCompletion resolver never falls back
+        # to os.getenv("OLLAMA_API_KEY") for local calls — see module
+        # docstring's OLLAMA_API_KEY entry for why that fallback is a real
+        # footgun now that var lives in .env for the ollama-cloud branch
+        # below. "ollama" is Ollama's own documented dummy value for
+        # deployments that don't require auth (crewai/llms/providers/
+        # openai_compatible/completion.py's OPENAI_COMPATIBLE_PROVIDERS
+        # config already defaults to this exact value when no key is
+        # given — passing it explicitly here just removes the env-var
+        # detour so a stray OLLAMA_API_KEY can't reach a local call).
         return LLM(
             model=f"ollama_chat/{model}",
             base_url=base_url,
+            api_key="ollama",
+        )
+
+    if provider == "ollama-cloud":
+        # 2026-09-05: DEV/ITERATION lane — capable + more daily headroom
+        # than Gemini's free tier, for cheaply tuning the generation
+        # pipeline. The paper's final results still come from a single
+        # Sonnet pass later; do not treat this as a substitute for that.
+        #
+        # This is a genuinely different mechanism from the local "ollama"
+        # branch above, not a variant of it — Ollama Cloud's direct API
+        # (https://ollama.com/v1) is a real OpenAI-compatible REST
+        # endpoint authenticated with a plain Bearer token (the regular
+        # API-key path: create a key at ollama.com/settings/keys, send
+        # `Authorization: Bearer <key>`), confirmed live via curl against
+        # both /v1/models and /v1/chat/completions (2026-09-05). This is
+        # DIFFERENT from `ollama signin` (device-key SSH flow for a
+        # locally-run `ollama serve` proxying to the cloud), which this
+        # project tried first and hit a 401 with — that flow registers an
+        # ed25519 keypair with an ollama.com ACCOUNT via a browser step;
+        # this one just needs a bearer token, no account/browser step, and
+        # was confirmed working on the first real attempt with a properly
+        # generated API key (id.secret format from ollama.com/settings/
+        # keys, distinct from the ssh-ed25519 device key `ollama signin`
+        # produces — don't confuse the two when rotating keys later).
+        #
+        # Reuses CrewAI's OpenAICompatibleCompletion directly (not the
+        # LLM(...) factory, and not litellm — same reasoning as
+        # RetryAwareGeminiCompletion above: constructing the native class
+        # directly is what makes explicit api_key/base_url kwargs actually
+        # stick instead of falling through to env-var/default resolution).
+        # provider="ollama_chat" reuses that provider's existing base-url
+        # normalization (appends /v1 if missing — confirmed it resolves
+        # "https://ollama.com" to "https://ollama.com/v1" as intended) —
+        # it's the right config to reuse because Ollama Cloud's endpoint
+        # IS the same OpenAI-compatible shape "ollama_chat" already
+        # targets, just against a remote host instead of localhost.
+        #
+        # Model tag: gpt-oss:120b, verified present via a live
+        # GET https://ollama.com/v1/models call under this exact key
+        # (2026-09-05) — no "-cloud" suffix needed here (that suffix is
+        # only for the local-`ollama serve`-proxying-to-cloud path via
+        # `ollama pull gpt-oss:120b-cloud`, a different auth mechanism
+        # from the one this branch uses).
+        key = os.getenv("OLLAMA_API_KEY")
+        if not key:
+            raise RuntimeError("OLLAMA_API_KEY not set — add it to chatbot/.env")
+        from crewai.llms.providers.openai_compatible.completion import (
+            OpenAICompatibleCompletion,
+        )
+        return OpenAICompatibleCompletion(
+            model=model,
+            provider="ollama_chat",
+            base_url=os.getenv("OLLAMA_CLOUD_BASE_URL", "https://ollama.com"),
+            api_key=key,
         )
 
     raise ValueError(f"Unsupported LLM_PROVIDER={provider!r}")
@@ -309,6 +383,9 @@ def describe_llm_config() -> str:
         base_url = os.getenv("OLLAMA_LLM_BASE_URL") or os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         )
-        key_str = ", OLLAMA_API_KEY=set" if os.getenv("OLLAMA_API_KEY") else ""
-        return f"LLM: provider={provider}, model=ollama_chat/{model}, base_url={base_url}{key_str}{ctx_str}"
+        return f"LLM: provider={provider}, model=ollama_chat/{model}, base_url={base_url}, api_key=ollama (local, no auth){ctx_str}"
+    if provider == "ollama-cloud":
+        base_url = os.getenv("OLLAMA_CLOUD_BASE_URL", "https://ollama.com")
+        key_str = "OLLAMA_API_KEY=set" if os.getenv("OLLAMA_API_KEY") else "OLLAMA_API_KEY=MISSING"
+        return f"LLM: provider={provider}, model=ollama_chat/{model}, base_url={base_url}/v1, {key_str}"
     return f"LLM: provider={provider}, model={model}"
