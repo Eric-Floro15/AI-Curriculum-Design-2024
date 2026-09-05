@@ -21,6 +21,7 @@ Crew. The LLM decides when to call them.
 
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +35,7 @@ from agents.analyst import make_analyst  # noqa: E402
 from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
 from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
-from llm import get_llm  # noqa: E402
+from llm import describe_llm_config, get_llm  # noqa: E402
 
 
 ORCHESTRATOR_BACKSTORY = """\
@@ -251,46 +252,112 @@ def build_crew() -> tuple[Crew, Agent]:
     return crew, orchestrator
 
 
-_PARTIAL_RUNS_DIR = os.path.join(_CHATBOT_DIR, "partial_runs")
+# Durable, NOT gitignored — 2026-09-05: every run (success or failure) is
+# a record worth keeping for inspection and the paper, not scratch. See
+# run_query()'s docstring for the full account of why this replaced the
+# earlier partial-runs-only (gitignored) version.
+_RUN_RECORDS_DIR = os.path.join(_CHATBOT_DIR, "run_records")
 
 
-def _capture_partial_output(query: str, step_log: list[dict], error: Exception) -> str:
-    """Write whatever specialist output completed before `error` was raised.
+def _format_step(step: dict) -> list[str]:
+    """Render one captured step_callback payload as markdown lines.
 
-    2026-09-04 hardening: a rate-limit/quota failure part-way through a
-    5-agent crew (e.g. Gemini's per-day cap) previously meant losing every
-    tool call and partial specialist answer the run had already paid for —
-    crew.kickoff() just raised, with nothing recoverable afterward. CrewAI
-    itself gives no post-hoc access to partial results once kickoff()
-    raises, so step_callback (wired in run_query(), below) captures each
-    specialist's output PROACTIVELY as the run progresses, not
-    reconstructed after the fact. Returns the path written.
+    CrewAI's step_callback receives an AgentAction (one tool call: .tool,
+    .tool_input, .result) or an AgentFinish (that agent's own final
+    answer: .output) — crewai.agents.parser. Duck-typed on attribute
+    presence rather than isinstance() so this doesn't break if CrewAI
+    renames/moves these dataclasses across versions; falls back to
+    str(output) for anything else so a shape change degrades gracefully
+    instead of losing the record.
     """
-    os.makedirs(_PARTIAL_RUNS_DIR, exist_ok=True)
+    output = step["output"]
+    if hasattr(output, "tool") and hasattr(output, "tool_input"):
+        return [
+            f"**Tool call:** `{output.tool}`",
+            f"**Input:** `{output.tool_input}`",
+            "",
+            "**Result:**",
+            "```",
+            str(getattr(output, "result", ""))[:4000],
+            "```",
+        ]
+    if hasattr(output, "output"):
+        return [
+            "**Final answer for this agent's (sub-)task:**",
+            "```",
+            str(output.output)[:4000],
+            "```",
+        ]
+    return ["```", str(output)[:4000], "```"]
+
+
+def _is_tool_call(step: dict) -> bool:
+    output = step["output"]
+    return hasattr(output, "tool") and hasattr(output, "tool_input")
+
+
+def _write_run_record(
+    query: str,
+    step_log: list[dict],
+    wall_time_sec: float,
+    answer: str | None,
+    error: Exception | None,
+) -> str:
+    """Write a full durable record of one orchestrator run — success or
+    failure — to chatbot/run_records/. Returns the path written.
+
+    2026-09-05: unifies what was previously two mechanisms (a full answer
+    that only ever reached ephemeral scratch/console output on success,
+    and a gitignored partial_runs/ that only fired on a rate-limit/quota
+    failure) into one durable, git-tracked record written on EVERY run,
+    so nothing — including the Sonnet-phase production runs whose output
+    is paper content — depends on a scratch file or a terminal scrollback
+    surviving. Reason for the underlying capture mechanism (step_callback,
+    not post-hoc reconstruction): CrewAI gives no way to inspect a task's
+    intermediate results after crew.kickoff() returns OR raises, so every
+    step is captured proactively as the run progresses.
+    """
+    os.makedirs(_RUN_RECORDS_DIR, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    path = os.path.join(_PARTIAL_RUNS_DIR, f"partial_{ts}.md")
+    status = "failure" if error is not None else "success"
+    path = os.path.join(_RUN_RECORDS_DIR, f"run_{ts}_{status}.md")
+
+    delegated_to = sorted({step["role"] for step in step_log})
+    tool_call_count = sum(1 for step in step_log if _is_tool_call(step))
+
     lines = [
-        f"# Partial run output — {ts}",
+        f"# Orchestrator run — {ts} — {status.upper()}",
         "",
         f"**Query:** {query}",
         "",
-        f"**Failed with:** {type(error).__name__}: {error}",
+        f"**Model:** {describe_llm_config()}",
         "",
-        f"## Steps completed before failure ({len(step_log)})",
+        "## Metrics",
+        f"- **Status:** {status}",
+        f"- **Error:** {f'{type(error).__name__}: {error}' if error else 'None'}",
+        f"- **Delegated to:** {delegated_to or '(none)'}",
+        f"- **Tool calls:** {tool_call_count}",
+        f"- **Wall time:** {wall_time_sec:.1f}s",
+        "",
+        "## Final Answer" if error is None else "## Partial Answer (run failed before completion)",
+        "",
+        answer if answer else "_(none — failed before any answer was produced)_",
+        "",
+        f"## Per-Agent Tool-Call Trace ({len(step_log)} step(s))",
         "",
     ]
     if step_log:
-        for i, step in enumerate(step_log, 1):
-            lines += [
-                f"### Step {i} — {step['role']}",
-                "",
-                "```",
-                str(step["output"])[:4000],
-                "```",
-                "",
-            ]
+        by_role: dict[str, int] = {}
+        for step in step_log:
+            role = step["role"]
+            by_role[role] = by_role.get(role, 0) + 1
+            lines.append(f"### {role} — step {by_role[role]}")
+            lines.append("")
+            lines += _format_step(step)
+            lines.append("")
     else:
-        lines.append("_(no specialist steps completed before failure)_")
+        lines.append("_(no specialist steps completed)_")
+
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return path
@@ -299,15 +366,19 @@ def _capture_partial_output(query: str, step_log: list[dict], error: Exception) 
 def run_query(query: str) -> str:
     """Run a single professor query end-to-end through the full crew.
 
-    2026-09-04 hardening: wraps crew.kickoff() so a rate-limit/quota
-    failure doesn't silently discard completed tool calls and partial
-    specialist answers — see _capture_partial_output(). Currently scoped
-    to the Gemini error classes this project has live-tested retry/
-    fail-fast behaviour against (gemini_retry.py); extend the except
-    clause here with the equivalent Anthropic rate-limit exception once
-    that provider is validated the same way — do NOT widen this to bare
-    Exception, that would also swallow genuine bugs behind a misleading
-    "partial output saved" message.
+    2026-09-05: every run — success or failure — is written as a durable
+    record via _write_run_record() (chatbot/run_records/, git-tracked;
+    see that function's docstring). This project's Sonnet-phase production
+    runs (curricula, eval) are paper content, so "ran once in a terminal"
+    is not sufficient persistence for them, or for any run someone might
+    want to inspect later.
+
+    The except clause here is currently scoped to the Gemini error classes
+    this project has live-tested retry/fail-fast behaviour against
+    (gemini_retry.py) — extend it with the equivalent Anthropic rate-limit
+    exception once that provider is validated the same way. Deliberately
+    NOT widened to bare Exception: that would also write a run record for
+    (and mask) a genuine bug as if it were a handled rate-limit case.
     """
     # Function-local (not module-level) so orchestrator.py doesn't force a
     # google-genai import for callers running LLM_PROVIDER=ollama/anthropic.
@@ -327,6 +398,7 @@ def run_query(query: str) -> str:
             step_log.append({"role": role, "output": output})
         return _tracker
 
+    orchestrator.step_callback = _make_tracker("Senior Curriculum Advisor")
     analyst.step_callback = _make_tracker("Skills Taxonomy Analyst")
     univ_programs.step_callback = _make_tracker("University AI Programs Researcher")
     news.step_callback = _make_tracker("AI Industry News Researcher")
@@ -354,12 +426,18 @@ def run_query(query: str) -> str:
         tasks=[task],
         verbose=False,
     )
+    t0 = time.time()
     try:
-        return str(crew.kickoff())
+        answer = str(crew.kickoff())
     except (GeminiDailyQuotaExhaustedError, APIError) as e:
-        path = _capture_partial_output(query, step_log, e)
+        wall_time = time.time() - t0
+        path = _write_run_record(query, step_log, wall_time, answer=None, error=e)
         raise RuntimeError(
             f"{type(e).__name__}: {e}\n\n"
             f"Partial output ({len(step_log)} specialist step(s) completed "
             f"before failure) saved to: {path}"
         ) from e
+    else:
+        wall_time = time.time() - t0
+        _write_run_record(query, step_log, wall_time, answer=answer, error=None)
+        return answer
