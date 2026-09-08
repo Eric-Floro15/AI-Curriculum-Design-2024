@@ -128,9 +128,12 @@ CRITICAL TOOL-USE RULES (read carefully — small models break here):
                    the call and the crew will fail.
     • "coworker" — the exact role string (see list below)
   Example of a valid delegation:
-    task:     "What are the top 10 data engineering skills by frequency?"
+    task:     "What skills are significantly co-demanded (lift + z) with
+               data engineering, and which are the top attested (z>=2)
+               picks for a curriculum?"
     context:  "A professor asked: 'What data engineering skills should
-               my AI/ML Master's cover?' I need market-demand data."
+               my AI/ML Master's cover?' I need market-demand data,
+               grounded in lift/significance, not raw frequency."
     coworker: "Skills Taxonomy Analyst"
 - Do NOT emit tool-call JSON like `{"name": "ask_question_to_coworker",
   "parameters": {...}}` as your final text answer. If you find yourself
@@ -162,9 +165,15 @@ CRITICAL DELEGATION RULES:
                                      (structured fetch) THEN
                                      Cluster Interpreter (in sequence)
   Still MUST delegate — do not answer from memory.
-- When you delegate, frame the sub-question PRECISELY. Good: "What are
-  the top 10 most in-demand data engineering skills by frequency?"
-  Bad: "Tell me about data engineering."
+- When you delegate a curriculum-recommendation question to the Skills
+  Taxonomy Analyst, frame it around LIFT/SIGNIFICANCE, not frequency —
+  that's this project's grounding metric (what's distinctively
+  co-demanded, not merely popular). Good: "What skills are significantly
+  co-demanded (lift + z, z>=2) with data engineering?" Bad: "What are the
+  top 10 most in-demand data engineering skills by frequency?" (frequency
+  framing is fine for a pure scale question, e.g. "how many postings
+  mention data engineering", just not for "what should we teach"). Also
+  bad, for any specialist: "Tell me about data engineering" (too vague).
 - HARD BUDGET: delegate exactly ONCE per specialist. Maximum 3
   delegations total across the entire task (one each for Analyst,
   University Programs, News). If a specialist's answer is incomplete,
@@ -182,8 +191,14 @@ OUTPUT FORMAT for your final answer:
 - Then a structured body with concrete picks (skills to add, topics
   to emphasise, courses to update). Cite the evidence from ALL
   specialists consulted:
-    * Frequency numbers (e.g. "Data Pipelines, 4,278") from the
-      Skills Taxonomy Analyst.
+    * Lift (×) and significance (z) from the Skills Taxonomy Analyst,
+      e.g. "Large Language Models (lift 6.17×, z=9.56)" — this is the
+      grounding metric: what's DISTINCTIVELY co-demanded, not merely
+      popular. Raw frequency (e.g. "4,278 postings") may appear as
+      secondary scale/context but must never be the only number attached
+      to a recommended skill, and never the stated reason a skill was
+      picked. (Frequency alone is fine when the Analyst was answering a
+      pure scale/inventory question rather than "what should we add".)
     * Peer-program course names + URLs (e.g. "Queen's MMAI capstone
       at smith.queensu.ca/...") from the University Programs
       Researcher.
@@ -409,8 +424,12 @@ def run_query(query: str) -> str:
         expected_output=(
             "A single coherent recommendation for the professor. Open with "
             "a 2-3 sentence executive summary. Then a structured body of "
-            "concrete recommendations citing: specific skills with "
-            "frequencies (from the Analyst), peer-program courses with "
+            "concrete recommendations citing: specific skills with their "
+            "lift (×) and significance (z) (from the Analyst) — the "
+            "grounding metric for what to recommend (distinctively "
+            "co-demanded, not merely popular); raw frequency may appear "
+            "as secondary scale context but never as the sole justification "
+            "for a recommended skill — peer-program courses with "
             "URLs (from the University Programs researcher), recent "
             "articles with titles + sources (from the News researcher), "
             "and — where relevant — a structured curriculum course list "

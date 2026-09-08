@@ -150,14 +150,23 @@ if _CHATBOT_DIR not in sys.path:
 
 QUERIES_FILE = os.path.join(_HERE, "orchestrator_queries.yaml")
 
+# 2026-09-08: "frequencies" -> "lift (x) and significance (z)" — matches
+# the same fix in agents/orchestrator.py's run_query() Task.expected_output.
+# Raw frequency is the naive baseline this project's method is meant to
+# beat; it was steering the Analyst toward citing popularity instead of
+# distinctive co-demand. This eval harness builds its own Task separately
+# from run_query() (doesn't reuse its expected_output), so needed the same
+# fix independently to not silently regress back to frequency-grounding
+# next time this harness runs.
 DEFAULT_EXPECTED_OUTPUT = (
     "A single coherent recommendation for the professor. Open with a 2-3 "
     "sentence executive summary. Then a structured body of concrete "
-    "recommendations citing specific skills with frequencies (from the "
-    "Analyst), peer-program courses with URLs (from the University "
-    "Programs researcher), and recent articles with titles + sources "
-    "(from the News researcher) where each is relevant. Close with a "
-    "trade-off or caveat."
+    "recommendations citing specific skills with their lift (x) and "
+    "significance (z) (from the Analyst) — the grounding metric for what "
+    "to recommend, not raw frequency — peer-program courses with URLs "
+    "(from the University Programs researcher), and recent articles with "
+    "titles + sources (from the News researcher) where each is relevant. "
+    "Close with a trade-off or caveat."
 )
 
 
