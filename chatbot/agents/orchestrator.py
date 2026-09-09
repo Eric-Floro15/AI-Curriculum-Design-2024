@@ -20,6 +20,7 @@ Crew. The LLM decides when to call them.
 """
 
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -431,6 +432,239 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
     return flags
 
 
+# --- Numeric grounding guard (2026-09-10) ---------------------------------
+# Closes the gap the attribution guard above doesn't cover: a specialist
+# that WAS actually delegated to, but whose lift/z/frequency numbers the
+# Advisor altered or invented while writing the final synthesis (rather
+# than fabricating an entire uninvoked section). Scope is deliberately
+# narrow — market-statistic numbers only (lift, z, posting
+# frequency/count) — NOT curriculum-design numbers (credits, weeks,
+# course counts), which are the Advisor's own legitimate synthesis and
+# would just be false-positive noise here.
+#
+# Each regex is anchored on a keyword (lift/z/freq/postings) or a
+# domain-specific marker within a short window of the number, rather
+# than scanning for bare digits — this is what keeps false-positive risk
+# down for short numbers (a lone "9" or "5" is everywhere in normal
+# prose; "z=9" or "9 postings" is not). One capture group per pattern.
+#
+# Lift specifically does NOT require the literal word "lift" adjacent to
+# the number — tried that first, and it produced both false negatives
+# and misleading context on a live run (2026-09-10, run_20260909T181136Z):
+# markdown tables put "lift" only in the column header ("Composed lift
+# (×) | Agentic lift (×) / z | ..."), 15+ chars away from each row's
+# actual number ("22.39×"), so the keyword-adjacent version failed to
+# extract real, correctly-cited table values from BOTH the answer and
+# the grounding pool (same failure on both sides), producing spurious
+# flags. Every real example seen this session — inline prose and table
+# cells alike — writes lift as "<number><×-or-immediately-adjacent-x>"
+# with nothing else in this project's domain using that notation, so a
+# bare number immediately followed by × (or non-word-boundary-terminated
+# "x") is itself a strong, low-noise signal here — no keyword needed.
+_LIFT_NUM_RE = re.compile(r"(\d[\d,]*\.?\d*)\s?[×x](?!\w)", re.IGNORECASE)
+# Separator after "z" is OPTIONAL — real observed output writes both
+# "z=9.56" / "z = 9.2" AND bare "z 4.65" (no "=" at all, e.g. "AutoGen
+# lift 12.6x, z 4.65" from a live run). \bz requires a word boundary
+# before the z (so it won't match mid-word, e.g. the "z" in "size"),
+# which is what keeps this safe to make the separator optional.
+_Z_NUM_RE = re.compile(r"\bz\s*[=:]?\s*(-?\d[\d,]*\.?\d*)", re.IGNORECASE)
+# "k" (thousands) suffix must be INSIDE the capture group — it needs to
+# reach _normalize_market_num() so "56 k" -> 56000.0, not 56.0.
+_FREQ_NUM_RE = re.compile(
+    r"(?:freq(?:uency)?\s*[=:]\s*(\d[\d,]*\.?\d*\s*k?))"
+    r"|(?:(\d[\d,]*\.?\d*\s*k?)\s*(?:postings?|job[- ]postings?))",
+    re.IGNORECASE,
+)
+# Grounding-pool-only fallback: a markdown table cell containing NOTHING
+# but a number (optionally bold-wrapped), e.g. "| 22.39 |" or "| **10.33** |".
+# Added 2026-09-10 after a live false positive: a "Composed lift (×)"
+# table column had the "×" only in the header, and each row's own cell
+# was a bare number ("| AutoGen | 12.6 × | ... | 22.39 |") — the keyword/
+# marker-anchored patterns above correctly extracted the adjacent-× cells
+# in that same row (12.6×, 1.78×) but had nothing to anchor on for the
+# bare 22.39 cell. Used ONLY when building the grounded pool from
+# specialist text, never for extracting claims from the Advisor's answer
+# — widening what counts as "grounded" can only reduce false positives,
+# never cause new ones, whereas widening what counts as a "claim" in the
+# answer would reintroduce exactly the noise the keyword anchoring exists
+# to prevent.
+#
+# Trailing "|" is a lookahead, NOT consumed — adjacent cells in the same
+# table row share a delimiter ("| 0.40 | 22.39 |"), and finditer's
+# non-overlapping matches would otherwise consume the "|" between two
+# numeric cells as part of the first match, leaving nothing to serve as
+# the opening "|" for the next cell (found via a live false positive on
+# the first version of this pattern: 8 of 9 real, correctly-grounded
+# composed-lift values were still missed, all in rows with 2+ adjacent
+# bare-number cells).
+_TABLE_CELL_NUM_RE = re.compile(r"\|\s*\**\s*(-?\d[\d,]*\.?\d*)\s*\**\s*(?=\|)")
+
+# kind -> (regex, group-indices to try in order, relative tolerance)
+# Lift/z are floats copied verbatim from a frozen CSV — any deviation
+# beyond formatting (e.g. "6.3" vs "6.30", which are equal once parsed)
+# is suspicious, so tolerance is effectively zero. Frequency numbers are
+# often summed/rounded by the Advisor from several real per-skill
+# figures (e.g. "Total Frequency (sum of top-3 skills)" seen in a real
+# run) or abbreviated with a "k" suffix — both legitimate arithmetic on
+# real numbers, not fabrication — so frequency gets a wider relative
+# tolerance to avoid flagging that as if it were invented.
+_MARKET_NUM_KINDS = {
+    "lift": (_LIFT_NUM_RE, [0], 1e-6),
+    "z-score": (_Z_NUM_RE, [0], 1e-6),
+    "frequency": (_FREQ_NUM_RE, [0, 1], 0.10),
+}
+
+
+def _normalize_market_num(raw: str) -> float:
+    """'1,435' / '56k' / '6.30' -> float, tolerant of commas and a 'k'
+    (thousands) suffix. Deliberately float-parse-and-compare rather than
+    reusing eval/run_orchestrator_eval.py's _substring_match() (a plain
+    comma-stripped substring check) — substring matching risks a short
+    number wrongly matching inside a longer one (e.g. "1.5" as a
+    substring of "21.5" or "1.56"); parsing to float and comparing
+    numerically is the correct generalisation of the same
+    comma-normalisation idea for this use case.
+    """
+    raw = raw.strip()
+    is_k = raw.lower().endswith("k")
+    if is_k:
+        raw = raw[:-1]
+    val = float(raw.replace(",", ""))
+    return val * 1000 if is_k else val
+
+
+def _extract_market_numbers(text: str) -> list[tuple[str, float, str, int, int]]:
+    """Return [(raw_matched_number, normalized_float, kind, start, end), ...]
+    for every lift/z/frequency number found in text, anchored on the
+    keyword/marker regexes above. start/end are the character offsets of
+    the CAPTURED NUMBER (not the whole match) within `text`, needed by
+    callers that report an accurate context snippet — a plain
+    `text.find(raw)` after the fact is wrong whenever the same short
+    digit string (e.g. "18", "2") occurs earlier elsewhere in the text
+    for an unrelated reason (a live run on 2026-09-10 hit exactly this:
+    a flagged "'2'" reported context from an unrelated numbered list
+    item, "(2) mirror the proven...", instead of the real match's
+    location in a "lift ≈ 2×" phrase).
+
+    Best-effort pattern matching, not a full parser — deliberately
+    biased toward under-extraction (missing an oddly-formatted number)
+    over over-extraction (flagging noise), consistent with "flag, don't
+    strip": a missed number costs nothing here since this guard only
+    warns, while a false extraction could produce a spurious flag.
+    """
+    found = []
+    for kind, (pattern, group_idxs, _tol) in _MARKET_NUM_KINDS.items():
+        for m in pattern.finditer(text):
+            # Single-group patterns (lift, z) have group_idxs=[0] -> just
+            # m.group(1). The two-alternative freq pattern has
+            # group_idxs=[0, 1] -> try m.group(1) then m.group(2),
+            # whichever of the two alternatives actually matched (the
+            # other is None).
+            for gi in group_idxs:
+                raw = m.group(gi + 1)
+                if raw is None:
+                    continue
+                try:
+                    val = _normalize_market_num(raw)
+                except ValueError:
+                    continue
+                found.append((raw, val, kind, m.start(gi + 1), m.end(gi + 1)))
+    return found
+
+
+def _detect_numeric_fabrication_flags(
+    answer: str, step_log: list[dict], delegated_to: list[str]
+) -> list[str]:
+    """Numeric grounding guard: every market-statistic number (lift, z,
+    frequency/posting count) in the final answer must appear in some
+    ACTUALLY-CONSULTED specialist's own captured output this run — not
+    just be attributed to a real specialist name (that's the attribution
+    guard above), but be a real number that specialist's own text
+    contains. Catches the Advisor altering or inventing a number inside
+    a section it otherwise correctly attributes.
+
+    Ground truth is each specialist's own AgentFinish text already
+    captured in step_log (the same text rendered in the run record's
+    "Per-Agent Tool-Call Trace" section) — restricted to roles in
+    _SPECIALIST_ROLES that are actually in delegated_to this run (the
+    Orchestrator's own steps are excluded: comparing the final answer
+    against itself would be circular and prove nothing).
+
+    Deliberately does NOT require the matched kind (lift vs z vs
+    frequency) to line up between the answer and the specialist text
+    beyond both being extracted by the same keyword-anchored patterns —
+    the two-pass, keyword-anchored extraction on both sides is itself
+    the false-positive control (see _extract_market_numbers), not an
+    exact-kind cross-check.
+    """
+    if not step_log:
+        return []
+    grounded_text = "\n".join(
+        str(getattr(step["output"], "output", ""))
+        for step in step_log
+        if step["role"] in _SPECIALIST_ROLES and step["role"] in delegated_to
+    )
+    grounded_numbers: dict[str, list[float]] = {}
+    for _raw, val, kind, _s, _e in _extract_market_numbers(grounded_text):
+        grounded_numbers.setdefault(kind, []).append(val)
+    # Fallback pool: bare numeric table cells (see _TABLE_CELL_NUM_RE) —
+    # kind-agnostic since formatting alone can't tell us which kind a
+    # bare cell represents, so it's checked against every kind bucket.
+    bare_table_numbers = []
+    for m in _TABLE_CELL_NUM_RE.finditer(grounded_text):
+        try:
+            bare_table_numbers.append(_normalize_market_num(m.group(1)))
+        except ValueError:
+            continue
+
+    flags = []
+    seen = set()  # avoid duplicate flags for the same raw number repeated in the answer
+    for raw, val, kind, start, end in _extract_market_numbers(answer):
+        if (raw, kind) in seen:
+            continue
+        # Exempt approximate/threshold phrasing ("lift ≈ 11–13×", "lift
+        # ≥ 18×", "≈ 30× total"). Added 2026-09-10 after 4/4 of a live
+        # finance rerun's remaining flags (post the extraction fixes
+        # above) were all this exact shape — a legitimate qualitative
+        # range/threshold the Advisor derived across several real
+        # numbers, not a specific value copied from a tool. Checked only
+        # against a short window immediately before the match (not the
+        # whole answer) to avoid accidentally exempting an unrelated
+        # later number that happens to follow one of these symbols
+        # somewhere earlier in the text. The optional
+        # "<number><dash>" tail handles a range's END number ("13" in
+        # "≈ 11–13×") — the symbol precedes the range START, not the
+        # matched number itself.
+        preceding = answer[max(0, start - 25): start]
+        if re.search(
+            r"(?:[≈~≥≤><]|approx(?:imately)?|about|roughly)\s*"
+            r"(?:\d[\d,]*\.?\d*\s*[-–—]\s*)?$",
+            preceding,
+            re.IGNORECASE,
+        ):
+            continue
+        _pattern, _idxs, tol = _MARKET_NUM_KINDS[kind]
+        pool = grounded_numbers.get(kind, []) + bare_table_numbers
+        if any(abs(val - g) <= max(tol * abs(g), tol) for g in pool):
+            continue
+        seen.add((raw, kind))
+        # Snippet built from this exact match's own position (start/end
+        # from _extract_market_numbers), NOT answer.find(raw) — a plain
+        # find() would grab the FIRST occurrence of the raw digit string
+        # anywhere in the answer, which is wrong whenever that short
+        # string also appears earlier for an unrelated reason (see
+        # _extract_market_numbers' docstring for the live example this
+        # fixed).
+        snippet = answer[max(0, start - 30): end + 30].replace("\n", " ").strip()
+        flags.append(
+            f"{kind} value '{raw}' in the final answer does not match any "
+            f"number in the consulted specialists' own captured output "
+            f"this run — possibly invented or altered. Context: "
+            f"\"...{snippet}...\""
+        )
+    return flags
+
+
 def _write_run_record(
     query: str,
     step_log: list[dict],
@@ -459,7 +693,13 @@ def _write_run_record(
 
     delegated_to = sorted({step["role"] for step in step_log})
     tool_call_count = sum(1 for step in step_log if _is_tool_call(step))
-    fabrication_flags = _detect_fabrication_flags(answer, delegated_to) if answer else []
+    fabrication_flags = (
+        (
+            _detect_fabrication_flags(answer, delegated_to)
+            + _detect_numeric_fabrication_flags(answer, step_log, delegated_to)
+        )
+        if answer else []
+    )
 
     lines = [
         f"# Orchestrator run — {ts} — {status.upper()}",
