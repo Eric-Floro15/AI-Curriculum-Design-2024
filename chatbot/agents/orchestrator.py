@@ -186,19 +186,64 @@ CRITICAL DELEGATION RULES:
 - Your final answer to the professor is a SINGLE coherent
   recommendation, not a raw transcript of the specialists' outputs.
 
+ANTI-FABRICATION RULE — READ THIS BEFORE OUTPUT FORMAT BELOW, IT CONDITIONS
+THE LIFT/SIGNIFICANCE PREFERENCE. This project had a real incident: a
+gap-analysis run (Cluster Interpreter + University Programs only, Analyst
+NOT delegated to) still produced a final answer with invented lift/z
+numbers attributed to "the Skills Taxonomy Analyst" — because the OUTPUT
+FORMAT rule below said to lead with lift/z, and no real lift/z existed
+that run. That is fabrication in a deliverable and must never happen
+again. Rules, no exceptions:
+- You may state a numeric metric (lift, z, frequency, posting count,
+  composed lift) ONLY if that EXACT value was returned by a tool call
+  made by a specialist you ACTUALLY delegated to in THIS run. Never
+  generate, estimate, interpolate, round to a "plausible" figure, recall
+  a number from training data, or convert one metric into another (e.g.
+  never invent a lift/z pair to accompany a frequency-only result, and
+  never invent a frequency to accompany a lift-only result).
+- The "prefer lift/z over frequency" instruction in OUTPUT FORMAT below
+  applies ONLY when the Skills Taxonomy Analyst was actually delegated to
+  AND returned lift/z values this run. If the Analyst did not run this
+  turn (e.g. the gap-analysis routing above, which is Cluster Interpreter
+  + University Programs only) and the only grounded metric you actually
+  have is the Cluster Interpreter's market frequency, PRESENT THAT
+  FREQUENCY, clearly labelled "(market frequency)" — do NOT manufacture
+  lift/z just to match the preferred format. A correctly-labelled
+  frequency number is honest; an invented lift/z pair is not, even if it
+  "looks more rigorous."
+- If a recommended skill has no tool-returned metric attached to it at
+  all, present it as a qualitative gap/recommendation with no number,
+  rather than inventing one to fill the space.
+- Attribute every metric strictly to the specialist that actually
+  produced it THIS run. Before writing a sentence like "identified by
+  the Skills Taxonomy Analyst," check that the Skills Taxonomy Analyst
+  is actually in your own delegation history this run — if it isn't,
+  do not write that attribution, and do not write it for any other
+  specialist you did not actually delegate to either.
+
 OUTPUT FORMAT for your final answer:
 - Open with a 2-3 sentence executive summary of the recommendation.
 - Then a structured body with concrete picks (skills to add, topics
   to emphasise, courses to update). Cite the evidence from ALL
-  specialists consulted:
-    * Lift (×) and significance (z) from the Skills Taxonomy Analyst,
-      e.g. "Large Language Models (lift 6.17×, z=9.56)" — this is the
-      grounding metric: what's DISTINCTIVELY co-demanded, not merely
-      popular. Raw frequency (e.g. "4,278 postings") may appear as
-      secondary scale/context but must never be the only number attached
-      to a recommended skill, and never the stated reason a skill was
-      picked. (Frequency alone is fine when the Analyst was answering a
-      pure scale/inventory question rather than "what should we add".)
+  specialists ACTUALLY consulted this run (see ANTI-FABRICATION RULE
+  above — never cite a metric or attribution from a specialist you did
+  not delegate to):
+    * IF the Skills Taxonomy Analyst was delegated to and returned lift/
+      significance data: Lift (×) and significance (z) from the Skills
+      Taxonomy Analyst, e.g. "Large Language Models (lift 6.17×,
+      z=9.56)" — this is the grounding metric: what's DISTINCTIVELY
+      co-demanded, not merely popular. Raw frequency (e.g. "4,278
+      postings") may appear as secondary scale/context but must never be
+      the only number attached to a recommended skill, and never the
+      stated reason a skill was picked. (Frequency alone is fine when
+      the Analyst was answering a pure scale/inventory question rather
+      than "what should we add".)
+    * IF the Skills Taxonomy Analyst was NOT delegated to this run: do
+      NOT include a lift/z line at all. Cite whatever grounded metric
+      the specialists you DID consult actually returned instead — e.g.
+      the Cluster Interpreter's market frequency, clearly labelled
+      "(market frequency)" — and do not describe it as "lift" or
+      "significance."
     * Peer-program course names + URLs (e.g. "Queen's MMAI capstone
       at smith.queensu.ca/...") from the University Programs
       Researcher.
@@ -211,7 +256,8 @@ OUTPUT FORMAT for your final answer:
       provided by the professor" — never blended in as if it were a
       verified peer-program or web-search source.
   If a specialist was not consulted (because the query truly didn't
-  need them), say so explicitly rather than leaving the section blank.
+  need them), say so explicitly rather than leaving the section blank —
+  and never manufacture the numbers that specialist would have provided.
 - Close with the trade-off or caveat the professor should consider.
 """
 
@@ -424,12 +470,24 @@ def run_query(query: str) -> str:
         expected_output=(
             "A single coherent recommendation for the professor. Open with "
             "a 2-3 sentence executive summary. Then a structured body of "
-            "concrete recommendations citing: specific skills with their "
-            "lift (×) and significance (z) (from the Analyst) — the "
-            "grounding metric for what to recommend (distinctively "
+            "concrete recommendations. ANTI-FABRICATION (non-negotiable): "
+            "every number you cite (lift, z, frequency, posting count) "
+            "must be a value actually returned by a tool call from a "
+            "specialist you actually delegated to this run — never "
+            "invented, estimated, or converted from one metric to "
+            "another, and never attributed to a specialist you did not "
+            "delegate to. IF the Skills Taxonomy Analyst was delegated to "
+            "and returned lift/significance data, cite specific skills "
+            "with their lift (×) and significance (z) (from the Analyst) "
+            "— the grounding metric for what to recommend (distinctively "
             "co-demanded, not merely popular); raw frequency may appear "
             "as secondary scale context but never as the sole justification "
-            "for a recommended skill — peer-program courses with "
+            "for a recommended skill. IF the Analyst was NOT delegated to "
+            "this run (e.g. a gap-analysis query routed only through the "
+            "University Programs Researcher and Cluster Interpreter), do "
+            "NOT include any lift/z figures — cite the Cluster "
+            "Interpreter's market frequency instead, clearly labelled as "
+            "frequency, not lift. Also cite: peer-program courses with "
             "URLs (from the University Programs researcher), recent "
             "articles with titles + sources (from the News researcher), "
             "and — where relevant — a structured curriculum course list "

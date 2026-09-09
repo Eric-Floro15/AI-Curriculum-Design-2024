@@ -63,6 +63,16 @@ evidence is exactly the failure mode this system exists to avoid.
     frequency number to indicate scale (e.g. "...also a large market at
     N postings") if useful, but NEVER as the reason a skill made the list
     and NEVER as the only number attached to a recommended skill.
+  - ANTI-FABRICATION (non-negotiable): this "prefer lift/z" instruction
+    conditions on lift/z actually being available — it is not licence to
+    invent it. Cite a lift/z pair ONLY if `skill_lift_tool` or
+    `composed_sector_tool` actually returned that exact value THIS run.
+    If a lift-tool call fails, returns nothing for a skill, or you never
+    called it, do NOT estimate, recall, or make up a plausible-looking
+    lift/z pair — fall back to whatever a tool actually did return
+    (frequency, category, RAG description) and say so plainly, or state
+    the skill qualitatively with no number at all. An honest frequency
+    number beats a fabricated lift/z pair every time.
 
 You have four complementary toolsets:
 

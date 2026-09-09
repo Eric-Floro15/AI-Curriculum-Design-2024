@@ -158,15 +158,35 @@ QUERIES_FILE = os.path.join(_HERE, "orchestrator_queries.yaml")
 # from run_query() (doesn't reuse its expected_output), so needed the same
 # fix independently to not silently regress back to frequency-grounding
 # next time this harness runs.
+#
+# 2026-09-09: that lift/z preference, unconditioned, turned into a real
+# fabrication bug — a gap-analysis run where the Analyst never got
+# delegated to still produced invented lift/z numbers attributed to "the
+# Analyst" to satisfy this expected_output's wording. Added an explicit
+# anti-fabrication + conditioning clause, matching the same fix applied
+# to agents/orchestrator.py's run_query() Task.expected_output — this
+# harness builds its own Task independently, so needed the same
+# conditioning applied here too, not just in production.
 DEFAULT_EXPECTED_OUTPUT = (
     "A single coherent recommendation for the professor. Open with a 2-3 "
     "sentence executive summary. Then a structured body of concrete "
-    "recommendations citing specific skills with their lift (x) and "
-    "significance (z) (from the Analyst) — the grounding metric for what "
-    "to recommend, not raw frequency — peer-program courses with URLs "
-    "(from the University Programs researcher), and recent articles with "
-    "titles + sources (from the News researcher) where each is relevant. "
-    "Close with a trade-off or caveat."
+    "recommendations. ANTI-FABRICATION (non-negotiable): every number "
+    "you cite (lift, z, frequency, posting count) must be a value "
+    "actually returned by a tool call from a specialist you actually "
+    "delegated to this run — never invented, estimated, or converted "
+    "from one metric to another, and never attributed to a specialist "
+    "you did not delegate to. IF the Skills Taxonomy Analyst was "
+    "delegated to and returned lift/significance data, cite specific "
+    "skills with their lift (x) and significance (z) (from the Analyst) "
+    "— the grounding metric for what to recommend, not raw frequency. IF "
+    "the Analyst was NOT delegated to this run, do NOT include any "
+    "lift/z figures — cite whichever grounded metric the specialists you "
+    "did consult actually returned instead (e.g. a Cluster Interpreter "
+    "market frequency, clearly labelled as frequency, not lift). Also "
+    "cite peer-program courses with URLs (from the University Programs "
+    "researcher), and recent articles with titles + sources (from the "
+    "News researcher) where each is relevant. Close with a trade-off or "
+    "caveat."
 )
 
 
