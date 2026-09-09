@@ -357,6 +357,80 @@ def _is_tool_call(step: dict) -> bool:
     return hasattr(output, "tool") and hasattr(output, "tool_input")
 
 
+# The four specialist role strings step_callback trackers are registered
+# under in run_query() below — deliberately excludes "Senior Curriculum
+# Advisor" (the Orchestrator itself; checking it against itself is
+# meaningless). Kept as one list so a future 5th specialist only needs
+# adding here, not in every call site.
+_SPECIALIST_ROLES = [
+    "Skills Taxonomy Analyst",
+    "University AI Programs Researcher",
+    "AI Industry News Researcher",
+    "Cluster Interpreter",
+]
+
+
+def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]:
+    """Production attribution-level anti-fabrication guard.
+
+    2026-09-09: generalises the "fabricated specialist attribution" check
+    validated in agents/test_uploaded_curriculum.py's grade() (see that
+    file's comment dated 2026-06-24) from a test-only assertion into a
+    runtime scan on every real run_query() call. Motivated by a live
+    incident the same day this was added: a gap-analysis run (Cluster
+    Interpreter + Orchestrator only, delegated_to confirms neither
+    University Programs nor News ran) still produced a final answer with
+    a full "Recent Industry Signals (AI Industry News Researcher)"
+    section of invented articles, and separately a fabricated Queen's
+    MMAI course list attributed to a fetch that never happened — despite
+    orchestrator.py's own backstory already explicitly forbidding this
+    ("Do NOT claim to have consulted a specialist you did not actually
+    delegate to"). A prompt-only rule was demonstrably insufficient, so
+    this is a structural, code-level check on top of it.
+
+    Deliberately FLAGS rather than strips or silently drops anything —
+    per explicit instruction, the fabrication rate is itself data worth
+    seeing and counting across run_records, not something to hide.
+
+    Signal used: `delegated_to` (from step_callback, one tracker per
+    agent, firing at least once whenever that agent is actually invoked
+    this run) — NOT the per-tool-call trace. The tool-call trace is
+    already known-unreliable in this CrewAI version (see _is_tool_call's
+    callers / the "Tool calls" metric — it undercounts to ~0 because
+    CrewAI's native-tool-calling flow doesn't invoke step_callback on
+    intermediate AgentAction steps, only on each agent's terminal
+    AgentFinish). delegated_to has no such gap: it's populated by that
+    same terminal AgentFinish firing, which is exactly the "was this
+    agent invoked at all this run" question this check needs answered,
+    not "how many tool calls did it make."
+
+    Unlike the test-only version this generalises, Cluster Interpreter
+    IS included here — that test excluded it because its harness didn't
+    trust delegated_to for it, but run_query() below registers a
+    step_callback tracker for cluster_interp exactly the same way as the
+    other three specialists, and this session's own live verification
+    runs confirmed 'Cluster Interpreter' reliably appears in delegated_to
+    when it actually runs. No reason to carve it out here.
+
+    Only a name-string match — cannot verify individual facts/numbers
+    within a section are correct, only whether the section's claimed
+    source was actually consulted this run. See STEP 4 in the
+    2026-09-09 conversation for the numeric/raw-output layers this does
+    NOT cover.
+    """
+    answer_lc = answer.lower()
+    flags = []
+    for role in _SPECIALIST_ROLES:
+        if role.lower() in answer_lc and role not in delegated_to:
+            flags.append(
+                f"'{role}' is named/cited in the final answer but is NOT "
+                f"in this run's delegated_to ({delegated_to or '(none)'}) "
+                "— likely a fabricated citation, not a specialist actually "
+                "consulted this run."
+            )
+    return flags
+
+
 def _write_run_record(
     query: str,
     step_log: list[dict],
@@ -385,6 +459,7 @@ def _write_run_record(
 
     delegated_to = sorted({step["role"] for step in step_log})
     tool_call_count = sum(1 for step in step_log if _is_tool_call(step))
+    fabrication_flags = _detect_fabrication_flags(answer, delegated_to) if answer else []
 
     lines = [
         f"# Orchestrator run — {ts} — {status.upper()}",
@@ -399,7 +474,26 @@ def _write_run_record(
         f"- **Delegated to:** {delegated_to or '(none)'}",
         f"- **Tool calls:** {tool_call_count}",
         f"- **Wall time:** {wall_time_sec:.1f}s",
+        f"- **fabrication_flags:** {fabrication_flags or '[]'}",
         "",
+    ]
+    if fabrication_flags:
+        lines += [
+            "## ⚠️⚠️⚠️ FABRICATION WARNING ⚠️⚠️⚠️",
+            "",
+            "This run's final answer attributes content to a specialist "
+            "that was **NOT delegated to this run** per `delegated_to` "
+            "above. This is the attribution-level anti-fabrication guard "
+            "(see `_detect_fabrication_flags()` in agents/orchestrator.py) "
+            "— it did not strip anything, it only flags. Treat every "
+            "number, URL, course, or citation attributed to the "
+            "role(s) below as UNVERIFIED for this run:",
+            "",
+        ]
+        for flag in fabrication_flags:
+            lines.append(f"- {flag}")
+        lines.append("")
+    lines += [
         "## Final Answer" if error is None else "## Partial Answer (run failed before completion)",
         "",
         answer if answer else "_(none — failed before any answer was produced)_",
