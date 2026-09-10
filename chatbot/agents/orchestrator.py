@@ -187,6 +187,37 @@ CRITICAL DELEGATION RULES:
 - Your final answer to the professor is a SINGLE coherent
   recommendation, not a raw transcript of the specialists' outputs.
 
+MANDATORY ROUTING RULES — added 2026-09-10 after a real incident: two
+dev-lane dry runs under-delegated and the Senior Curriculum Advisor
+gap-filled an entire peer-program section from nothing — one invented
+9 Queen's/CMU course codes and 2 URLs, the other invented a full
+6-peer-program comparison using SIX WRONG INSTITUTIONS (not even this
+project's actual curated peer-program corpus) with neither University AI
+Programs Researcher nor Cluster Interpreter ever consulted. These rules
+are mandatory, not a preference — a deterministic code-level check also
+enforces them independently of whether you follow this text (see
+agents/orchestrator.py's `_detect_required_specialists()` and
+`STRICT_DELEGATION` mode), so skipping the required delegation may cause
+this run to hard-fail rather than silently return an unverified answer:
+- If the query mentions peer programs, specific universities, courses,
+  curricula, or "which programs teach/cover X" → you MUST delegate to
+  the University AI Programs Researcher. Do NOT produce any
+  peer-program, course-list, course-code, URL, or program-comparison
+  content in your final answer unless that specialist was ACTUALLY
+  consulted this run. If you cannot consult it (budget exhausted,
+  tool failure), say so explicitly — "peer-program data unavailable
+  this run" — rather than inventing course codes, URLs, or program
+  names to fill the gap.
+- If the query mentions clusters, gap analysis, "which clusters",
+  "missing", "underrepresented", or coverage → you MUST delegate to
+  the Cluster Interpreter (and to the Skills Taxonomy Analyst for any
+  lift/z figures).
+- Never attribute a section of your answer to a specialist that was
+  not actually consulted this run. Never invent course codes, URLs,
+  or program/institution names under any heading, labeled or not —
+  fabrication doesn't require naming a specialist to still be
+  fabrication.
+
 ANTI-FABRICATION RULE — READ THIS BEFORE OUTPUT FORMAT BELOW, IT CONDITIONS
 THE LIFT/SIGNIFICANCE PREFERENCE. This project had a real incident: a
 gap-analysis run (Cluster Interpreter + University Programs only, Analyst
@@ -369,6 +400,27 @@ _SPECIALIST_ROLES = [
     "AI Industry News Researcher",
     "Cluster Interpreter",
 ]
+
+
+def _build_consulted_text(step_log: list[dict], delegated_to: list[str]) -> str:
+    """Concatenated text of every ACTUALLY-CONSULTED specialist's own
+    captured output this run — the shared "ground truth" reference text
+    every content-level guard (numeric, course-code, URL, institution)
+    checks the Advisor's final answer against. Restricted to roles in
+    _SPECIALIST_ROLES that are also in delegated_to (the Orchestrator's
+    own steps are excluded: comparing the final answer against itself
+    would be circular and prove nothing).
+
+    2026-09-10: factored out of _detect_numeric_fabrication_flags (which
+    used to build this inline) so the content-attribution guard added the
+    same day can reuse the identical, already-validated technique rather
+    than a second hand-rolled copy.
+    """
+    return "\n".join(
+        str(getattr(step["output"], "output", ""))
+        for step in step_log
+        if step["role"] in _SPECIALIST_ROLES and step["role"] in delegated_to
+    )
 
 
 def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]:
@@ -599,11 +651,7 @@ def _detect_numeric_fabrication_flags(
     """
     if not step_log:
         return []
-    grounded_text = "\n".join(
-        str(getattr(step["output"], "output", ""))
-        for step in step_log
-        if step["role"] in _SPECIALIST_ROLES and step["role"] in delegated_to
-    )
+    grounded_text = _build_consulted_text(step_log, delegated_to)
     grounded_numbers: dict[str, list[float]] = {}
     for _raw, val, kind, _s, _e in _extract_market_numbers(grounded_text):
         grounded_numbers.setdefault(kind, []).append(val)
@@ -665,6 +713,335 @@ def _detect_numeric_fabrication_flags(
     return flags
 
 
+# --- Content-attribution guard (2026-09-10) --------------------------------
+# The attribution guard (_detect_fabrication_flags) only fires when a
+# specialist ROLE NAME appears in the final answer but not in
+# delegated_to. The numeric guard only fires on lift/z/frequency NUMBERS.
+# Neither catches an under-delegated run where the Advisor gap-fills an
+# entire peer-program section (course codes, URLs, institution names)
+# under a neutral heading with no role name and no market-stat number —
+# confirmed on two real Set A dry-run records: A1 (soft-skills) invented
+# 9 Queen's/CMU course codes + 2 URLs with University AI Programs
+# Researcher never delegated to; A4 (data-engineer clusters) invented a
+# full 6-peer-program JSON structure (course codes, URLs, and — worse —
+# the WRONG six programs entirely: Toronto/Edinburgh/Imperial/a generic
+# MIT MicroMasters/CMU MS-ML/Stanford AI Certificate, none of which are
+# this project's actual 6 curated peer programs) with NEITHER University
+# AI Programs Researcher NOR Cluster Interpreter delegated to. This guard
+# closes that gap with three checks, all using the same verbatim-trace
+# technique as the numeric guard: is this specific claim actually present
+# in _build_consulted_text()'s output, i.e. something a delegated
+# specialist actually said this run?
+
+# Allowlist of alpha-number tokens that look like course codes but
+# aren't, checked case-insensitively before any code-shaped candidate is
+# flagged.
+_COURSE_CODE_ALLOWLIST = {
+    "gpt-4", "gpt-4o", "gpt-5", "gpt4", "gpt4o", "gpt5",
+    "llama", "claude", "3d", "s3", "ec2", "h100", "co2",
+}
+
+# Course-code candidates take two shapes in real output: an uppercase
+# alpha prefix (2-5 letters) + a number that may carry dots/hyphens/a
+# trailing letter ("MMAI-902", "CS330", "CS 224N", "PH 140.651",
+# "CSC2515", "AI-301", "CSE 6242", "DATA 514"), OR a bare
+# department-number.course-number pair with no alpha prefix at all
+# ("11-651", "6.7960", "10-601", "15-619" — real MIT/CMU formats).
+# Deliberately case-SENSITIVE (no IGNORECASE) on the alpha branch — real
+# course codes in this project's output are always rendered uppercase;
+# loosening this would start matching ordinary lowercase words that
+# happen to end in digits.
+#
+# The dash class below is NOT just ASCII "-": this project's actual
+# model output consistently renders what should be a plain ASCII hyphen
+# as U+2011 (non-breaking hyphen) throughout — confirmed directly in a
+# real Set A record ("MMAI\u2011902"), where an ASCII-only hyphen class
+# silently missed every single course code with a hyphen separator.
+# Covers the common Unicode dash variants a markdown-generating LLM
+# might use: U+2010 hyphen, U+2011 non-breaking hyphen, U+2012 figure
+# dash, U+2013 en dash, U+2014 em dash, plus the ASCII hyphen-minus.
+# Built from explicit \uXXXX escapes (not raw pasted characters) so the
+# intent is unambiguous in source, and the ASCII hyphen is escaped
+# (`\-`) rather than merely repositioned — a raw "-" between two other
+# class members is a RANGE in a character class, not a literal hyphen
+# (e.g. "[ -\u2010]" silently matches almost the entire ASCII printable
+# range, from space through U+2010 — caught this exact mistake in a
+# throwaway smoke test before it shipped).
+_DASH_CHARS = "\\-\u2010\u2011\u2012\u2013\u2014"
+_COURSE_CODE_RE = re.compile(
+    r"\b(?:[A-Z]{2,5}[ " + _DASH_CHARS + r"]?\d[\d." + _DASH_CHARS + r"]*[A-Z]?"
+    r"|\d{1,2}[." + _DASH_CHARS + r"]\d{3,4}[A-Za-z]?)\b"
+)
+
+# URLs: standard http(s) scheme, stop at whitespace or a markdown-link
+# closing character.
+_URL_RE = re.compile(r"https?://[^\s)\]}>\"'`|]+")
+
+
+def _normalize_url(url: str) -> str:
+    """Lowercase host, strip a trailing slash and trailing punctuation a
+    sentence/markdown context tends to leave attached ('.', ',', ')',
+    ']')."""
+    url = url.rstrip(".,;:)]}>\"'")
+    url = url.rstrip("/")
+    m = re.match(r"(https?://)([^/]+)(.*)", url, re.IGNORECASE)
+    if not m:
+        return url.lower()
+    scheme, host, rest = m.groups()
+    return f"{scheme.lower()}{host.lower()}{rest}"
+
+
+# This project's actual, human-curated peer-program corpus (see
+# chatbot/data/program_and_curriculum/*.txt) plus common short aliases.
+# Johns Hopkins is deliberately excluded from this always-recognized set
+# — per the spec this guard implements, JHU is only "in scope" when the
+# PROFESSOR'S OWN QUERY named it (handled in
+# _detect_content_attribution_flags via the `query` argument), not
+# whenever it happens to appear in an answer.
+_RECOGNIZED_INSTITUTIONS = [
+    "carnegie mellon", "cmu",
+    "stanford",
+    "mit", "massachusetts institute of technology",
+    "georgia tech", "georgia institute of technology",
+    "queen's", "queen's university", "queens university", "mmai",
+]
+# "University of Toronto" / "UofT" / "Rotman" deliberately NOT included
+# here, even though UofT Rotman MMA is genuinely one of this project's
+# 6 curated peer programs. "University of Toronto" is exactly the
+# phrase _GENERIC_INSTITUTION_RE would independently extract from a
+# "University of X" construction — pre-exempting it by literal string
+# match would blind this check to EXACTLY the case a real Set A record
+# exposed: A4 fabricated a "University of Toronto – MEng in Artificial
+# Intelligence" program (not the real Rotman MMA) attributed to nothing
+# delegated. A genuine Rotman mention, when the specialist actually said
+# it, is still correctly exempted by the verbatim consulted_text check
+# below — that check alone is sufficient and doesn't have this blind
+# spot, so no separate pre-exemption is needed or wanted here.
+
+# Light "University of X" / "X University" / "Y College (London)"
+# matcher for institution names NOT in the recognized/curated list —
+# this is what catches A4's fabricated Toronto/Edinburgh/Imperial
+# mentions generically, without having to enumerate every possible
+# fabricated institution name in advance.
+# The negative lookahead on the "X University" branch matters: without
+# it, a sentence like "The University of Cambridge also has..." gets
+# mis-matched as just "The University" — "The" satisfies
+# [A-Z][a-zA-Z]+ and is immediately followed by " University", so that
+# alternative matches (and consumes) "The University" BEFORE the regex
+# engine ever reaches the correct "University of Cambridge" starting
+# position, since finditer takes the first alternative that matches at
+# each position and "University" is now already consumed. The lookahead
+# rejects "X University" whenever it's immediately followed by
+# " of <Capitalized>" — in that shape the true institution name is
+# "University of Y", not "<leading filler word> University" — found via
+# a real unit-test failure, not just theorized.
+_GENERIC_INSTITUTION_RE = re.compile(
+    r"\b(?:University of [A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)?"
+    r"|[A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)? University(?!\s+of\s+[A-Z])"
+    r"|Imperial College(?: London)?)\b"
+)
+
+
+def _detect_content_attribution_flags(
+    answer: str, query: str, step_log: list[dict], delegated_to: list[str]
+) -> list[str]:
+    """Content-attribution guard: course codes, URLs, and institution
+    names in the final answer must each trace verbatim to something a
+    delegated specialist's own captured output actually said this run.
+
+    Three checks (A1/A2/A3), each against the same `consulted_text`
+    reference built the same way as the numeric guard's grounding pool.
+    The verbatim-trace test is the primary false-positive control here,
+    same as the numeric guard: anything a delegated specialist actually
+    produced appears in consulted_text and is never flagged, regardless
+    of how "suspicious" it might look in isolation.
+
+    Deliberately does NOT try to detect whether a course code sits
+    inside a fenced code block that's quoted verbatim from a specialist
+    — if it's genuinely quoted from a specialist that ran, it's already
+    in consulted_text and the verbatim check exempts it for free; if
+    it's quoted-looking content from a specialist that did NOT run,
+    that's exactly the fabrication this guard exists to catch, fenced or
+    not, so no separate code-fence carve-out is needed or wanted.
+    """
+    if not answer:
+        return []
+    consulted_text = _build_consulted_text(step_log, delegated_to)
+    consulted_lc = consulted_text.lower()
+    flags: list[str] = []
+
+    # A1 — course codes.
+    seen_codes = set()
+    for m in _COURSE_CODE_RE.finditer(answer):
+        code = m.group(0)
+        code_norm = re.sub(r"\s+", " ", code).strip().lower()
+        if code_norm in _COURSE_CODE_ALLOWLIST or code_norm in seen_codes:
+            continue
+        # Whitespace-normalized, case-insensitive verbatim check —
+        # matches the spec's "appear verbatim (case-insensitive,
+        # whitespace-normalized)" requirement exactly.
+        if code_norm in consulted_lc:
+            continue
+        seen_codes.add(code_norm)
+        idx = m.start()
+        snippet = answer[max(0, idx - 30): idx + len(code) + 30].replace("\n", " ").strip()
+        flags.append(
+            f"unattributed_course_code: '{code}' in the final answer does "
+            f"not appear in any delegated specialist's own captured "
+            f"output this run — possibly a fabricated course code. "
+            f"Context: \"...{snippet}...\""
+        )
+
+    # A2 — URLs.
+    seen_urls = set()
+    consulted_urls = {_normalize_url(u) for u in _URL_RE.findall(consulted_text)}
+    for m in _URL_RE.finditer(answer):
+        url = m.group(0)
+        url_norm = _normalize_url(url)
+        if url_norm in seen_urls or url_norm in consulted_urls:
+            continue
+        seen_urls.add(url_norm)
+        idx = m.start()
+        snippet = answer[max(0, idx - 30): idx + len(url) + 10].replace("\n", " ").strip()
+        flags.append(
+            f"unattributed_url: '{url}' in the final answer does not "
+            f"appear (normalized) in any delegated specialist's own "
+            f"captured output this run — possibly a fabricated URL. "
+            f"Context: \"...{snippet}...\""
+        )
+
+    # A3 — institutions. Candidates come from two sources: the curated
+    # recognized-institution aliases (substring match) and the generic
+    # "University of X" / "X University" pattern (for names NOT in our
+    # corpus — this is what catches a fabricated peer institution we've
+    # never heard of).
+    query_lc = (query or "").lower()
+    recognized = set(_RECOGNIZED_INSTITUTIONS)
+
+    # "johns hopkins"/"jhu" always searched for in the answer (not in
+    # _RECOGNIZED_INSTITUTIONS, so not pre-exempted) — whether a mention
+    # gets flagged depends on the per-candidate query-echo check below,
+    # generalised from JHU specifically (per the spec: "Johns Hopkins,
+    # only in scope when the query names it") to any institution.
+    answer_lc = answer.lower()
+    candidates: dict[str, tuple[int, int]] = {}
+    for name in _RECOGNIZED_INSTITUTIONS + ["johns hopkins", "jhu"]:
+        for m in re.finditer(r"\b" + re.escape(name) + r"\b", answer_lc):
+            candidates.setdefault(name, m.span())
+    for m in _GENERIC_INSTITUTION_RE.finditer(answer):
+        name_norm = re.sub(r"\s+", " ", m.group(0)).strip().lower()
+        candidates.setdefault(name_norm, m.span())
+
+    seen_institutions = set()
+    for name_norm, (start, end) in candidates.items():
+        if name_norm in recognized or name_norm in seen_institutions:
+            continue
+        if name_norm in consulted_lc:
+            continue
+        # An institution the PROFESSOR'S OWN QUERY already named is not
+        # suspicious merely for being echoed back — e.g. an off-scope
+        # refusal that repeats "...restaurants near the University of
+        # Toronto" from the query itself is not a fabricated
+        # peer-program claim. Confirmed via a real Set A false positive
+        # (A5, a pure refusal quoting the query's own institution
+        # mention). Course codes and URLs attributed to that
+        # institution are still independently checked by A1/A2
+        # regardless of this exemption — this only covers the bare
+        # institution-name-level flag.
+        if name_norm in query_lc:
+            continue
+        seen_institutions.add(name_norm)
+        snippet = answer[max(0, start - 30): end + 30].replace("\n", " ").strip()
+        flags.append(
+            f"unattributed_institution: '{answer[start:end]}' in the "
+            f"final answer is not a recognized peer institution for "
+            f"this project and does not appear in any delegated "
+            f"specialist's own captured output this run — possibly a "
+            f"fabricated institution. Context: \"...{snippet}...\""
+        )
+
+    return flags
+
+
+# --- Delegation enforcement (2026-09-10, Part B) ----------------------------
+# The three guards above are all post-hoc content checks — they catch a
+# fabrication once it's already in the final answer. This is the
+# structural backstop: detect from the QUERY ITSELF which specialists a
+# defensible answer requires, independent of what the Advisor actually
+# produced, and flag (or, in STRICT_DELEGATION mode, hard-fail) when a
+# required specialist was never delegated to. Deterministic keyword
+# matching, not LLM-dependent — this is meant to hold even when the
+# backstory-level routing rules (see ORCHESTRATOR_BACKSTORY's MANDATORY
+# ROUTING RULES section) get ignored by the model, which is exactly what
+# happened on A1/A4.
+_PEER_PROGRAM_INTENT_RE = re.compile(
+    r"peer[ -]?program|which (?:program|university|universities)"
+    r"|programs? (?:teach|cover|include)|curricul(?:um|a)\b"
+    r"|\bcourses?\b|\bcompares? (?:to|with|against)\b"
+    r"|fetch (?:the|our|current) course",
+    re.IGNORECASE,
+)
+_CLUSTER_GAP_INTENT_RE = re.compile(
+    r"\bclusters?\b|gap analysis|which clusters|\bmissing\b"
+    r"|underrepresented|under-represented|\bcoverage\b",
+    re.IGNORECASE,
+)
+
+
+def _detect_required_specialists(query: str) -> set[str]:
+    """Deterministic, keyword-based required-specialist detection from
+    the query text alone. Two intents:
+      - peer-program / course / curriculum intent -> University AI
+        Programs Researcher must be delegated.
+      - cluster / gap-analysis / coverage intent -> Cluster Interpreter
+        must be delegated (a gap analysis is meaningless without it).
+    Also checks named institutions (the recognized list +
+    _GENERIC_INSTITUTION_RE) in the query, since "which peer programs
+    teach X, like Queen's MMAI or CMU MSAII" names specific institutions
+    without necessarily using the word "program".
+
+    Deliberately conservative/best-effort, not a full intent classifier
+    — false negatives (missing a real peer-program ask) just mean this
+    backstop doesn't fire for that query, same "flag less than you
+    could" bias as the numeric guard's extraction. False positives here
+    are low-cost: if the specialist WAS delegated to anyway (the common
+    case for genuine peer-program queries), no flag is produced either
+    way.
+    """
+    required: set[str] = set()
+    if _PEER_PROGRAM_INTENT_RE.search(query):
+        required.add("University AI Programs Researcher")
+    for name in _RECOGNIZED_INSTITUTIONS:
+        if re.search(r"\b" + re.escape(name) + r"\b", query, re.IGNORECASE):
+            required.add("University AI Programs Researcher")
+            break
+    if _GENERIC_INSTITUTION_RE.search(query):
+        required.add("University AI Programs Researcher")
+    if _CLUSTER_GAP_INTENT_RE.search(query):
+        required.add("Cluster Interpreter")
+    return required
+
+
+def _strict_delegation_enabled() -> bool:
+    """STRICT_DELEGATION mode (env var, default off): when a required
+    specialist (per _detect_required_specialists) is missing from
+    delegated_to, run_query() hard-fails instead of returning the
+    at-risk answer as a deliverable. Default is FLAG-only (this stays
+    off) so dev-lane exploration/debugging isn't interrupted — wire this
+    on for the Sonnet-phase production/paper runs, where a fabricated
+    answer must never silently become a deliverable.
+    """
+    return os.environ.get("STRICT_DELEGATION", "").strip().lower() in ("1", "true", "yes")
+
+
+class RequiredSpecialistMissingError(RuntimeError):
+    """Raised by run_query() in STRICT_DELEGATION mode when the query's
+    detected intent required a specialist that was never actually
+    delegated to this run (see _detect_required_specialists) — the
+    crew's answer is at high risk of fabricated peer-program or cluster
+    content and must not be handed to the caller as a deliverable."""
+
+
 def _write_run_record(
     query: str,
     step_log: list[dict],
@@ -693,10 +1070,13 @@ def _write_run_record(
 
     delegated_to = sorted({step["role"] for step in step_log})
     tool_call_count = sum(1 for step in step_log if _is_tool_call(step))
+    required_specialists = _detect_required_specialists(query)
+    required_missing = sorted(required_specialists - set(delegated_to))
     fabrication_flags = (
         (
             _detect_fabrication_flags(answer, delegated_to)
             + _detect_numeric_fabrication_flags(answer, step_log, delegated_to)
+            + _detect_content_attribution_flags(answer, query, step_log, delegated_to)
         )
         if answer else []
     )
@@ -709,6 +1089,13 @@ def _write_run_record(
         f"**Model:** {describe_llm_config()}",
         "",
         "## Metrics",
+        # required_specialist_missing is placed first/at the top of
+        # Metrics, ahead of even Status — this is the deterministic,
+        # query-derived delegation-enforcement backstop (Part B2): it
+        # doesn't depend on what the Advisor's answer says, only on
+        # whether the query's detected intent (peer-program / cluster-gap)
+        # was actually satisfied by a real delegation this run.
+        f"- **required_specialist_missing:** {required_missing or '[]'}",
         f"- **Status:** {status}",
         f"- **Error:** {f'{type(error).__name__}: {error}' if error else 'None'}",
         f"- **Delegated to:** {delegated_to or '(none)'}",
@@ -717,17 +1104,39 @@ def _write_run_record(
         f"- **fabrication_flags:** {fabrication_flags or '[]'}",
         "",
     ]
+    if required_missing:
+        lines += [
+            "## 🚨 REQUIRED SPECIALIST NOT DELEGATED 🚨",
+            "",
+            "This query's detected intent (peer-program/course/curriculum, "
+            "and/or cluster/gap-analysis — see `_detect_required_specialists()` "
+            "in agents/orchestrator.py) required a specialist that was "
+            "**never actually delegated to this run**. Any peer-program, "
+            "course, URL, or cluster-gap content in the final answer below "
+            "should be treated as HIGH fabrication risk regardless of "
+            "whether the content-attribution guard also flagged it "
+            "individually:",
+            "",
+        ]
+        for role in required_missing:
+            lines.append(f"- required_specialist_missing:{role}")
+        lines.append("")
     if fabrication_flags:
         lines += [
             "## ⚠️⚠️⚠️ FABRICATION WARNING ⚠️⚠️⚠️",
             "",
-            "This run's final answer attributes content to a specialist "
-            "that was **NOT delegated to this run** per `delegated_to` "
-            "above. This is the attribution-level anti-fabrication guard "
-            "(see `_detect_fabrication_flags()` in agents/orchestrator.py) "
-            "— it did not strip anything, it only flags. Treat every "
-            "number, URL, course, or citation attributed to the "
-            "role(s) below as UNVERIFIED for this run:",
+            "One or more of this run's four content guards flagged the "
+            "final answer: attribution (a specialist NAME cited but not "
+            "in `delegated_to`, `_detect_fabrication_flags()`), numeric "
+            "(a lift/z/frequency NUMBER absent from any consulted "
+            "specialist's output, `_detect_numeric_fabrication_flags()`), "
+            "and/or content-attribution (a course CODE, URL, or "
+            "INSTITUTION absent from any consulted specialist's output, "
+            "`_detect_content_attribution_flags()`) — all in "
+            "agents/orchestrator.py. FLAG-don't-strip throughout: nothing "
+            "below was removed, only flagged. Treat every number, URL, "
+            "course, institution, or citation named in a flag below as "
+            "UNVERIFIED for this run:",
             "",
         ]
         for flag in fabrication_flags:
@@ -827,7 +1236,19 @@ def run_query(query: str) -> str:
             "and — where relevant — a structured curriculum course list "
             "with source URL and a cluster-level gap analysis with "
             "priority recommendations (both from the University Programs "
-            "Researcher and Cluster Interpreter respectively). Close with "
+            "Researcher and Cluster Interpreter respectively). MANDATORY "
+            "ROUTING (non-negotiable): if the query mentions peer "
+            "programs, specific universities, courses, curricula, or "
+            "which programs teach/cover something, you MUST delegate to "
+            "the University AI Programs Researcher — do NOT produce any "
+            "peer-program, course-list, course-code, URL, or "
+            "program-comparison content unless that specialist was "
+            "actually consulted this run; if you cannot consult it, say "
+            "so explicitly instead of inventing course codes, URLs, or "
+            "program names. If the query mentions clusters, gap "
+            "analysis, which clusters, missing, underrepresented, or "
+            "coverage, you MUST delegate to the Cluster Interpreter (and "
+            "to the Skills Taxonomy Analyst for any lift/z). Close with "
             "a trade-off or caveat."
         ),
         agent=orchestrator,
@@ -850,5 +1271,26 @@ def run_query(query: str) -> str:
         ) from e
     else:
         wall_time = time.time() - t0
-        _write_run_record(query, step_log, wall_time, answer=answer, error=None)
+        path = _write_run_record(query, step_log, wall_time, answer=answer, error=None)
+        # STRICT_DELEGATION (Part B2 deterministic backstop, 2026-09-10):
+        # the run record above is ALWAYS written first — even in strict
+        # mode, the actual (at-risk) answer stays on disk for audit — but
+        # the answer is withheld from the caller when the query's
+        # detected intent required a specialist that was never actually
+        # delegated to. Default off (see _strict_delegation_enabled());
+        # wire it on for Sonnet-phase production/paper runs so a
+        # fabricated peer-program/cluster answer can never silently
+        # become a deliverable the way A1/A4 did on the dev lane.
+        delegated_to = sorted({step["role"] for step in step_log})
+        required_missing = sorted(_detect_required_specialists(query) - set(delegated_to))
+        if required_missing and _strict_delegation_enabled():
+            raise RequiredSpecialistMissingError(
+                f"STRICT_DELEGATION is on and this query's detected intent "
+                f"required {required_missing}, which was/were never "
+                f"delegated to this run — refusing to return the answer "
+                f"as a deliverable (high fabrication risk for peer-program "
+                f"or cluster-gap content). The full run record, including "
+                f"the actual (unverified) answer the crew produced, was "
+                f"still saved for audit to: {path}"
+            )
         return answer
