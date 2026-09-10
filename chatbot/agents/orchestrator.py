@@ -352,7 +352,21 @@ def build_crew() -> tuple[Crew, Agent]:
 _RUN_RECORDS_DIR = os.path.join(_CHATBOT_DIR, "run_records")
 
 
-def _format_step(step: dict) -> list[str]:
+def _truncate(text: str, max_chars: int | None) -> str:
+    """`text`, capped at `max_chars` with a trailing note — or the
+    complete, untouched `text` when `max_chars` is None. Centralises the
+    truncation decision so the main record and the full-audit companion
+    file (see _write_run_record()) differ only in what they pass here."""
+    if max_chars is None or len(text) <= max_chars:
+        return text
+    return (
+        text[:max_chars]
+        + f"\n... [TRUNCATED — {len(text) - max_chars} more characters; "
+        "see the companion _full.md file for the complete text]"
+    )
+
+
+def _format_step(step: dict, max_chars: int | None = 20_000) -> list[str]:
     """Render one captured step_callback payload as markdown lines.
 
     CrewAI's step_callback receives an AgentAction (one tool call: .tool,
@@ -362,6 +376,18 @@ def _format_step(step: dict) -> list[str]:
     renames/moves these dataclasses across versions; falls back to
     str(output) for anything else so a shape change degrades gracefully
     instead of losing the record.
+
+    2026-09-10 (GUARD_TUNEUP_sonnet.md Item 1): `max_chars` used to be a
+    hardcoded 4000, unconditionally. Sonnet's specialist outputs run
+    considerably longer than gpt-oss:120b's ever did, so real content —
+    including the exact numbers several fabrication-guard flags pointed
+    at — routinely fell past that cutoff in the SAVED record, making
+    those flags impossible to audit from disk even though the live guard
+    computed them against the true, complete text. Default raised to
+    20,000 (generous headroom for a readable main record); pass
+    max_chars=None (via _truncate above) to get the full, uncapped text
+    for the companion audit file _write_run_record() now always writes
+    alongside the main record.
     """
     output = step["output"]
     if hasattr(output, "tool") and hasattr(output, "tool_input"):
@@ -371,17 +397,17 @@ def _format_step(step: dict) -> list[str]:
             "",
             "**Result:**",
             "```",
-            str(getattr(output, "result", ""))[:4000],
+            _truncate(str(getattr(output, "result", "")), max_chars),
             "```",
         ]
     if hasattr(output, "output"):
         return [
             "**Final answer for this agent's (sub-)task:**",
             "```",
-            str(output.output)[:4000],
+            _truncate(str(output.output), max_chars),
             "```",
         ]
-    return ["```", str(output)[:4000], "```"]
+    return ["```", _truncate(str(output), max_chars), "```"]
 
 
 def _is_tool_call(step: dict) -> bool:
@@ -482,17 +508,18 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
     orchestrator.py's own backstory asks for ("if you cannot consult it,
     say so explicitly") — which made a genuinely well-behaved answer
     look no different from a real fabrication in this guard's output.
-    Checked per-occurrence via _is_honest_disclosure(): a role is
-    exempted only if EVERY mention of it in the answer is disclosure-
-    shaped; a role mentioned once as a disclosure and once as a real
-    citation still flags, since that second mention is exactly the
-    fabrication this guard exists to catch.
+    Checked per-occurrence via _is_exempt_mention() (honest disclosure OR
+    capability-listing, see that function): a role is exempted only if
+    EVERY mention of it in the answer is exempt-shaped; a role mentioned
+    once as exempt and once as a real citation still flags, since that
+    second mention is exactly the fabrication this guard exists to
+    catch.
     """
     answer_lc = answer.lower()
     flags = []
     for role in _SPECIALIST_ROLES:
         if role.lower() in answer_lc and role not in delegated_to:
-            if _is_honest_disclosure(answer, role):
+            if _is_exempt_mention(answer, role):
                 continue
             flags.append(
                 f"'{role}' is named/cited in the final answer but is NOT "
@@ -504,37 +531,81 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
 
 
 # Phrasing this project's own backstories/answers actually use to
-# disclose that a specialist wasn't reached (confirmed against a real
-# stage-2 run's exact wording, not guessed) — deliberately not an
-# exhaustive NLP-grade classifier, same "best-effort, low-noise" bias as
-# the other guards' extraction.
+# disclose that a specialist wasn't reached or wasn't needed (confirmed
+# against real stage-2 AND sonnet run wording, not guessed) —
+# deliberately not an exhaustive NLP-grade classifier, same "best-effort,
+# low-noise" bias as the other guards' extraction.
+#
+# 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 2): broadened from the
+# SONNET_delegation-check.md Step 1 version, which only covered Ollama's
+# "could not be reached/retrieve" style. Sonnet disclosed the SAME
+# honest thing — a specialist wasn't consulted — using a DIFFERENT,
+# equally honest vocabulary: proactive routing rationale ("...are not
+# required this turn", "was not needed") rather than reactive failure
+# language ("could not be reached"). Added "not required", "not needed",
+# "isn't required", "wasn't needed", "not necessary", "was skipped" to
+# cover this without assuming any one model's specific phrasing is the
+# only honest way to say it.
 _HONEST_DISCLOSURE_RE = re.compile(
     r"could not be reached|was not consulted|were not consulted"
     r"|not consulted|unavailable within the tool budget"
     r"|could not retrieve|couldn't retrieve|could not fetch"
     r"|not delegated|did not consult|wasn't consulted"
-    r"|no\s+\S+\s+was\s+consulted",
+    r"|no\s+\S+\s+was\s+consulted"
+    r"|not required|isn't required|wasn't required|was not required"
+    r"|not needed|isn't needed|wasn't needed|was not needed"
+    r"|not necessary|wasn't necessary|was not necessary"
+    r"|was skipped|were skipped",
     re.IGNORECASE,
 )
 
+# 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 2b): a DIFFERENT exemption
+# shape than honest disclosure — the answer introducing/describing the
+# SYSTEM'S OWN roster of specialists (e.g. a refusal's "My four
+# specialists are: ...") rather than disclosing a gap in THIS run. Real
+# example (Sonnet A5, a restaurant question correctly refused): "My four
+# specialists are:\n- **Skills Taxonomy Analyst** – AI/ML job market
+# skill demand\n- ..." — each bullet is its own newline-bounded
+# "sentence" under _is_exempt_mention's sentence check, so the intro
+# phrase sitting one line ABOVE never shares a sentence with the role
+# name it introduces; a bare disclosure check alone still flagged all
+# four. Checked with a wider, non-sentence-bounded LOOKBACK (see
+# _CAPABILITY_LISTING_LOOKBACK_CHARS) specifically because a listing's
+# intro phrase is structurally separated from each item it introduces,
+# unlike a disclosure sentence, which contains the role name directly.
+_CAPABILITY_LISTING_RE = re.compile(
+    r"my\s+\w*\s*specialists?\s+(?:are|include)"
+    r"|specialists?\s+(?:are|include)\s*:"
+    r"|I\s+coordinate\s+(?:the\s+following\s+)?specialists?"
+    r"|(?:the\s+)?following\s+specialists?",
+    re.IGNORECASE,
+)
+_CAPABILITY_LISTING_LOOKBACK_CHARS = 400
 
-def _is_honest_disclosure(answer: str, role: str) -> bool:
-    """True iff EVERY mention of `role` in `answer` sits inside the SAME
-    SENTENCE as honest-disclosure phrasing — i.e. the answer is saying
-    this specialist wasn't reached, never presenting it as a source of
-    real content. A role with zero mentions returns True (vacuous;
-    callers already gate on the role actually appearing in the answer
-    before calling this).
 
-    Bounded to the containing sentence, not a fixed character window —
-    a flat window (e.g. ±100/150 chars) can "bleed" disclosure language
-    from an ADJACENT sentence into a nearby real citation's window.
-    Caught via a unit test: "The <role> could not be reached this run.
-    Still, per the <role>, Queen's MMAI offers MMAI-902..." — the
-    second, real-citation mention's fixed window reached backward far
-    enough to see the first sentence's "could not be reached" and was
-    wrongly exempted. Sentence-bounding fixes this precisely because
+def _is_exempt_mention(answer: str, role: str) -> bool:
+    """True iff EVERY mention of `role` in `answer` is either (a) honest
+    disclosure in its own sentence, or (b) part of a capability-listing
+    block describing the system's own roster — i.e. never presented as
+    an actual source of content. A role with zero mentions returns True
+    (vacuous; callers already gate on the role appearing before calling
+    this).
+
+    (a) is bounded to the containing SENTENCE, not a fixed character
+    window — a flat window (e.g. ±100/150 chars) can "bleed" disclosure
+    language from an ADJACENT sentence into a nearby real citation's
+    window. Caught via a unit test: "The <role> could not be reached
+    this run. Still, per the <role>, Queen's MMAI offers MMAI-902..." —
+    the second, real-citation mention's fixed window reached backward
+    far enough to see the first sentence's "could not be reached" and
+    was wrongly exempted. Sentence-bounding fixes this precisely because
     each mention is judged only by its own sentence.
+
+    (b) deliberately uses a WIDER, non-sentence-bounded lookback instead
+    — a capability-listing intro phrase sits in its OWN sentence/line,
+    structurally separate from each specialist it introduces (see
+    _CAPABILITY_LISTING_RE's docstring), so sentence-bounding (correct
+    for (a)) would never find it for (b).
     """
     pattern = re.compile(re.escape(role), re.IGNORECASE)
     for m in pattern.finditer(answer):
@@ -542,9 +613,13 @@ def _is_honest_disclosure(answer: str, role: str) -> bool:
         sentence_start = max(starts, default=-1) + 1
         ends = [p for p in (answer.find(c, m.end()) for c in ".!?\n") if p != -1]
         sentence_end = (min(ends) + 1) if ends else len(answer)
-        window = answer[sentence_start:sentence_end]
-        if not _HONEST_DISCLOSURE_RE.search(window):
-            return False
+        sentence = answer[sentence_start:sentence_end]
+        if _HONEST_DISCLOSURE_RE.search(sentence):
+            continue
+        lookback = answer[max(0, m.start() - _CAPABILITY_LISTING_LOOKBACK_CHARS): m.start()]
+        if _CAPABILITY_LISTING_RE.search(lookback):
+            continue
+        return False
     return True
 
 
@@ -837,6 +912,44 @@ _COURSE_CODE_RE = re.compile(
     r"|\d{1,2}[." + _DASH_CHARS + r"]\d{3,4}[A-Za-z]?)\b"
 )
 
+# 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 3a): a report/publication
+# citation shaped as "ACRONYM YEAR" — "WEF 2025", "Stanford HAI 2026",
+# "McKinsey 2025" — structurally matches the alpha-prefix branch above
+# (2-5 uppercase letters + a separator + digits) and got mis-flagged as
+# unattributed_course_code on real Sonnet output ('WEF 2025', 'HAI
+# 2026' x2 across the sonnet run records). A bare 4-digit number in the
+# 1900s/2000s with NO other characters (no dot continuation, no
+# trailing letter — the things a REAL course code almost always has,
+# per this project's actual corpus: "6.7960", "CS 224N", "MMAI-902")
+# is a year, not a course number; real course numbers in this domain
+# don't happen to also look like a calendar year with nothing attached.
+_REPORT_YEAR_CITATION_RE = re.compile(
+    r"^[A-Z]{2,5}[ " + _DASH_CHARS + r"]?(?:19|20)\d{2}$"
+)
+
+
+def _is_report_year_citation(code: str) -> bool:
+    return bool(_REPORT_YEAR_CITATION_RE.match(code))
+
+
+# 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 3b): real identifiers for this
+# project's own curated peer programs (chatbot/data/program_and_
+# curriculum/*.txt — confirmed by reading the actual files, not
+# guessed) that happen to be short/numeric enough to structurally match
+# _COURSE_CODE_RE's alpha-prefix branch. Currently just MIT's: the
+# "6-4" track in "MEng in 6-4: Artificial Intelligence and Decision
+# Making" is genuinely MIT's own program identifier (source:
+# mit-eecs-meng-ai-decision-making.txt), and "MIT 6-4" got flagged as
+# unattributed_course_code on real Sonnet output the same way "MIT
+# 6.7960" (a real course WITHIN that program) did in an earlier Ollama
+# batch — an institution name glued onto a genuinely real identifier,
+# not a fabrication. The other 5 curated programs' short names (MSAII,
+# MMAI, MMA, "MS CS") don't have a bare numeric-suffix form that
+# _COURSE_CODE_RE would extract in the first place (no digit follows),
+# so nothing to allowlist for them here — MMAI-902 (a fabricated COURSE
+# within the real MMAI program) still correctly matches and flags.
+_COURSE_CODE_ALLOWLIST.update({"mit 6-4", "6-4"})
+
 # URLs: standard http(s) scheme, stop at whitespace or a markdown-link
 # closing character.
 _URL_RE = re.compile(r"https?://[^\s)\]}>\"'`|]+")
@@ -952,6 +1065,8 @@ def _detect_content_attribution_flags(
         code = m.group(0)
         code_norm = re.sub(r"\s+", " ", code).strip().lower()
         if code_norm in _COURSE_CODE_ALLOWLIST or code_norm in seen_codes:
+            continue
+        if _is_report_year_citation(code):
             continue
         # Whitespace-normalized, case-insensitive verbatim check —
         # matches the spec's "appear verbatim (case-insensitive,
@@ -1229,6 +1344,7 @@ def _write_run_record(
         for flag in fabrication_flags:
             lines.append(f"- {flag}")
         lines.append("")
+    full_path = path[:-len(".md")] + "_full.md"
     lines += [
         "## Final Answer" if error is None else "## Partial Answer (run failed before completion)",
         "",
@@ -1238,19 +1354,35 @@ def _write_run_record(
         "",
     ]
     if step_log:
+        lines.append(
+            f"Traces below are capped at 20,000 characters each for "
+            f"readability — every guard flag above was computed against "
+            f"the COMPLETE, uncapped text, which is always recoverable "
+            f"from the companion file: `{os.path.basename(full_path)}`."
+        )
+        lines.append("")
+    full_lines = list(lines)  # same header/metrics/answer, full-length traces below
+    if step_log:
         by_role: dict[str, int] = {}
         for step in step_log:
             role = step["role"]
             by_role[role] = by_role.get(role, 0) + 1
-            lines.append(f"### {role} — step {by_role[role]}")
-            lines.append("")
-            lines += _format_step(step)
-            lines.append("")
+            header = [f"### {role} — step {by_role[role]}", ""]
+            lines += header + _format_step(step) + [""]
+            full_lines += header + _format_step(step, max_chars=None) + [""]
     else:
         lines.append("_(no specialist steps completed)_")
+        full_lines.append("_(no specialist steps completed)_")
 
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+    # 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 1): companion file with the
+    # COMPLETE, never-truncated text of every step, written for EVERY run
+    # (not just long ones) so "is this run's trace long enough to need
+    # the companion" is never a judgment call anyone has to make later —
+    # it's just always there.
+    with open(full_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(full_lines))
     return path
 
 

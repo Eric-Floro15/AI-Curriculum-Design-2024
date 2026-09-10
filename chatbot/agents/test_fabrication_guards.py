@@ -36,6 +36,8 @@ from agents.orchestrator import (  # noqa: E402
     _COURSE_CODE_ALLOWLIST,
     _URL_RE,
     _normalize_url,
+    _is_report_year_citation,
+    _write_run_record,
     RequiredSpecialistMissingError,
 )
 
@@ -484,6 +486,199 @@ _check(
     "numeric guard still flags an invented lift/z pair",
     len(num_flags_fake) == 2,
     detail=str(num_flags_fake),
+)
+
+
+# =====================================================================
+# GUARD_TUNEUP_sonnet.md — Item 1: no more truncated saved traces
+# =====================================================================
+print("\n=== Item 1: companion full-text audit file ===")
+
+_long_text = "Y" * 25_000 + " END_MARKER"
+_long_steps = [{"role": "Skills Taxonomy Analyst", "output": _Finish(_long_text)}]
+_test_path = _write_run_record(
+    "item1 test query", _long_steps, 1.0, answer="short answer", error=None
+)
+_test_full_path = _test_path[:-len(".md")] + "_full.md"
+try:
+    _check(
+        "a companion _full.md file is always written alongside the main record",
+        os.path.exists(_test_full_path),
+    )
+    with open(_test_path, encoding="utf-8") as _f:
+        _main_content = _f.read()
+    with open(_test_full_path, encoding="utf-8") as _f:
+        _full_content = _f.read()
+    _check(
+        "the main record truncates a long trace and says so",
+        "END_MARKER" not in _main_content and "TRUNCATED" in _main_content,
+    )
+    _check(
+        "the companion file has the COMPLETE, untruncated trace",
+        _long_text in _full_content,
+    )
+finally:
+    for _p in (_test_path, _test_full_path):
+        if os.path.exists(_p):
+            os.remove(_p)
+
+
+# =====================================================================
+# GUARD_TUNEUP_sonnet.md — Item 2: broader disclosure + capability-listing
+# =====================================================================
+print("\n=== Item 2: broadened attribution exemption ===")
+
+# Real Sonnet A2 wording (run_20260910T172658Z_sonnet-A2-ai-trends_success.md):
+# proactive routing rationale, not the "could not be reached" style
+# Step-1's original regex was built from.
+_a2_style = (
+    "this query is specifically about industry trends and report findings "
+    "— it does not mention peer programs, gap analysis, or clusters, so "
+    "per my routing rules, the University AI Programs Researcher and "
+    "Cluster Interpreter are not required this turn, and the Skills "
+    "Taxonomy Analyst was not needed (the question is a pure fact-lookup, "
+    "not a lift/significance curriculum-recommendation question)."
+)
+_a2_flags = _detect_fabrication_flags(
+    _a2_style, ["AI Industry News Researcher", "Senior Curriculum Advisor"]
+)
+_check(
+    "Sonnet A2's real 'not required this turn' / 'was not needed' wording "
+    "is exempted (0 flags) — a routing-rationale phrasing Step 1's "
+    "original regex didn't cover",
+    len(_a2_flags) == 0,
+    detail=str(_a2_flags),
+)
+
+# Real Sonnet A5 wording (run_20260910T174133Z_sonnet-A5-restaurants_success.md):
+# a capability-listing refusal, structurally distinct from a disclosure
+# sentence (the intro sits on its own line above each bulleted role).
+_a5_style = (
+    "My four specialists are:\n\n"
+    "- **Skills Taxonomy Analyst** – AI/ML job market skill demand\n"
+    "- **University AI Programs Researcher** – peer institution curricula\n"
+    "- **AI Industry News Researcher** – recent AI/ML developments\n"
+    "- **Cluster Interpreter** – curriculum gap analysis\n"
+)
+_a5_flags = _detect_fabrication_flags(_a5_style, ["Senior Curriculum Advisor"])
+_check(
+    "Sonnet A5's real capability-listing refusal is exempted (0 flags) — "
+    "each role sits in its own newline-bounded 'sentence', separate from "
+    "the intro phrase, so this needed a wider lookback than Item 2a's "
+    "sentence-scoped disclosure check alone",
+    len(_a5_flags) == 0,
+    detail=str(_a5_flags),
+)
+
+# Paired still-catches #1: the original fabrication that motivated the
+# attribution guard in the first place (a section header naming an
+# uninvoked specialist, with real-looking fabricated findings).
+_gap_analysis_fabrication = (
+    "## Gap Analysis (Cluster Interpreter)\n\n"
+    "The Cluster Interpreter identified three missing clusters: DevOps, "
+    "Cloud, and MLOps."
+)
+_gap_flags = _detect_fabrication_flags(
+    _gap_analysis_fabrication, ["Senior Curriculum Advisor"]
+)
+_check(
+    "still catches: a fabricated 'Gap Analysis (Cluster Interpreter)' "
+    "section with no disclosure/listing language survives Item 2's "
+    "broadening unflagged-free — it's still flagged",
+    any("Cluster Interpreter" in f for f in _gap_flags),
+    detail=str(_gap_flags),
+)
+
+# Paired still-catches #2: a direct "According to <specialist>" content
+# citation to a non-delegated specialist.
+_according_to_fabrication = (
+    "According to the University AI Programs Researcher, CMU offers a "
+    "new AI ethics elective this year."
+)
+_according_flags = _detect_fabrication_flags(
+    _according_to_fabrication, ["Senior Curriculum Advisor"]
+)
+_check(
+    "still catches: 'According to <specialist>, <specific content>' is "
+    "still flagged — Item 2's exemptions don't cover real citations",
+    any("University AI Programs Researcher" in f for f in _according_flags),
+    detail=str(_according_flags),
+)
+
+
+# =====================================================================
+# GUARD_TUNEUP_sonnet.md — Item 3: course-code false positives
+# =====================================================================
+print("\n=== Item 3: report-year citations + real curated program codes ===")
+
+for _code, _expect_report_year in [
+    ("WEF 2025", True), ("HAI 2026", True), ("McKinsey 2025", False),
+    # McKinsey is 8 letters, doesn't fit the 2-5 letter alpha-prefix
+    # shape at all — included to confirm it's simply never extracted as
+    # a candidate in the first place, not that the exclusion "misses" it.
+    ("MIT 6-4", False), ("MMAI-902", False), ("CS330", False), ("6.7960", False),
+]:
+    _check(
+        f"_is_report_year_citation({_code!r}) == {_expect_report_year}",
+        _is_report_year_citation(_code) == _expect_report_year,
+    )
+
+_check(
+    "'McKinsey 2025' is never extracted as a course-code CANDIDATE at "
+    "all (8-letter prefix doesn't fit the 2-5 letter alpha branch), so "
+    "it needs no exclusion to begin with",
+    "McKinsey 2025" not in _COURSE_CODE_RE.findall("McKinsey 2025 report"),
+)
+
+_report_year_flags = _detect_content_attribution_flags(
+    "Sources: WEF 2025 and Stanford HAI 2026 both highlight this trend.",
+    "AI trends query", [], [],
+)
+_check(
+    "real Sonnet report-citation wording ('WEF 2025', 'Stanford HAI "
+    "2026') produces zero course-code flags end-to-end",
+    not any(f.startswith("unattributed_course_code") for f in _report_year_flags),
+    detail=str(_report_year_flags),
+)
+
+_mit_flags = _detect_content_attribution_flags(
+    "Peer programs surveyed include MIT 6-4 and Queen's MMAI.",
+    "compare peer programs", [], [],
+)
+_check(
+    "the real MIT '6-4' program identifier, glued to the institution "
+    "name, is NOT flagged as a fabricated course code (allowlisted, "
+    "same class as the earlier 'MIT 6.7960' finding)",
+    not any(f.startswith("unattributed_course_code") for f in _mit_flags),
+    detail=str(_mit_flags),
+)
+
+# Paired still-catches #1: the original fabricated MMAI-902 (a course
+# WITHIN the real MMAI program, but itself invented) must still flag —
+# confirms the "mit 6-4" allowlist entry doesn't accidentally shadow
+# fabricated MMAI course numbers.
+_mmai_fabrication_flags = _detect_content_attribution_flags(
+    "Queen's MMAI offers MMAI-902 AI Ethics, Law & Policy.",
+    "compare peer programs", [], [],
+)
+_check(
+    "still catches: fabricated 'MMAI-902' (a real program, invented "
+    "course within it) is still flagged",
+    any("MMAI" in f and f.startswith("unattributed_course_code") for f in _mmai_fabrication_flags),
+    detail=str(_mmai_fabrication_flags),
+)
+
+# Paired still-catches #2: A4-style wholly invented peer-program codes
+# (real Set A4 pattern — wrong institutions, invented course numbers).
+_a4_fabrication_flags = _detect_content_attribution_flags(
+    "University of Washington offers AI-405 and Imperial College offers CS9999.",
+    "compare peer programs", [], [],
+)
+_check(
+    "still catches: A4-style wholly invented course codes at fabricated "
+    "peer institutions are still flagged",
+    sum(1 for f in _a4_fabrication_flags if f.startswith("unattributed_course_code")) == 2,
+    detail=str(_a4_fabrication_flags),
 )
 
 
