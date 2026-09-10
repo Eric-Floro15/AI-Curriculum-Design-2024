@@ -257,6 +257,27 @@ _check(
     detail=str(flags_toronto_fabricated),
 )
 
+# Real Stage-2 (2026-09-10) false positive: prose honestly disclosing
+# that a specialist wasn't consulted mentions its role name, "University
+# AI Programs Researcher" — the generic "X University" matcher mistook
+# "The University" (from "The University AI Programs Researcher could
+# not be reached") for a fabricated institution, since it isn't
+# followed by " of <Capitalized>" (the only case excluded until this
+# fix).
+flags_role_name_disclosure = _detect_content_attribution_flags(
+    "Note: the University AI Programs Researcher could not be reached "
+    "this run, so peer-program data is unavailable.",
+    "Tell me about Johns Hopkins' MPH program and how it compares to AI/ML programs.",
+    [], [],
+)
+_check(
+    "an honest disclosure mentioning the 'University AI Programs "
+    "Researcher' role name does NOT get mis-flagged as a fabricated "
+    "'University' institution (real Stage-2 false positive, now fixed)",
+    len(_institution_names(flags_role_name_disclosure)) == 0,
+    detail=str(flags_role_name_disclosure),
+)
+
 
 # =====================================================================
 # Required-specialist intent detection (Part B2)
@@ -271,10 +292,40 @@ _check(
 )
 _check(
     "named-institution query requires University AI Programs Researcher "
-    "even without the word 'program'",
+    "even without the word 'program' — via the MMAI degree-token match, "
+    "not a bare institution-name trigger (removed in the Stage 2 "
+    "refinement below)",
     "University AI Programs Researcher" in _detect_required_specialists(
         "What does Queen's MMAI cover?"
     ),
+)
+# Stage 2 refinement (2026-09-10): a bare institution/city name is no
+# longer sufficient on its own — real Set A5 query, names "University of
+# Toronto" but has zero program/comparison intent (a pure off-scope
+# restaurant question), must NOT require University AI Programs
+# Researcher. A3's JHU query genuinely compares to AI/ML programs and
+# must still require it — the difference is intent language, not the
+# presence of a university name.
+_check(
+    "A5's exact query (names an institution, zero program/comparison "
+    "intent) requires NOTHING — the real false positive this stage fixed",
+    _detect_required_specialists(
+        "Can you tell me about the best restaurants near the University of Toronto?"
+    )
+    == set(),
+)
+_check(
+    "A3's exact query (MPH degree token + 'compares to AI/ML programs') "
+    "still correctly requires University AI Programs Researcher",
+    "University AI Programs Researcher" in _detect_required_specialists(
+        "Tell me about Johns Hopkins' MPH program in biostatistics and "
+        "how it compares to AI/ML programs."
+    ),
+)
+_check(
+    "a bare institution name with NO intent language requires nothing "
+    "(the removed trigger, tested directly)",
+    _detect_required_specialists("Have you heard of Stanford University?") == set(),
 )
 _check(
     "cluster/gap query requires Cluster Interpreter",

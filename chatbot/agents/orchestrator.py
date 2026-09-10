@@ -823,21 +823,33 @@ _RECOGNIZED_INSTITUTIONS = [
 # this is what catches A4's fabricated Toronto/Edinburgh/Imperial
 # mentions generically, without having to enumerate every possible
 # fabricated institution name in advance.
-# The negative lookahead on the "X University" branch matters: without
-# it, a sentence like "The University of Cambridge also has..." gets
-# mis-matched as just "The University" — "The" satisfies
+# The negative lookaheads on the "X University" branch matter: without
+# the first, a sentence like "The University of Cambridge also has..."
+# gets mis-matched as just "The University" — "The" satisfies
 # [A-Z][a-zA-Z]+ and is immediately followed by " University", so that
 # alternative matches (and consumes) "The University" BEFORE the regex
 # engine ever reaches the correct "University of Cambridge" starting
 # position, since finditer takes the first alternative that matches at
-# each position and "University" is now already consumed. The lookahead
-# rejects "X University" whenever it's immediately followed by
-# " of <Capitalized>" — in that shape the true institution name is
-# "University of Y", not "<leading filler word> University" — found via
-# a real unit-test failure, not just theorized.
+# each position and "University" is now already consumed. It rejects
+# "X University" whenever immediately followed by " of <Capitalized>" —
+# in that shape the true institution name is "University of Y", not
+# "<leading filler word> University" — found via a real unit-test
+# failure, not just theorized.
+#
+# The second lookahead is a live Stage-2 finding, not a unit-test one:
+# a real run's prose admitted "The University AI Programs Researcher
+# could not be reached" (correctly disclosing the specialist was never
+# delegated to) — but the SPECIALIST ROLE NAME itself starts with
+# "University", so "The University" matched again, this time as a
+# false institution candidate for a sentence that was actually about a
+# role name, not a place. Rejects "X University" whenever immediately
+# followed by " AI Programs Researcher" (the one role name this
+# ambiguity can arise from — the other three role names in
+# _SPECIALIST_ROLES don't start with "University").
 _GENERIC_INSTITUTION_RE = re.compile(
     r"\b(?:University of [A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)?"
-    r"|[A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)? University(?!\s+of\s+[A-Z])"
+    r"|[A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)? University"
+    r"(?!\s+of\s+[A-Z]|\s+AI\s+Programs\s+Researcher)"
     r"|Imperial College(?: London)?)\b"
 )
 
@@ -975,11 +987,15 @@ def _detect_content_attribution_flags(
 # ROUTING RULES section) get ignored by the model, which is exactly what
 # happened on A1/A4.
 _PEER_PROGRAM_INTENT_RE = re.compile(
-    r"peer[ -]?program|which (?:program|university|universities)"
-    r"|programs? (?:teach|cover|include)|curricul(?:um|a)\b"
-    r"|\bcourses?\b|\bcompares? (?:to|with|against)\b"
-    r"|fetch (?:the|our|current) course",
-    re.IGNORECASE,
+    r"(?i:peer[ -]?program|which (?:program|university|universities)"
+    r"|programs? (?:teach|cover|include|offer)|curricul(?:um|a)\b"
+    r"|\bcourses?\b|\bteach(?:es)?\b|\boffers?\b|\bcompares?\b"
+    r"|fetch (?:the|our|current) course)"
+    # Degree-token alternatives are deliberately OUTSIDE the (?i:...)
+    # scope, so they only match their real uppercase abbreviation form
+    # ("MMAI", "MPH") — this keeps "MS" from also matching stray
+    # lowercase "ms" occurrences case-insensitively.
+    r"|\bMMAI\b|\bMSAII\b|\bMEng\b|\bMSc\b|\bMPH\b|\bMS\b"
 )
 _CLUSTER_GAP_INTENT_RE = re.compile(
     r"\bclusters?\b|gap analysis|which clusters|\bmissing\b"
@@ -991,14 +1007,27 @@ _CLUSTER_GAP_INTENT_RE = re.compile(
 def _detect_required_specialists(query: str) -> set[str]:
     """Deterministic, keyword-based required-specialist detection from
     the query text alone. Two intents:
-      - peer-program / course / curriculum intent -> University AI
-        Programs Researcher must be delegated.
+      - peer-program / course / curriculum COMPARISON intent ->
+        University AI Programs Researcher must be delegated.
       - cluster / gap-analysis / coverage intent -> Cluster Interpreter
         must be delegated (a gap analysis is meaningless without it).
-    Also checks named institutions (the recognized list +
-    _GENERIC_INSTITUTION_RE) in the query, since "which peer programs
-    teach X, like Queen's MMAI or CMU MSAII" names specific institutions
-    without necessarily using the word "program".
+
+    2026-09-10 (Stage 2 refinement): this used to ALSO require the
+    specialist whenever the query merely NAMED an institution (the
+    recognized list, or the generic "University of X" pattern) with no
+    other qualifying language — that was wrong. A real Set A5 query,
+    "Can you tell me about the best restaurants near the University of
+    Toronto?", named an institution but had zero program/comparison
+    intent, and wrongly fired required_specialist_missing on a pure
+    off-scope refusal. A3's JHU query ("...how it compares to AI/ML
+    programs") is the correctly-required case, and the difference is
+    INTENT, not the presence of a university/city name — so the
+    bare-institution-name triggers were removed entirely; detection now
+    relies solely on _PEER_PROGRAM_INTENT_RE, which already covers real
+    peer-program queries via intent language (program/course/curriculum/
+    teach/offer/compare) OR a degree-token mention (MMAI, MSAII, MEng,
+    MSc, MPH, MS) — both of which co-occur with genuine peer-program
+    asks without needing a separate institution-name check.
 
     Deliberately conservative/best-effort, not a full intent classifier
     — false negatives (missing a real peer-program ask) just mean this
@@ -1010,12 +1039,6 @@ def _detect_required_specialists(query: str) -> set[str]:
     """
     required: set[str] = set()
     if _PEER_PROGRAM_INTENT_RE.search(query):
-        required.add("University AI Programs Researcher")
-    for name in _RECOGNIZED_INSTITUTIONS:
-        if re.search(r"\b" + re.escape(name) + r"\b", query, re.IGNORECASE):
-            required.add("University AI Programs Researcher")
-            break
-    if _GENERIC_INSTITUTION_RE.search(query):
         required.add("University AI Programs Researcher")
     if _CLUSTER_GAP_INTENT_RE.search(query):
         required.add("Cluster Interpreter")
