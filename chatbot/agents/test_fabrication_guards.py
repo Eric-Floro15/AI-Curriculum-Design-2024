@@ -38,6 +38,8 @@ from agents.orchestrator import (  # noqa: E402
     _normalize_url,
     _is_report_year_citation,
     _write_run_record,
+    _format_cost_section,
+    _estimate_cost_usd,
     RequiredSpecialistMissingError,
 )
 
@@ -680,6 +682,192 @@ _check(
     sum(1 for f in _a4_fabrication_flags if f.startswith("unattributed_course_code")) == 2,
     detail=str(_a4_fabrication_flags),
 )
+
+
+# =====================================================================
+# POLISH_attribution-flip_and_cost-tracking.md — Item A: inverted
+# attribution guard (positive detector, not exemption blocklist)
+# =====================================================================
+print("\n=== Item A: inverted attribution guard ===")
+
+# Still-catches, third shape: a bare "— Role" source line (the third
+# citation shape named in the spec, not yet covered by any earlier test
+# — the header and "According to" shapes already have paired tests
+# above from the guard-tuneup work).
+_source_line_fabrication = (
+    "Automation & Scripting shows the highest lift this quarter.\n"
+    "— Cluster Interpreter\n"
+    "More findings follow."
+)
+_source_line_flags = _detect_fabrication_flags(
+    _source_line_fabrication, ["Senior Curriculum Advisor"]
+)
+_check(
+    "still catches: a bare '— Role' source line credits content to a "
+    "non-delegated specialist",
+    any("Cluster Interpreter" in f for f in _source_line_flags),
+    detail=str(_source_line_flags),
+)
+
+# The exact sentence that slipped through the old exemption-based design
+# on Run 1 (d126756) — a hypothetical/conditional FUTURE routing plan,
+# not a citation, not disclosure-phrased, not capability-listing-shaped.
+_run1_hypothetical_routing = (
+    "The professor's query did not explicitly request a cluster-level "
+    "gap analysis of an existing curriculum, so the Cluster Interpreter "
+    "was not consulted this run in order to stay within delegation "
+    "budget. If you would like a systematic cluster-level gap analysis "
+    "— showing which of the 10 CSPA ensemble skill clusters your "
+    "current ML course covers vs. what an agentic AI course would "
+    "address — provide or upload your current course list and I will "
+    "route that through the University AI Programs Researcher (for "
+    "structured curriculum extraction) and the Cluster Interpreter in "
+    "sequence."
+)
+_run1_flags = _detect_fabrication_flags(
+    _run1_hypothetical_routing,
+    ["AI Industry News Researcher", "Senior Curriculum Advisor",
+     "Skills Taxonomy Analyst", "University AI Programs Researcher"],
+)
+_check(
+    "the exact Run 1 (d126756) hypothetical-future-routing sentence — "
+    "the real false positive this item fixes — is NOT flagged under "
+    "the inverted design",
+    len(_run1_flags) == 0,
+    detail=str(_run1_flags),
+)
+
+# Full end-to-end validation against Run 1's actual saved record: zero
+# flags of any kind (attribution was the only flag it ever had).
+_run1_record_path = os.path.join(
+    _HERE, "..", "run_records",
+    "run_20260910T212751Z_sonnet-run1-agentic-curriculum_success.md",
+)
+if os.path.exists(_run1_record_path):
+    with open(_run1_record_path, encoding="utf-8") as _f:
+        _run1_content = _f.read()
+    import re as _re_mod
+    _run1_delegated = eval(_re_mod.search(  # noqa: S307 - trusted local fixture file
+        r"\*\*Delegated to:\*\* (\[.*?\])", _run1_content
+    ).group(1))
+    _run1_ans_start = _run1_content.index("## Final Answer") + len("## Final Answer")
+    _run1_ans_end = _run1_content.index("## Per-Agent Tool-Call Trace")
+    _run1_answer = _run1_content[_run1_ans_start:_run1_ans_end].strip()
+    _run1_real_flags = _detect_fabrication_flags(_run1_answer, _run1_delegated)
+    _check(
+        "Run 1's real saved record (d126756) now shows ZERO attribution "
+        "flags — it previously had exactly one, on 'Cluster Interpreter'",
+        len(_run1_real_flags) == 0,
+        detail=str(_run1_real_flags),
+    )
+else:
+    print("  (skipped: Run 1's saved record not found at expected path)")
+
+
+# =====================================================================
+# POLISH_attribution-flip_and_cost-tracking.md — Item B: cost tracking
+# =====================================================================
+print("\n=== Item B: cost/usage tracking ===")
+
+
+class _FakeUsage:
+    prompt_tokens = 12_000
+    completion_tokens = 3_000
+    total_tokens = 15_000
+    cached_prompt_tokens = 500
+    cache_creation_tokens = 200
+    successful_requests = 17
+
+
+_check(
+    "None usage_metrics writes 'usage unavailable', not a crash",
+    "usage unavailable" in "\n".join(_format_cost_section(None)),
+)
+
+
+class _WeirdUsage:
+    pass
+
+
+_check(
+    "an unexpected-shape usage_metrics object also writes 'usage "
+    "unavailable' rather than raising",
+    "usage unavailable" in "\n".join(_format_cost_section(_WeirdUsage())),
+)
+
+_check(
+    "_estimate_cost_usd computes the expected dollar figure for "
+    "anthropic/claude-sonnet-4-6 (12000 prompt + 3000 completion tokens "
+    "at $3/$15 per million)",
+    abs(_estimate_cost_usd("anthropic", "claude-sonnet-4-6", 12_000, 3_000) - 0.081) < 1e-9,
+)
+_check(
+    "_estimate_cost_usd returns None for a provider/model with no price "
+    "entry (no fabricated dollar figure)",
+    _estimate_cost_usd("ollama-cloud", "gpt-oss:120b", 12_000, 3_000) is None,
+)
+
+_cost_lines = _format_cost_section(_FakeUsage())
+_cost_text = "\n".join(_cost_lines)
+_check(
+    "a real usage_metrics object renders all token counts",
+    "12,000" in _cost_text and "3,000" in _cost_text and "15,000" in _cost_text,
+    detail=_cost_text,
+)
+
+_prev_provider = os.environ.get("LLM_PROVIDER")
+_prev_model = os.environ.get("LLM_MODEL")
+try:
+    os.environ["LLM_PROVIDER"] = "anthropic"
+    os.environ["LLM_MODEL"] = "claude-sonnet-4-6"
+    _priced_text = "\n".join(_format_cost_section(_FakeUsage()))
+    _check(
+        "the Cost/Usage section includes an approx. dollar figure when "
+        "the env vars resolve to a known-priced model",
+        "Approx. cost:** $0.0810" in _priced_text,
+        detail=_priced_text,
+    )
+
+    os.environ["LLM_PROVIDER"] = "ollama-cloud"
+    os.environ["LLM_MODEL"] = "gpt-oss:120b"
+    _unpriced_text = "\n".join(_format_cost_section(_FakeUsage()))
+    _check(
+        "the Cost/Usage section reports 'not estimated' (never a "
+        "fabricated dollar figure) for an unpriced provider/model, "
+        "while still showing real token counts",
+        "not estimated" in _unpriced_text and "12,000" in _unpriced_text,
+        detail=_unpriced_text,
+    )
+finally:
+    if _prev_provider is None:
+        os.environ.pop("LLM_PROVIDER", None)
+    else:
+        os.environ["LLM_PROVIDER"] = _prev_provider
+    if _prev_model is None:
+        os.environ.pop("LLM_MODEL", None)
+    else:
+        os.environ["LLM_MODEL"] = _prev_model
+
+# End-to-end: _write_run_record() actually calls _format_cost_section()
+# and the section lands in the saved file.
+_cost_test_steps = [{"role": "Skills Taxonomy Analyst", "output": _Finish("short output")}]
+_cost_test_path = _write_run_record(
+    "cost test query", _cost_test_steps, 1.0, answer="short answer",
+    error=None, usage_metrics=_FakeUsage(),
+)
+_cost_test_full_path = _cost_test_path[:-len(".md")] + "_full.md"
+try:
+    with open(_cost_test_path, encoding="utf-8") as _f:
+        _saved_content = _f.read()
+    _check(
+        "_write_run_record() writes a '## Cost / Usage' section with "
+        "real token counts into the actual saved run record",
+        "## Cost / Usage" in _saved_content and "12,000" in _saved_content,
+    )
+finally:
+    for _p in (_cost_test_path, _cost_test_full_path):
+        if os.path.exists(_p):
+            os.remove(_p)
 
 
 # =====================================================================

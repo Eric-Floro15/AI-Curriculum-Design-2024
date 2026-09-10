@@ -491,136 +491,94 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
     runs confirmed 'Cluster Interpreter' reliably appears in delegated_to
     when it actually runs. No reason to carve it out here.
 
-    Only a name-string match — cannot verify individual facts/numbers
-    within a section are correct, only whether the section's claimed
-    source was actually consulted this run. See STEP 4 in the
-    2026-09-09 conversation for the numeric/raw-output layers this does
-    NOT cover.
+    Only a pattern match — cannot verify individual facts/numbers within
+    a section are correct, only whether the section's claimed source was
+    actually consulted this run. See the numeric guard below for the
+    layer that DOES check individual values.
 
-    2026-09-10 (SONNET_delegation-check.md Step 1): a role mention is
-    NOT flagged if it is HONEST DISCLOSURE — the answer saying the
-    specialist "could not be reached" / "was not consulted" /
-    "unavailable within the tool budget" — rather than presenting that
-    specialist as an actual source of content. A real stage-2 run
-    ("the University AI Programs Researcher could not retrieve
-    structured course lists...") got flagged under the old rule purely
-    for HONESTLY disclosing the gap — exactly the behavior
-    orchestrator.py's own backstory asks for ("if you cannot consult it,
-    say so explicitly") — which made a genuinely well-behaved answer
-    look no different from a real fabrication in this guard's output.
-    Checked per-occurrence via _is_exempt_mention() (honest disclosure OR
-    capability-listing, see that function): a role is exempted only if
-    EVERY mention of it in the answer is exempt-shaped; a role mentioned
-    once as exempt and once as a real citation still flags, since that
-    second mention is exactly the fabrication this guard exists to
-    catch.
+    2026-09-10 (POLISH_attribution-flip_and_cost-tracking.md Item A):
+    INVERTED from a blocklist-of-exemptions to a positive detector of
+    the actual bad pattern. The exemption-based version (flag a
+    non-delegated role's mention unless it matched a growing allowlist
+    of honest-disclosure/capability-listing phrasings) was structural
+    whack-a-mole: every richer Sonnet answer found a new BENIGN way to
+    mention a non-delegated specialist that the allowlist hadn't
+    anticipated yet — three real false-positive rounds in a row (Ollama
+    "could not retrieve" style, Sonnet "not required this turn" style,
+    Sonnet capability-listing refusals, and finally a hypothetical
+    future-routing sentence on Run 1, d126756, that fit neither existing
+    exemption). Chasing exemption phrasings is an unbounded problem;
+    recognizing the actual fabrication SHAPE is bounded. Now flags a
+    non-delegated role ONLY when the answer presents it as the SOURCE OF
+    SPECIFIC CONTENT — a section header crediting it
+    ("### Gap Analysis (Cluster Interpreter)", a "(Role)" tag on a
+    heading, a bare "— Role" source line), or a citation verb
+    ("According to <role>", "per the <role>", "<role> found/identified/
+    reported/recommends/says/shows/...", "<role>'s analysis shows").
+    A bare mention, an honest disclosure, a capability listing, or a
+    hypothetical/conditional future-routing sentence naturally doesn't
+    match any of these — no exemption list to maintain, because nothing
+    about "not consulted" or "my four specialists are" or "I'll route it
+    through X next time" ever looked like a citation to begin with.
     """
-    answer_lc = answer.lower()
     flags = []
     for role in _SPECIALIST_ROLES:
-        if role.lower() in answer_lc and role not in delegated_to:
-            if _is_exempt_mention(answer, role):
-                continue
-            flags.append(
-                f"'{role}' is named/cited in the final answer but is NOT "
-                f"in this run's delegated_to ({delegated_to or '(none)'}) "
-                "— likely a fabricated citation, not a specialist actually "
-                "consulted this run."
-            )
+        if role in delegated_to:
+            continue
+        m = _build_content_attribution_pattern(role).search(answer)
+        if not m:
+            continue
+        idx = m.start()
+        snippet = answer[max(0, idx - 30): idx + len(m.group(0)) + 30].replace("\n", " ").strip()
+        flags.append(
+            f"'{role}' is presented as the source of specific content in "
+            f"the final answer but is NOT in this run's delegated_to "
+            f"({delegated_to or '(none)'}) — likely a fabricated "
+            f"citation, not a specialist actually consulted this run. "
+            f"Context: \"...{snippet}...\""
+        )
     return flags
 
 
-# Phrasing this project's own backstories/answers actually use to
-# disclose that a specialist wasn't reached or wasn't needed (confirmed
-# against real stage-2 AND sonnet run wording, not guessed) —
-# deliberately not an exhaustive NLP-grade classifier, same "best-effort,
-# low-noise" bias as the other guards' extraction.
-#
-# 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 2): broadened from the
-# SONNET_delegation-check.md Step 1 version, which only covered Ollama's
-# "could not be reached/retrieve" style. Sonnet disclosed the SAME
-# honest thing — a specialist wasn't consulted — using a DIFFERENT,
-# equally honest vocabulary: proactive routing rationale ("...are not
-# required this turn", "was not needed") rather than reactive failure
-# language ("could not be reached"). Added "not required", "not needed",
-# "isn't required", "wasn't needed", "not necessary", "was skipped" to
-# cover this without assuming any one model's specific phrasing is the
-# only honest way to say it.
-_HONEST_DISCLOSURE_RE = re.compile(
-    r"could not be reached|was not consulted|were not consulted"
-    r"|not consulted|unavailable within the tool budget"
-    r"|could not retrieve|couldn't retrieve|could not fetch"
-    r"|not delegated|did not consult|wasn't consulted"
-    r"|no\s+\S+\s+was\s+consulted"
-    r"|not required|isn't required|wasn't required|was not required"
-    r"|not needed|isn't needed|wasn't needed|was not needed"
-    r"|not necessary|wasn't necessary|was not necessary"
-    r"|was skipped|were skipped",
-    re.IGNORECASE,
+# Verbs/phrases this project's own outputs actually use to CITE a
+# specialist as the source of a specific claim (confirmed against real
+# fabrication examples — the A2-style "Gap Analysis (Cluster
+# Interpreter)" header and "According to <specialist>, <claim>" — not
+# guessed). Deliberately the POSITIVE pattern the guard flags on, not a
+# negative exemption list: see _detect_fabrication_flags' 2026-09-10
+# docstring for why this direction is more robust.
+_CONTENT_ATTRIBUTION_VERBS = (
+    r"found|identified|reported|recommends?|recommended|says?|said"
+    r"|shows?|showed|indicates?|indicated|notes?|noted|states?|stated"
+    r"|confirms?|confirmed|reveals?|revealed|provides?|provided|returned"
 )
 
-# 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 2b): a DIFFERENT exemption
-# shape than honest disclosure — the answer introducing/describing the
-# SYSTEM'S OWN roster of specialists (e.g. a refusal's "My four
-# specialists are: ...") rather than disclosing a gap in THIS run. Real
-# example (Sonnet A5, a restaurant question correctly refused): "My four
-# specialists are:\n- **Skills Taxonomy Analyst** – AI/ML job market
-# skill demand\n- ..." — each bullet is its own newline-bounded
-# "sentence" under _is_exempt_mention's sentence check, so the intro
-# phrase sitting one line ABOVE never shares a sentence with the role
-# name it introduces; a bare disclosure check alone still flagged all
-# four. Checked with a wider, non-sentence-bounded LOOKBACK (see
-# _CAPABILITY_LISTING_LOOKBACK_CHARS) specifically because a listing's
-# intro phrase is structurally separated from each item it introduces,
-# unlike a disclosure sentence, which contains the role name directly.
-_CAPABILITY_LISTING_RE = re.compile(
-    r"my\s+\w*\s*specialists?\s+(?:are|include)"
-    r"|specialists?\s+(?:are|include)\s*:"
-    r"|I\s+coordinate\s+(?:the\s+following\s+)?specialists?"
-    r"|(?:the\s+)?following\s+specialists?",
-    re.IGNORECASE,
-)
-_CAPABILITY_LISTING_LOOKBACK_CHARS = 400
 
+def _build_content_attribution_pattern(role: str) -> re.Pattern:
+    """A citation-shaped mention of `role`: a heading crediting it, a
+    bare '— Role' source line, or a citing verb phrase. MULTILINE so the
+    heading/source-line alternatives' ^/$ anchor to individual lines,
+    not the whole answer.
 
-def _is_exempt_mention(answer: str, role: str) -> bool:
-    """True iff EVERY mention of `role` in `answer` is either (a) honest
-    disclosure in its own sentence, or (b) part of a capability-listing
-    block describing the system's own roster — i.e. never presented as
-    an actual source of content. A role with zero mentions returns True
-    (vacuous; callers already gate on the role appearing before calling
-    this).
-
-    (a) is bounded to the containing SENTENCE, not a fixed character
-    window — a flat window (e.g. ±100/150 chars) can "bleed" disclosure
-    language from an ADJACENT sentence into a nearby real citation's
-    window. Caught via a unit test: "The <role> could not be reached
-    this run. Still, per the <role>, Queen's MMAI offers MMAI-902..." —
-    the second, real-citation mention's fixed window reached backward
-    far enough to see the first sentence's "could not be reached" and
-    was wrongly exempted. Sentence-bounding fixes this precisely because
-    each mention is judged only by its own sentence.
-
-    (b) deliberately uses a WIDER, non-sentence-bounded lookback instead
-    — a capability-listing intro phrase sits in its OWN sentence/line,
-    structurally separate from each specialist it introduces (see
-    _CAPABILITY_LISTING_RE's docstring), so sentence-bounding (correct
-    for (a)) would never find it for (b).
+    Reuses _DASH_CHARS (defined further down, safe to reference here —
+    Python resolves module-level names at call time, not definition
+    order) rather than a fresh hand-typed dash class: a raw "-" between
+    two other class members is a RANGE, not a literal, and an early
+    draft of this exact function had that bug (a coincidentally-correct
+    one, since U+2010-U+2014 happens to be the same 5 dashes intended —
+    still fixed before shipping, since correctness-by-coincidence isn't
+    something to leave in the code once the actual mistake is spotted).
     """
-    pattern = re.compile(re.escape(role), re.IGNORECASE)
-    for m in pattern.finditer(answer):
-        starts = [answer.rfind(c, 0, m.start()) for c in ".!?\n"]
-        sentence_start = max(starts, default=-1) + 1
-        ends = [p for p in (answer.find(c, m.end()) for c in ".!?\n") if p != -1]
-        sentence_end = (min(ends) + 1) if ends else len(answer)
-        sentence = answer[sentence_start:sentence_end]
-        if _HONEST_DISCLOSURE_RE.search(sentence):
-            continue
-        lookback = answer[max(0, m.start() - _CAPABILITY_LISTING_LOOKBACK_CHARS): m.start()]
-        if _CAPABILITY_LISTING_RE.search(lookback):
-            continue
-        return False
-    return True
+    r = re.escape(role)
+    return re.compile(
+        r"^#{1,6}[^\n]*\(\s*" + r + r"\s*\)\s*$"            # "### ... (Role)"
+        r"|^\s*[" + _DASH_CHARS + r"]\s*" + r + r"\s*[:.]?\s*$"  # bare "— Role" source line
+        r"|\baccording to (?:the )?" + r + r"\b"
+        r"|\bper (?:the )?" + r + r"\b"
+        r"|\b" + r + r"'s\s+analysis\s+shows?\b"
+        r"|\b" + r + r"(?:'s)?\s+(?:" + _CONTENT_ATTRIBUTION_VERBS + r")\b",
+        re.IGNORECASE | re.MULTILINE,
+    )
 
 
 # --- Numeric grounding guard (2026-09-10) ---------------------------------
@@ -1244,12 +1202,96 @@ class RequiredSpecialistMissingError(RuntimeError):
     content and must not be handed to the caller as a deliverable."""
 
 
+# 2026-09-10 (POLISH_attribution-flip_and_cost-tracking.md Item B):
+# publicly-documented Anthropic per-token pricing for the claude-sonnet-4
+# family (USD per million tokens) — the only model/provider combination
+# this project's run_query() is currently used with on the paid lane.
+# Approximate: does NOT account for prompt-cache read/write discount
+# tiers (Anthropic prices cache reads well below, and cache writes
+# somewhat above, the base input rate) — cached_prompt_tokens and
+# cache_creation_tokens are reported as raw counts in the run record but
+# not separately priced here, since getting that tiering exactly right
+# is not "trivial" in the sense this task asked for. Treat the dollar
+# figure as a rough estimate; the Anthropic console has the exact bill.
+_ANTHROPIC_PRICE_PER_MILLION_TOKENS_USD = {
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
+}
+
+
+def _estimate_cost_usd(provider: str, model: str, prompt_tokens: int, completion_tokens: int) -> float | None:
+    """Rough USD estimate for a known provider/model, or None if this
+    combination has no price entry (callers report tokens-only in that
+    case rather than a fabricated dollar figure)."""
+    if provider != "anthropic":
+        return None
+    rates = _ANTHROPIC_PRICE_PER_MILLION_TOKENS_USD.get(model)
+    if not rates:
+        return None
+    return (prompt_tokens * rates["input"] + completion_tokens * rates["output"]) / 1_000_000
+
+
+def _format_cost_section(usage_metrics: object | None) -> list[str]:
+    """Render a '## Cost / Usage' section from crew.usage_metrics.
+    Defensive by design: usage_metrics is populated by CrewAI only after
+    a real crew.kickoff() call, so it's legitimately absent for a
+    request that failed before that point, or None if a future CrewAI
+    version changes its shape — either way this writes an honest
+    "usage unavailable" line instead of raising.
+    """
+    lines = ["## Cost / Usage", ""]
+    if usage_metrics is None:
+        lines += ["usage unavailable (no crew.usage_metrics captured this run).", ""]
+        return lines
+    try:
+        prompt_tokens = int(usage_metrics.prompt_tokens)
+        completion_tokens = int(usage_metrics.completion_tokens)
+        total_tokens = int(usage_metrics.total_tokens)
+        cached_prompt_tokens = int(getattr(usage_metrics, "cached_prompt_tokens", 0) or 0)
+        cache_creation_tokens = int(getattr(usage_metrics, "cache_creation_tokens", 0) or 0)
+        successful_requests = int(getattr(usage_metrics, "successful_requests", 0) or 0)
+    except (AttributeError, TypeError, ValueError):
+        lines += [
+            "usage unavailable (crew.usage_metrics had an unexpected shape "
+            "this run — see agents/orchestrator.py's _format_cost_section()).",
+            "",
+        ]
+        return lines
+    lines += [
+        f"- **Prompt tokens:** {prompt_tokens:,}",
+        f"- **Completion tokens:** {completion_tokens:,}",
+        f"- **Total tokens:** {total_tokens:,}",
+        f"- **Cached prompt tokens:** {cached_prompt_tokens:,} (not separately "
+        f"priced below — see the pricing note above _estimate_cost_usd)",
+        f"- **Cache-creation tokens:** {cache_creation_tokens:,} (not "
+        f"separately priced below)",
+        f"- **Successful LLM requests:** {successful_requests}",
+    ]
+    provider = os.getenv("LLM_PROVIDER", "anthropic").lower()
+    model = os.getenv("LLM_MODEL", "")
+    cost = _estimate_cost_usd(provider, model, prompt_tokens, completion_tokens)
+    if cost is not None:
+        lines.append(
+            f"- **Approx. cost:** ${cost:.4f} USD (rough estimate at "
+            f"{model} list rates, prompt+completion tokens only — verify "
+            f"against the Anthropic console for the exact bill)"
+        )
+    else:
+        lines.append(
+            f"- **Approx. cost:** not estimated (no price entry for "
+            f"provider={provider!r} model={model!r} — token counts above "
+            f"are still real)"
+        )
+    lines.append("")
+    return lines
+
+
 def _write_run_record(
     query: str,
     step_log: list[dict],
     wall_time_sec: float,
     answer: str | None,
     error: Exception | None,
+    usage_metrics: object | None = None,
 ) -> str:
     """Write a full durable record of one orchestrator run — success or
     failure — to chatbot/run_records/. Returns the path written.
@@ -1306,6 +1348,7 @@ def _write_run_record(
         f"- **fabrication_flags:** {fabrication_flags or '[]'}",
         "",
     ]
+    lines += _format_cost_section(usage_metrics)
     if required_missing:
         lines += [
             "## 🚨 REQUIRED SPECIALIST NOT DELEGATED 🚨",
@@ -1482,7 +1525,17 @@ def run_query(query: str) -> str:
         answer = str(crew.kickoff())
     except (GeminiDailyQuotaExhaustedError, APIError) as e:
         wall_time = time.time() - t0
-        path = _write_run_record(query, step_log, wall_time, answer=None, error=e)
+        # Defensive getattr: crew.usage_metrics is only guaranteed to be
+        # populated by a completed kickoff() — a failure path CAN still
+        # have partial usage recorded depending on how far the run got,
+        # but this must never be the reason a failure record fails to
+        # write, so absence/an unexpected shape is handled the same way
+        # _format_cost_section() itself handles it (None -> "usage
+        # unavailable"), not raised here.
+        usage_metrics = getattr(crew, "usage_metrics", None)
+        path = _write_run_record(
+            query, step_log, wall_time, answer=None, error=e, usage_metrics=usage_metrics
+        )
         raise RuntimeError(
             f"{type(e).__name__}: {e}\n\n"
             f"Partial output ({len(step_log)} specialist step(s) completed "
@@ -1490,7 +1543,10 @@ def run_query(query: str) -> str:
         ) from e
     else:
         wall_time = time.time() - t0
-        path = _write_run_record(query, step_log, wall_time, answer=answer, error=None)
+        usage_metrics = getattr(crew, "usage_metrics", None)
+        path = _write_run_record(
+            query, step_log, wall_time, answer=answer, error=None, usage_metrics=usage_metrics
+        )
         # STRICT_DELEGATION (Part B2 deterministic backstop, 2026-09-10):
         # the run record above is ALWAYS written first — even in strict
         # mode, the actual (at-risk) answer stays on disk for audit — but
