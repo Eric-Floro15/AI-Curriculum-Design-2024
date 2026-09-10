@@ -470,11 +470,30 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
     source was actually consulted this run. See STEP 4 in the
     2026-09-09 conversation for the numeric/raw-output layers this does
     NOT cover.
+
+    2026-09-10 (SONNET_delegation-check.md Step 1): a role mention is
+    NOT flagged if it is HONEST DISCLOSURE — the answer saying the
+    specialist "could not be reached" / "was not consulted" /
+    "unavailable within the tool budget" — rather than presenting that
+    specialist as an actual source of content. A real stage-2 run
+    ("the University AI Programs Researcher could not retrieve
+    structured course lists...") got flagged under the old rule purely
+    for HONESTLY disclosing the gap — exactly the behavior
+    orchestrator.py's own backstory asks for ("if you cannot consult it,
+    say so explicitly") — which made a genuinely well-behaved answer
+    look no different from a real fabrication in this guard's output.
+    Checked per-occurrence via _is_honest_disclosure(): a role is
+    exempted only if EVERY mention of it in the answer is disclosure-
+    shaped; a role mentioned once as a disclosure and once as a real
+    citation still flags, since that second mention is exactly the
+    fabrication this guard exists to catch.
     """
     answer_lc = answer.lower()
     flags = []
     for role in _SPECIALIST_ROLES:
         if role.lower() in answer_lc and role not in delegated_to:
+            if _is_honest_disclosure(answer, role):
+                continue
             flags.append(
                 f"'{role}' is named/cited in the final answer but is NOT "
                 f"in this run's delegated_to ({delegated_to or '(none)'}) "
@@ -482,6 +501,51 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
                 "consulted this run."
             )
     return flags
+
+
+# Phrasing this project's own backstories/answers actually use to
+# disclose that a specialist wasn't reached (confirmed against a real
+# stage-2 run's exact wording, not guessed) — deliberately not an
+# exhaustive NLP-grade classifier, same "best-effort, low-noise" bias as
+# the other guards' extraction.
+_HONEST_DISCLOSURE_RE = re.compile(
+    r"could not be reached|was not consulted|were not consulted"
+    r"|not consulted|unavailable within the tool budget"
+    r"|could not retrieve|couldn't retrieve|could not fetch"
+    r"|not delegated|did not consult|wasn't consulted"
+    r"|no\s+\S+\s+was\s+consulted",
+    re.IGNORECASE,
+)
+
+
+def _is_honest_disclosure(answer: str, role: str) -> bool:
+    """True iff EVERY mention of `role` in `answer` sits inside the SAME
+    SENTENCE as honest-disclosure phrasing — i.e. the answer is saying
+    this specialist wasn't reached, never presenting it as a source of
+    real content. A role with zero mentions returns True (vacuous;
+    callers already gate on the role actually appearing in the answer
+    before calling this).
+
+    Bounded to the containing sentence, not a fixed character window —
+    a flat window (e.g. ±100/150 chars) can "bleed" disclosure language
+    from an ADJACENT sentence into a nearby real citation's window.
+    Caught via a unit test: "The <role> could not be reached this run.
+    Still, per the <role>, Queen's MMAI offers MMAI-902..." — the
+    second, real-citation mention's fixed window reached backward far
+    enough to see the first sentence's "could not be reached" and was
+    wrongly exempted. Sentence-bounding fixes this precisely because
+    each mention is judged only by its own sentence.
+    """
+    pattern = re.compile(re.escape(role), re.IGNORECASE)
+    for m in pattern.finditer(answer):
+        starts = [answer.rfind(c, 0, m.start()) for c in ".!?\n"]
+        sentence_start = max(starts, default=-1) + 1
+        ends = [p for p in (answer.find(c, m.end()) for c in ".!?\n") if p != -1]
+        sentence_end = (min(ends) + 1) if ends else len(answer)
+        window = answer[sentence_start:sentence_end]
+        if not _HONEST_DISCLOSURE_RE.search(window):
+            return False
+    return True
 
 
 # --- Numeric grounding guard (2026-09-10) ---------------------------------

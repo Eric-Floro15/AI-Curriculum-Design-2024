@@ -386,6 +386,71 @@ _check(
 # Regression: the two pre-existing guards (attribution, numeric) still
 # behave correctly against real Set A/B4 patterns.
 # =====================================================================
+print("\n=== Attribution guard: honest-disclosure exemption (SONNET_delegation-check.md Step 1) ===")
+
+# Real stage-2 wording (run_20260910T153646Z_stage2-A3-jhu-mph_success.md):
+# an honest disclosure that a specialist wasn't reached, not a citation.
+_jhu_disclosure_answer = (
+    "**Contextual Gaps**\n\n"
+    "- **Peer-program curriculum data**: The University AI Programs "
+    "Researcher could not retrieve structured course lists for Johns "
+    "Hopkins MPH Biostatistics or for the four benchmark AI/ML master's "
+    "programs within the current tool budget. Consequently, no direct "
+    "course-by-course comparison is available in this answer."
+)
+_check(
+    "honest disclosure ('could not retrieve... within the current tool "
+    "budget', real stage-2 wording) is NOT flagged as a fabricated "
+    "citation",
+    len(_detect_fabrication_flags(
+        _jhu_disclosure_answer, ["AI Industry News Researcher", "Senior Curriculum Advisor"]
+    )) == 0,
+    detail=str(_detect_fabrication_flags(
+        _jhu_disclosure_answer, ["AI Industry News Researcher", "Senior Curriculum Advisor"]
+    )),
+)
+
+_check(
+    "the same specialist name IS still flagged when presented as an "
+    "actual source of content (not disclosure wording)",
+    any(
+        "University AI Programs Researcher" in f
+        for f in _detect_fabrication_flags(
+            "Per the University AI Programs Researcher, Queen's MMAI "
+            "offers MMAI-902 AI Ethics.",
+            ["AI Industry News Researcher", "Senior Curriculum Advisor"],
+        )
+    ),
+)
+
+_check(
+    "a role mentioned ONCE as disclosure and ONCE as a real citation "
+    "still flags — exemption requires EVERY mention to be disclosure-"
+    "shaped, not just one",
+    any(
+        "University AI Programs Researcher" in f
+        for f in _detect_fabrication_flags(
+            "The University AI Programs Researcher could not be reached "
+            "this run. Still, per the University AI Programs Researcher, "
+            "Queen's MMAI offers MMAI-902 AI Ethics.",
+            ["AI Industry News Researcher", "Senior Curriculum Advisor"],
+        )
+    ),
+)
+
+for _phrase in [
+    "was not consulted", "were not consulted", "unavailable within the "
+    "tool budget", "could not be reached", "did not consult",
+]:
+    _answer = f"The Cluster Interpreter {_phrase} this run."
+    _flags = _detect_fabrication_flags(_answer, ["Senior Curriculum Advisor"])
+    _check(
+        f"disclosure phrase {_phrase!r} exempts the mention",
+        len(_flags) == 0,
+        detail=str(_flags),
+    )
+
+
 print("\n=== Regression: pre-existing attribution + numeric guards ===")
 
 steps_b4 = _steps(("Cluster Interpreter", "Automation & Scripting: freq = 501."))
