@@ -69,54 +69,59 @@ print("\n=== 1: anchor check (sector_wrap against known-good values) ===")
 _finance_wrap = sector_wrap("finance")
 _healthcare_wrap = sector_wrap("healthcare")
 
-# Healthcare anchors: EXACT match expected (source: compose_demo_healthcare.py's
-# own printed sanity check, generated the same way as this tool reads it).
+# 2026-09-11 (RUN2D Item 1): z_fin is now computed via lift_analysis.py's
+# own fightin_words (single source of truth — see compose_demo.py's
+# canonical_z), not the old divergent local copy. Anchors below are the
+# TRUE canonical values, each independently confirmed this task by running
+# `lift_analysis.py --where "industry=<sector>" --semesters W2026` directly
+# and comparing its z output to compose_<sector>_W2026.csv's z_fin — both
+# match to 4 decimal places for all 6 skills. Healthcare's anchors shift
+# slightly (~0.02–0.07) from RUN2C's originally-stated values (7.20/3.19 →
+# 3.14, 8.99/2.91 → 2.87, 7.22/2.45 → 2.41, 4.29/2.35 → 2.28) because those
+# were read from the OLD, unconformed compose table — i.e. a circular
+# check, not an independent one. Finance's anchors (already independently
+# lift_analysis.py-sourced in RUN2C) are unchanged and now match exactly
+# instead of the prior ~2% z gap. Tight tolerance (0.01) for all 6, since
+# there is no longer a known cross-script gap to accommodate.
 for name, lift_anchor, z_anchor in [
-    ("Electronic Health Records", 7.20, 3.19),
-    ("Health Informatics", 8.99, 2.91),
-    ("Clinical Trial Design And Execution", 7.22, 2.45),
-    ("Hipaa", 4.29, 2.35),
-]:
-    r = _find(_healthcare_wrap, name)
-    _check(f"healthcare anchor '{name}' present in sector_wrap", r is not None)
-    if r is not None:
-        _check(
-            f"healthcare anchor '{name}' lift == {lift_anchor} (exact)",
-            abs(r["lift"] - lift_anchor) < 0.01,
-            f"got {r['lift']}",
-        )
-        _check(
-            f"healthcare anchor '{name}' z == {z_anchor} (exact)",
-            abs(r["z"] - z_anchor) < 0.01,
-            f"got {r['z']}",
-        )
-
-# Finance anchors: lift matches exactly; z has a KNOWN ~2% discrepancy vs the
-# anchor's stated value, diagnosed and reported (not papered over) —
-# compose_demo.py's fightin_words() computes z over the FULL ~962-skill
-# vector before any cut is applied, whereas the anchor's source
-# (lift_analysis.py's CLI, run earlier this session) filters to n>=25 BEFORE
-# computing z — so the z-formula's informative-prior normalising total
-# differs between the two scripts even though both use the identical
-# formula and identical underlying counts. This does not change which side
-# of z>=2 either skill falls on. Tolerance here is 0.2 (not 0.01) to
-# reflect that KNOWN, diagnosed gap specifically — not a general loosening.
-for name, lift_anchor, z_anchor in [
-    ("Financial Services", 4.3, 7.2),
-    ("Risk Management", 4.4, 6.3),
+    ("Financial Services", 4.3244, 7.1977),
+    ("Risk Management", 4.4101, 6.3097),
 ]:
     r = _find(_finance_wrap, name)
     _check(f"finance anchor '{name}' present in sector_wrap", r is not None)
     if r is not None:
         _check(
-            f"finance anchor '{name}' lift == {lift_anchor} (exact)",
-            abs(r["lift"] - lift_anchor) < 0.03,
+            f"finance anchor '{name}' lift == {lift_anchor:.2f} (exact)",
+            abs(r["lift"] - lift_anchor) < 0.01,
             f"got {r['lift']}",
         )
         _check(
-            f"finance anchor '{name}' z ~= {z_anchor} (known ~2% cross-script "
-            f"discrepancy, see comment above — tolerance 0.2)",
-            abs(r["z"] - z_anchor) < 0.2,
+            f"finance anchor '{name}' z == {z_anchor:.2f} (exact, conformed "
+            f"to lift_analysis.py's canonical method)",
+            abs(r["z"] - z_anchor) < 0.01,
+            f"got {r['z']}",
+        )
+
+for name, lift_anchor, z_anchor in [
+    ("Electronic Health Records", 7.2031, 3.1384),
+    ("Health Informatics", 8.9894, 2.8673),
+    ("Clinical Trial Design And Execution", 7.2178, 2.4061),
+    ("Hipaa", 4.2881, 2.2820),
+]:
+    r = _find(_healthcare_wrap, name)
+    _check(f"healthcare anchor '{name}' present in sector_wrap", r is not None)
+    if r is not None:
+        _check(
+            f"healthcare anchor '{name}' lift == {lift_anchor:.2f} (exact)",
+            abs(r["lift"] - lift_anchor) < 0.01,
+            f"got {r['lift']}",
+        )
+        _check(
+            f"healthcare anchor '{name}' z == {z_anchor:.2f} (exact, "
+            f"independently cross-checked against a direct lift_analysis.py "
+            f"run on the healthcare segment — not read from the compose "
+            f"table itself, avoiding a circular check)",
+            abs(r["z"] - z_anchor) < 0.01,
             f"got {r['z']}",
         )
 
@@ -212,9 +217,10 @@ _step_log = [{"role": "Skills Taxonomy Analyst", "output": type(
     "Finish", (), {"output": _wrap_text}
 )()}]
 
+_fs = _find(_finance_wrap, "Financial Services")
 _answer_with_real_number = (
-    "The finance sector distinctively demands Financial Services skills "
-    "(sector lift 4.32x, z=7.34)."
+    f"The finance sector distinctively demands Financial Services skills "
+    f"(sector lift {_fs['lift']}x, z={_fs['z']})."
 )
 _flags_real = _detect_numeric_fabrication_flags(
     _answer_with_real_number, _step_log, ["Skills Taxonomy Analyst"]
@@ -259,6 +265,25 @@ for sector, wrap in [("finance", _finance_wrap), ("healthcare", _healthcare_wrap
     )
     print(f"  {sector}: {len(wrap)} skill(s) — "
           f"{', '.join(r['skill'] for r in wrap)}")
+
+# RUN2D Item 1 finding: conforming to lift_analysis.py's independent
+# n>=25 filter correctly DROPS two healthcare skills that the old,
+# unfiltered z let sneak into the wrap despite being under-powered
+# (Grant Proposal Preparation n=17, Laboratory Procedures n=23 — both
+# below the project's own n>=25 reliability floor, so lift_analysis.py
+# itself would never report a z for them either). Healthcare wrap is
+# correctly 5, not 7, post-conform.
+_check(
+    "healthcare wrap correctly excludes Grant Proposal Preparation "
+    "(n_fin=17 < 25 -- z_fin is NaN under the conformed method, matching "
+    "lift_analysis.py's own independent-filtering floor)",
+    _find(_healthcare_wrap, "Grant Proposal Preparation") is None,
+)
+_check(
+    "healthcare wrap correctly excludes Laboratory Procedures "
+    "(n_fin=23 < 25, same reason)",
+    _find(_healthcare_wrap, "Laboratory Procedures") is None,
+)
 
 
 # =====================================================================
