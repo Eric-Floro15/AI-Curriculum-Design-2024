@@ -25,7 +25,7 @@ from llm import get_llm  # noqa: E402
 from tools.csv_tool import CSV_TOOLS  # noqa: E402
 from tools.rag_tool import skills_rag_tool  # noqa: E402
 from tools.lift_tool import LIFT_TOOLS  # noqa: E402
-from tools.compose_tool import COMPOSE_TOOLS  # noqa: E402
+from tools.compose_tool import COMPOSE_TOOLS, SECTOR_WRAP_TOOLS  # noqa: E402
 
 
 ANALYST_BACKSTORY = """\
@@ -97,13 +97,30 @@ You have four complementary toolsets:
    prefer it over toolset 2 whenever the question is "what should we
    teach/add" rather than "how popular is X".
 
-4. **Composed Sector Curriculum (agentic × sector)** — PRIMARY evidence for
-   sector-specific curriculum recommendations. For a sector like "finance"
-   or "life sciences", returns the agentic-AI skills that sector
-   distinctively emphasises (product of the agentic lift and the sector
-   lift — more reliable than a direct sector∩agentic slice, which is
-   usually too small to trust). Use for sector-specific curriculum asks,
-   e.g. "what should agentic AI look like for a finance-focused program?"
+4. **Sector Skill Wrap (domain-distinctive, sector-lift ranked)** — PRIMARY
+   evidence for the DOMAIN half of a sector-specific curriculum, used
+   TOGETHER with toolset 3. For a sector like "finance" or "healthcare",
+   returns the skills that sector distinctively demands, ranked by
+   SECTOR-LIFT ALONE (not combined with agentic-lift), excluding anything
+   already in the agentic core. **A sector-specific curriculum question
+   needs BOTH calls, not one:** `skill_lift_tool(focal_skill="Agentic Ai")`
+   for the shared agentic CORE every such program needs, PLUS
+   `sector_wrap_tool(sector="<sector>")` for that sector's domain WRAP on
+   top of it. The wrap list clears z>=2 AND lift>=3 with no fixed
+   cutoff — its LENGTH is itself a finding (a thin wrap means the sector is
+   mostly the horizontal agentic core; a rich wrap means it has a real
+   distinct domain layer) — report the count, don't silently trim it.
+
+5. **Composed Sector Curriculum (agentic × sector)** — SECONDARY lens only.
+   Ranks by the PRODUCT of agentic-lift × sector-lift, which structurally
+   buries domain skills whose agentic-lift is low (e.g. EHR, HIPAA have
+   strong sector-lift but agentic-lift at/below 1, since agentic postings
+   don't especially co-mention health-records skills — the product
+   multiplies them down even though they're the sector's real
+   distinctiveness). Do NOT use this for "what sector-specific skills
+   should be added" — use toolset 4 (Sector Skill Wrap) for that. This
+   tool remains useful only for "which skills are strong on BOTH axes at
+   once" questions specifically.
 
 WORKED EXAMPLES — pick the matching pattern:
 
@@ -131,11 +148,15 @@ Q: "What skills should an agentic AI module cover?"
   frequency number may be added afterward as scale context if useful, but
   the lift/z pair is what justifies the skill being on the list.
 
-Q: "What would agentic AI look like for a finance-focused program?"
-→ composed_sector_tool(sector="finance"), THEN cite each recommended skill
-  with its composed lift (and the agentic/sector lift+z it's built from),
-  e.g. "AutoGen (composed lift 22.39× — agentic lift 12.6×/z=4.65, finance
-  lift 1.78×/z=0.4)" — NOT a bare frequency count.
+Q: "Design a finance-focused (or healthcare-focused) AI/ML curriculum" /
+   "What would agentic AI look like for a finance-focused program?"
+→ TWO calls: skill_lift_tool(focal_skill="Agentic Ai") for the agentic
+  core, AND sector_wrap_tool(sector="finance") for the finance-specific
+  domain wrap. Present both as separate labelled sections — "Agentic-AI
+  Core" and "Finance-Specific Wrap" — each citing its own lift+z, e.g.
+  "Large Language Models (agentic lift 6.17×, z=9.56)" and "Financial
+  Services (sector lift 4.32×, z=7.34)". Report the wrap's actual length
+  (e.g. "7 skills clear the cut") rather than picking a round number.
 
 TAXONOMY VERSION AWARENESS:
 When you retrieve skill taxonomy entries via the RAG tool, some will be
@@ -157,11 +178,13 @@ right metric — this rule is about recommendation/selection, not about
 banning frequency outright. Be concise — the professor asking these
 questions wants grounded recommendations, not a wall of text.
 
-HARD BUDGET: at most **6 tool calls per task** across all 7 tools
+HARD BUDGET: at most **6 tool calls per task** across all 8 tools
 combined. The taxonomy + clusters are small — one well-chosen CSV
 query usually answers a structured question, one RAG query usually
-answers a semantic one. If you're past 6 calls without an answer,
-write your final answer with what you have.
+answers a semantic one. A sector-specific curriculum question needs
+exactly 2 (skill_lift_tool + sector_wrap_tool), well within budget. If
+you're past 6 calls without an answer, write your final answer with
+what you have.
 """
 
 
@@ -175,11 +198,11 @@ def make_analyst() -> Agent:
             "says about the current market."
         ),
         backstory=ANALYST_BACKSTORY,
-        tools=[skills_rag_tool, *CSV_TOOLS, *LIFT_TOOLS, *COMPOSE_TOOLS],
+        tools=[skills_rag_tool, *CSV_TOOLS, *LIFT_TOOLS, *SECTOR_WRAP_TOOLS, *COMPOSE_TOOLS],
         llm=get_llm(),
         verbose=False,
         allow_delegation=False,
-        # Framework-level hard cap. 7 tools available but most questions
+        # Framework-level hard cap. 8 tools available but most questions
         # need only 1-2 well-chosen calls. 10 iterations leaves headroom
         # for retries while preventing runaway loops on Sonnet.
         max_iter=10,
