@@ -19,6 +19,7 @@ in CrewAI auto-injects two tools — "Delegate work to coworker" and
 Crew. The LLM decides when to call them.
 """
 
+import math
 import os
 import re
 import sys
@@ -664,6 +665,34 @@ _MARKET_NUM_KINDS = {
 }
 
 
+# --- Item A (GUARD_POLISH_batch, 2026-09-14): rounded prose ranges --------
+# A summary sentence like "lift values ranging from 6x to 13x" paraphrases
+# several real, individually-grounded numbers as a rounded span — a real
+# run grounded at 6.17x/13.14x got flagged for the bare "6"/"13" since
+# neither is an EXACT match to a grounded float. Detected as a distinct
+# "A<sep>B" range construct (not a single specific claim), and exempted
+# ONLY when each endpoint is a plausible rounding (floor or nearest-
+# integer) of some real grounded lift — narrow enough that a fabricated
+# range ("5x to 99x") still gets its bad endpoint flagged normally, since
+# a single specific claim (not part of a recognised range) is untouched.
+_RANGE_LIFT_RE = re.compile(
+    r"(\d[\d,]*\.?\d*)\s?[×x]\s*(?:[" + "\\-\u2010\u2011\u2012\u2013\u2014" + r"]|to)\s*"
+    r"(\d[\d,]*\.?\d*)\s?[×x](?!\w)",
+    re.IGNORECASE,
+)
+
+
+def _range_endpoint_grounded(val: float, pool: list[float]) -> bool:
+    """True if `val` is a plausible rounding (floor or nearest-integer) of
+    some grounded value in `pool` -- e.g. val=6 grounded by a real 6.17 or
+    6.63 (both floor to 6); val=13 grounded by a real 13.11 or 13.14
+    (both floor to 13). Deliberately NOT a wide/fuzzy tolerance: a
+    fabricated endpoint (e.g. 99) needs an actual grounded value in the
+    ~[99, 100) window to pass, which real market data won't coincidentally
+    provide."""
+    return any(math.floor(g) == val or round(g) == val for g in pool)
+
+
 def _normalize_market_num(raw: str) -> float:
     """'1,435' / '56k' / '6.30' -> float, tolerant of commas and a 'k'
     (thousands) suffix. Deliberately float-parse-and-compare rather than
@@ -762,10 +791,29 @@ def _detect_numeric_fabrication_flags(
         except ValueError:
             continue
 
+    # Item A range-summary exemption: identify "A<sep>B" range constructs
+    # in the answer whose BOTH endpoints are a plausible rounding of a
+    # real grounded lift value, and record their exact (start, end)
+    # spans so the per-number loop below skips them without loosening
+    # the check for any other (non-range, specific) claim.
+    range_exempt_spans: set[tuple[int, int]] = set()
+    lift_pool = grounded_numbers.get("lift", []) + bare_table_numbers
+    for rm in _RANGE_LIFT_RE.finditer(answer):
+        try:
+            v1 = _normalize_market_num(rm.group(1))
+            v2 = _normalize_market_num(rm.group(2))
+        except ValueError:
+            continue
+        if _range_endpoint_grounded(v1, lift_pool) and _range_endpoint_grounded(v2, lift_pool):
+            range_exempt_spans.add((rm.start(1), rm.end(1)))
+            range_exempt_spans.add((rm.start(2), rm.end(2)))
+
     flags = []
     seen = set()  # avoid duplicate flags for the same raw number repeated in the answer
     for raw, val, kind, start, end in _extract_market_numbers(answer):
         if (raw, kind) in seen:
+            continue
+        if kind == "lift" and (start, end) in range_exempt_spans:
             continue
         # Exempt approximate/threshold phrasing ("lift ≈ 11–13×", "lift
         # ≥ 18×", "≈ 30× total"). Added 2026-09-10 after 4/4 of a live
@@ -837,6 +885,16 @@ _COURSE_CODE_ALLOWLIST = {
     "gpt-4", "gpt-4o", "gpt-5", "gpt4", "gpt4o", "gpt5",
     "llama", "claude", "3d", "s3", "ec2", "h100", "co2",
 }
+# Item D (GUARD_POLISH_batch, 2026-09-14): domain-standard tokens that
+# structurally match the course-code shape (alpha prefix + digits) but
+# are medical/health-IT standards, not course codes -- confirmed real
+# false positives on a live healthcare Sonnet run ('ICD-10', 'HL7').
+# FHIR/SNOMED/SNOMED CT/LOINC/UMLS don't contain a digit so _COURSE_CODE_RE
+# can't currently match them at all, but they're listed anyway per spec
+# and as a defensive no-op if the detector's shape ever changes.
+_COURSE_CODE_ALLOWLIST.update({
+    "icd-10", "hl7", "fhir", "snomed", "snomed ct", "loinc", "umls", "dsm-5",
+})
 
 # Course-code candidates take two shapes in real output: an uppercase
 # alpha prefix (2-5 letters) + a number that may carry dots/hyphens/a
@@ -989,6 +1047,45 @@ _GENERIC_INSTITUTION_RE = re.compile(
 )
 
 
+def _strip_institution_code_prefix(code_norm: str) -> str | None:
+    """Item C (GUARD_POLISH_batch, 2026-09-14): a real course code
+    prefixed with its institution abbreviation ("CMU 17-762") is matched
+    by _COURSE_CODE_RE as one token, but a specialist's own trace usually
+    states the bare code alone ("17-762") without the institution glued
+    on -- confirmed a real false positive on a live healthcare Sonnet run
+    ('CMU 17-762', 'CMU 16-725', both genuinely present in the trace as
+    bare codes). Strips a single leading alpha token (2-6 letters,
+    optionally possessive, e.g. "queen's") followed by whitespace,
+    returning the remainder -- or None if the code has no such
+    leading-token-then-space shape (a glued form like "cs330" is
+    untouched; stripping there would strip the course subject itself,
+    not an institution prefix). The caller still requires the STRIPPED
+    remainder to independently appear in the trace, so this can only add
+    exemptions for codes that are genuinely grounded once the prefix is
+    removed -- never mask a code that's fabricated outright.
+    """
+    m = re.match(r"^[a-z]{2,6}(?:'s)?\s+(.+)$", code_norm)
+    return m.group(1) if m else None
+
+
+def _normalize_institution_text(s: str) -> str:
+    """Item B (GUARD_POLISH_batch, 2026-09-14): case/punctuation/
+    whitespace-insensitive normalization for institution-name matching --
+    collapses dash variants and other punctuation to spaces and collapses
+    whitespace runs, so a candidate like "University of Toronto Rotman"
+    matches a trace phrased "University of Toronto — Rotman School of
+    Management" (dash-separated, not concatenated) -- confirmed a real
+    false positive on a live finance Sonnet run. An institution genuinely
+    absent from every trace (e.g. a fabricated "University of
+    Fabricationland") still has no normalized substring to match, so it
+    stays flagged.
+    """
+    s = s.lower()
+    s = re.sub(r"[" + _DASH_CHARS + r",.;:()\[\]]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
 def _detect_content_attribution_flags(
     answer: str, query: str, step_log: list[dict], delegated_to: list[str]
 ) -> list[str]:
@@ -1015,6 +1112,7 @@ def _detect_content_attribution_flags(
         return []
     consulted_text = _build_consulted_text(step_log, delegated_to)
     consulted_lc = consulted_text.lower()
+    consulted_inst_norm = _normalize_institution_text(consulted_text)
     flags: list[str] = []
 
     # A1 — course codes.
@@ -1030,6 +1128,11 @@ def _detect_content_attribution_flags(
         # matches the spec's "appear verbatim (case-insensitive,
         # whitespace-normalized)" requirement exactly.
         if code_norm in consulted_lc:
+            continue
+        # Item C: an institution-prefixed code ("cmu 17-762") whose bare
+        # remainder ("17-762") is independently grounded in the trace.
+        stripped = _strip_institution_code_prefix(code_norm)
+        if stripped and stripped in consulted_lc:
             continue
         seen_codes.add(code_norm)
         idx = m.start()
@@ -1087,6 +1190,11 @@ def _detect_content_attribution_flags(
             continue
         if name_norm in consulted_lc:
             continue
+        # Item B: normalized (punctuation/whitespace-insensitive) match —
+        # "university of toronto rotman" against a trace phrased
+        # "university of toronto — rotman school of management".
+        if _normalize_institution_text(name_norm) in consulted_inst_norm:
+            continue
         # An institution the PROFESSOR'S OWN QUERY already named is not
         # suspicious merely for being echoed back — e.g. an off-scope
         # refusal that repeats "...restaurants near the University of
@@ -1112,8 +1220,86 @@ def _detect_content_attribution_flags(
     return flags
 
 
+# --- Delegation-claim honesty guard (Item E, GUARD_POLISH_batch, 2026-09-14) -
+# The attribution guard above catches a non-delegated role being credited
+# as the SOURCE OF SPECIFIC CONTENT. This is a narrower, distinct claim:
+# the final answer asserting the DELEGATION PROCESS ITSELF happened for a
+# role it didn't — "the University AI Programs Researcher was consulted"
+# — even without attaching any specific content to it. Confirmed a real
+# false claim on a live healthcare dev-lane run (RUN2C): delegated_to
+# excluded University AI Programs Researcher, but the answer's own caveat
+# said it "was consulted... but no verified peer-program data was
+# returned." Modelled the same way the attribution guard was inverted
+# (2026-09-10): a POSITIVE detector of the bad pattern (an affirmative,
+# past-tense consultation claim naming a non-delegated role), not an
+# exemption-allowlist of "polite ways to say no" that would whack-a-mole
+# on new honest-disclosure phrasings. Structurally safe against the
+# required negative cases without needing to enumerate them: "was NOT
+# consulted" / "wasn't needed" share the same verb as the affirmative
+# form but differ by a negation word directly after the auxiliary (the
+# lookahead below rejects that); "could not be reached" / "unavailable"
+# use no monitored verb at all; a conditional future routing sentence
+# ("if you provide..., I'll route it through <role>") uses present/future
+# tense ("route"), not the past-tense "routed" this guard looks for.
+_DELEGATION_CLAIM_VERBS_PASSIVE = r"consulted|used|engaged|utilized|leveraged"
+_DELEGATION_CLAIM_VERBS_ACTIVE = r"provided|returned|confirmed"
+
+
+def _build_delegation_claim_pattern(role: str) -> re.Pattern:
+    r = re.escape(role)
+    return re.compile(
+        # "<role> was/is/has been [not] consulted/used/engaged/..." —
+        # only matches when NOT negated directly after the auxiliary.
+        r"\b" + r + r"\s+(?:was|were|is|are|has been|have been)\s+"
+        r"(?!(?:not|n't|never)\b)(?:actually\s+)?"
+        r"(?:" + _DELEGATION_CLAIM_VERBS_PASSIVE + r")\b"
+        # "we consulted/used/engaged <role>"
+        r"|\bwe\s+(?:actually\s+)?(?:" + _DELEGATION_CLAIM_VERBS_PASSIVE + r")\s+"
+        r"(?:the\s+)?" + r + r"\b"
+        # "routed (it/this/that) to/through <role>" — PAST TENSE only, so
+        # a future/conditional "I'll route it through <role>" doesn't
+        # match this shape at all.
+        r"|\brouted\s+(?:it|this|that\s+)?\s*(?:to|through)\s+(?:the\s+)?" + r + r"\b"
+        # "drew on <role>"
+        r"|\bdrew on\s+(?:the\s+)?" + r + r"\b"
+        # "<role> provided/returned/confirmed" — active voice, role as
+        # grammatical subject; a negated form ("did not provide") uses a
+        # different verb form and doesn't match this shape.
+        r"|\b" + r + r"(?:'s)?\s+(?:" + _DELEGATION_CLAIM_VERBS_ACTIVE + r")\b",
+        re.IGNORECASE,
+    )
+
+
+def _detect_delegation_claim_flags(answer: str, delegated_to: list[str]) -> list[str]:
+    """For any specialist absent from `delegated_to`, flag an affirmative
+    past-tense claim that it WAS consulted/used/engaged this run — a
+    false claim about the delegation PROCESS, distinct from the
+    attribution guard's content-sourcing check above. See the module
+    comment immediately above for the full design rationale and the
+    negative-case safety argument (why honest disclosure and conditional
+    future-routing sentences structurally don't match).
+    """
+    flags = []
+    for role in _SPECIALIST_ROLES:
+        if role in delegated_to:
+            continue
+        m = _build_delegation_claim_pattern(role).search(answer)
+        if not m:
+            continue
+        idx = m.start()
+        snippet = answer[max(0, idx - 30): idx + len(m.group(0)) + 30].replace("\n", " ").strip()
+        flags.append(
+            f"delegation_claim: '{role}' is affirmatively claimed as "
+            f"consulted/used in the final answer but is NOT in this run's "
+            f"delegated_to ({delegated_to or '(none)'}) — a false claim "
+            f"about the delegation process itself. Context: "
+            f"\"...{snippet}...\""
+        )
+    return flags
+
+
 # --- Delegation enforcement (2026-09-10, Part B) ----------------------------
-# The three guards above are all post-hoc content checks — they catch a
+# The four guards above are all post-hoc content checks — they catch a
 # fabrication once it's already in the final answer. This is the
 # structural backstop: detect from the QUERY ITSELF which specialists a
 # defensible answer requires, independent of what the Advisor actually
@@ -1321,6 +1507,7 @@ def _write_run_record(
             _detect_fabrication_flags(answer, delegated_to)
             + _detect_numeric_fabrication_flags(answer, step_log, delegated_to)
             + _detect_content_attribution_flags(answer, query, step_log, delegated_to)
+            + _detect_delegation_claim_flags(answer, delegated_to)
         )
         if answer else []
     )
@@ -1370,14 +1557,17 @@ def _write_run_record(
         lines += [
             "## ⚠️⚠️⚠️ FABRICATION WARNING ⚠️⚠️⚠️",
             "",
-            "One or more of this run's four content guards flagged the "
+            "One or more of this run's five content guards flagged the "
             "final answer: attribution (a specialist NAME cited but not "
             "in `delegated_to`, `_detect_fabrication_flags()`), numeric "
             "(a lift/z/frequency NUMBER absent from any consulted "
             "specialist's output, `_detect_numeric_fabrication_flags()`), "
-            "and/or content-attribution (a course CODE, URL, or "
+            "content-attribution (a course CODE, URL, or "
             "INSTITUTION absent from any consulted specialist's output, "
-            "`_detect_content_attribution_flags()`) — all in "
+            "`_detect_content_attribution_flags()`), and/or "
+            "delegation-claim honesty (an affirmative 'was consulted' "
+            "claim naming a specialist not in `delegated_to`, "
+            "`_detect_delegation_claim_flags()`) — all in "
             "agents/orchestrator.py. FLAG-don't-strip throughout: nothing "
             "below was removed, only flagged. Treat every number, URL, "
             "course, institution, or citation named in a flag below as "

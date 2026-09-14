@@ -1,9 +1,11 @@
 """
-test_fabrication_guards.py — unit tests for all four anti-fabrication
+test_fabrication_guards.py — unit tests for all five anti-fabrication
 guards in agents/orchestrator.py: attribution (_detect_fabrication_flags),
 numeric (_detect_numeric_fabrication_flags), content-attribution
 (_detect_content_attribution_flags — course codes / URLs / institutions),
-and delegation-enforcement (_detect_required_specialists,
+delegation-claim honesty (_detect_delegation_claim_flags — a false "was
+consulted" process claim, distinct from content attribution), and
+delegation-enforcement (_detect_required_specialists,
 _strict_delegation_enabled, RequiredSpecialistMissingError).
 
 No LLM, no CrewAI kickoff, no network — pure functions and regexes only,
@@ -30,6 +32,7 @@ from agents.orchestrator import (  # noqa: E402
     _detect_fabrication_flags,
     _detect_numeric_fabrication_flags,
     _detect_content_attribution_flags,
+    _detect_delegation_claim_flags,
     _detect_required_specialists,
     _strict_delegation_enabled,
     _COURSE_CODE_RE,
@@ -37,6 +40,8 @@ from agents.orchestrator import (  # noqa: E402
     _URL_RE,
     _normalize_url,
     _is_report_year_citation,
+    _normalize_institution_text,
+    _strip_institution_code_prefix,
     _write_run_record,
     _format_cost_section,
     _estimate_cost_usd,
@@ -866,6 +871,296 @@ try:
     )
 finally:
     for _p in (_cost_test_path, _cost_test_full_path):
+        if os.path.exists(_p):
+            os.remove(_p)
+
+
+# =====================================================================
+# GUARD_POLISH_batch.md, Item A: numeric guard — rounded prose ranges
+# =====================================================================
+print("\n=== GUARD-POLISH Item A: rounded prose ranges ===")
+
+_itemA_trace = (
+    "Generative Ai (lift 5.05x, z=6.46) ... Multi-Agent Systems (lift "
+    "13.11x, z=5.08) ... CrewAI (lift 13.14x, z=5.01)"
+)
+_itemA_steps = _steps(("Skills Taxonomy Analyst", _itemA_trace))
+
+_itemA_flags_range = _detect_numeric_fabrication_flags(
+    "The distinctive skills range from roughly 5x to 13x above baseline.",
+    _itemA_steps, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: a rounded prose range ('5x to 13x') whose endpoints "
+    "are plausible roundings of real grounded lift values is not flagged",
+    _itemA_flags_range == [],
+    f"unexpected flags: {_itemA_flags_range}",
+)
+
+_itemA_flags_dash = _detect_numeric_fabrication_flags(
+    "Lift values span 5x-13x across the identified skills.",
+    _itemA_steps, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: same range with a dash separator ('5x-13x') is also "
+    "not flagged",
+    _itemA_flags_dash == [],
+    f"unexpected flags: {_itemA_flags_dash}",
+)
+
+_itemA_flags_specific = _detect_numeric_fabrication_flags(
+    "One skill shows an exceptional lift of 50x with z=30, unmatched by anything else.",
+    _itemA_steps, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "still-catches: a fabricated SPECIFIC value ('50x / z=30' for a "
+    "named skill), not part of a range construct, stays flagged",
+    len(_itemA_flags_specific) >= 1
+    and any("50" in f for f in _itemA_flags_specific),
+    f"got: {_itemA_flags_specific}",
+)
+
+_itemA_flags_bad_range = _detect_numeric_fabrication_flags(
+    "Lift values range from 5x to 99x across the board.",
+    _itemA_steps, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "a range with one fabricated endpoint (99x, no grounded value near "
+    "it) still flags that endpoint — the range exemption doesn't "
+    "blanket-launder an unrelated bad number",
+    any("99" in f for f in _itemA_flags_bad_range),
+    f"got: {_itemA_flags_bad_range}",
+)
+
+
+# =====================================================================
+# GUARD_POLISH_batch.md, Item B: institution guard — phrasing/substring
+# =====================================================================
+print("\n=== GUARD-POLISH Item B: institution phrasing/substring ===")
+
+_itemB_trace = (
+    "Institution 2: University of Toronto — Rotman School of "
+    "Management, MMA program. Source: sgs.calendar.utoronto.ca"
+)
+_itemB_steps = _steps(("University AI Programs Researcher", _itemB_trace))
+
+_check(
+    "_normalize_institution_text collapses dash + whitespace variants "
+    "to the same normalized form",
+    _normalize_institution_text("University of Toronto — Rotman School of Management")
+    == _normalize_institution_text("university of toronto rotman school of management"),
+)
+
+_itemB_flags_ok = _detect_content_attribution_flags(
+    "University of Toronto Rotman offers a strong analytics-focused MMA.",
+    "query", _itemB_steps, ["University AI Programs Researcher"],
+)
+_check(
+    "no-longer-FP: 'University of Toronto Rotman' is not flagged when "
+    "the trace phrases it 'University of Toronto — Rotman School of "
+    "Management' (dash-separated, not concatenated)",
+    _itemB_flags_ok == [],
+    f"unexpected flags: {_itemB_flags_ok}",
+)
+
+_itemB_flags_bad = _detect_content_attribution_flags(
+    "University of Fabricationland has an excellent AI program.",
+    "query", _itemB_steps, ["University AI Programs Researcher"],
+)
+_check(
+    "still-catches: a fabricated 'University of Fabricationland', "
+    "absent from every trace, stays flagged",
+    len(_itemB_flags_bad) >= 1
+    and any("Fabricationland" in f for f in _itemB_flags_bad),
+    f"got: {_itemB_flags_bad}",
+)
+
+
+# =====================================================================
+# GUARD_POLISH_batch.md, Item C: course-code guard — institution prefix
+# =====================================================================
+print("\n=== GUARD-POLISH Item C: institution-prefixed codes ===")
+
+_check(
+    "_strip_institution_code_prefix strips a leading institution token",
+    _strip_institution_code_prefix("cmu 17-762") == "17-762",
+)
+_check(
+    "_strip_institution_code_prefix returns None for a glued form with "
+    "no separate leading token (nothing to strip)",
+    _strip_institution_code_prefix("cs330") is None,
+)
+
+_itemC_trace = "CMU MSAII: 17-762 Law of Computer Technology (required)."
+_itemC_steps = _steps(("University AI Programs Researcher", _itemC_trace))
+
+_itemC_flags_ok = _detect_content_attribution_flags(
+    "The CMU 17-762 course covers AI regulation and startup law.",
+    "query", _itemC_steps, ["University AI Programs Researcher"],
+)
+_check(
+    "no-longer-FP: 'CMU 17-762' is not flagged when the trace contains "
+    "the bare '17-762'",
+    _itemC_flags_ok == [],
+    f"unexpected flags: {_itemC_flags_ok}",
+)
+
+_itemC_flags_bad = _detect_content_attribution_flags(
+    "The CMU 99-999 course covers a fabricated topic.",
+    "query", _itemC_steps, ["University AI Programs Researcher"],
+)
+_check(
+    "still-catches: a fabricated 'CMU 99-999' whose bare '99-999' "
+    "appears in no trace stays flagged",
+    len(_itemC_flags_bad) >= 1
+    and any("99-999" in f for f in _itemC_flags_bad),
+    f"got: {_itemC_flags_bad}",
+)
+
+
+# =====================================================================
+# GUARD_POLISH_batch.md, Item D: course-code guard — medical standards
+# =====================================================================
+print("\n=== GUARD-POLISH Item D: medical-standard acronyms ===")
+
+for _acronym in ("icd-10", "hl7", "fhir", "snomed", "snomed ct", "loinc", "umls", "dsm-5"):
+    _check(
+        f"'{_acronym}' is in the course-code allowlist",
+        _acronym in _COURSE_CODE_ALLOWLIST,
+    )
+
+_itemD_steps = _steps(("University AI Programs Researcher", "no course-code content here"))
+
+_itemD_flags_ok = _detect_content_attribution_flags(
+    "Clinical ontologies include ICD-10 and HL7 standards for interoperability.",
+    "query", _itemD_steps, ["University AI Programs Researcher"],
+)
+_check(
+    "no-longer-FP: 'ICD-10' and 'HL7' are not flagged as course codes",
+    _itemD_flags_ok == [],
+    f"unexpected flags: {_itemD_flags_ok}",
+)
+
+_itemD_flags_bad = _detect_content_attribution_flags(
+    "The fabricated course 11-999 covers an invented topic.",
+    "query", _itemD_steps, ["University AI Programs Researcher"],
+)
+_check(
+    "still-catches: a fabricated '11-999', not a domain-standard "
+    "acronym and absent from every trace, stays flagged",
+    len(_itemD_flags_bad) >= 1
+    and any("11-999" in f for f in _itemD_flags_bad),
+    f"got: {_itemD_flags_bad}",
+)
+
+
+# =====================================================================
+# GUARD_POLISH_batch.md, Item E: NEW delegation-claim honesty guard
+# =====================================================================
+print("\n=== GUARD-POLISH Item E: delegation-claim honesty (new guard) ===")
+
+_role = "University AI Programs Researcher"
+
+_itemE_flags_claim = _detect_delegation_claim_flags(
+    "The University AI Programs Researcher was consulted but no "
+    "verified peer-program data was returned.",
+    delegated_to=[],
+)
+_check(
+    "still-catches: an affirmative 'was consulted' claim naming a "
+    "specialist absent from delegated_to is flagged (the real RUN2C "
+    "healthcare dev-lane finding)",
+    len(_itemE_flags_claim) == 1 and _role in _itemE_flags_claim[0],
+    f"got: {_itemE_flags_claim}",
+)
+
+_itemE_flags_neg1 = _detect_delegation_claim_flags(
+    "The University AI Programs Researcher was not consulted this run.",
+    delegated_to=[],
+)
+_check(
+    "no-clean-flag: honest negative disclosure ('was not consulted') "
+    "is not flagged",
+    _itemE_flags_neg1 == [],
+    f"unexpected flags: {_itemE_flags_neg1}",
+)
+
+_itemE_flags_neg2 = _detect_delegation_claim_flags(
+    "The University AI Programs Researcher wasn't needed for this "
+    "particular question.",
+    delegated_to=[],
+)
+_check(
+    "no-clean-flag: contracted negation ('wasn't needed') is not "
+    "flagged",
+    _itemE_flags_neg2 == [],
+    f"unexpected flags: {_itemE_flags_neg2}",
+)
+
+_itemE_flags_cond = _detect_delegation_claim_flags(
+    "If you provide your course list, I'll route it through the "
+    "Cluster Interpreter for a full gap analysis.",
+    delegated_to=[],
+)
+_check(
+    "no-clean-flag: a conditional/future routing sentence ('I'll "
+    "route it through <role>') is not flagged — present/future tense, "
+    "not the past-tense claim this guard looks for",
+    _itemE_flags_cond == [],
+    f"unexpected flags: {_itemE_flags_cond}",
+)
+
+_itemE_flags_unavailable = _detect_delegation_claim_flags(
+    "The University AI Programs Researcher was unavailable and could "
+    "not be reached this run.",
+    delegated_to=[],
+)
+_check(
+    "no-clean-flag: 'unavailable' / 'could not be reached' phrasing is "
+    "not flagged",
+    _itemE_flags_unavailable == [],
+    f"unexpected flags: {_itemE_flags_unavailable}",
+)
+
+_itemE_flags_delegated = _detect_delegation_claim_flags(
+    "The University AI Programs Researcher was consulted and returned "
+    "real peer-program data.",
+    delegated_to=[_role],
+)
+_check(
+    "a role that IS in delegated_to is never flagged for a "
+    "consultation claim, even the same affirmative phrasing",
+    _itemE_flags_delegated == [],
+    f"unexpected flags: {_itemE_flags_delegated}",
+)
+
+# End-to-end: confirm this new guard is actually wired into the
+# combined fabrication_flags list _write_run_record() produces (not
+# just callable in isolation).
+_itemE_e2e_steps = _steps(
+    ("Skills Taxonomy Analyst", "Large Language Models (lift 6.17x, z=9.56)")
+)
+_itemE_e2e_path = _write_run_record(
+    "test query for Item E wiring", _itemE_e2e_steps, 1.0,
+    answer=(
+        "Large Language Models (lift 6.17x, z=9.56). The University AI "
+        "Programs Researcher was consulted for peer benchmarking."
+    ),
+    error=None, usage_metrics=None,
+)
+_itemE_e2e_full_path = _itemE_e2e_path[:-len(".md")] + "_full.md"
+try:
+    with open(_itemE_e2e_path, encoding="utf-8") as _f:
+        _itemE_e2e_content = _f.read()
+    _check(
+        "_detect_delegation_claim_flags is wired into the real "
+        "fabrication_flags list _write_run_record() saves",
+        "delegation_claim:" in _itemE_e2e_content
+        and "University AI Programs Researcher" in _itemE_e2e_content,
+        "delegation_claim: substring not found in saved record",
+    )
+finally:
+    for _p in (_itemE_e2e_path, _itemE_e2e_full_path):
         if os.path.exists(_p):
             os.remove(_p)
 
