@@ -141,7 +141,17 @@
   expected_substrings:
     # Core data-engineering skills — any grounded answer must surface these.
     - "Data Pipelines"
-    - "4,278"         # top frequency (comma-normalised by runner)
+    # 2026-09-15 (SUITE_step1, freq->lift): was "4,278" (raw frequency,
+    # the pre-lift-method metric this project's whole contribution moved
+    # away from). Real lift-table anchor instead: focal_associations()
+    # on EITHER "Data Pipelines" or "Data Engineering" (whichever the
+    # Analyst's tool call uses) returns the other as its #1 hit at
+    # lift=5.311 — confirmed BOTH directions give the identical lift
+    # (lift is symmetric by construction: n_together*N/(n_A*n_B)), so
+    # this anchor holds regardless of which focal skill the model
+    # actually queries. z is NOT symmetric (9.91 one way, 10.43 the
+    # other) so intentionally not asserted here.
+    - "5.31"
     - "DevOps"
     - "Big Data"
     # Queen's MMAI was explicitly asked about — answer must reference it.
@@ -169,7 +179,14 @@
     - AI Industry News Researcher
   expected_substrings:
     - "Communication"
-    - "39,040"        # comma-normalised by runner: also matches "39040"
+    # 2026-09-15 (SUITE_step1, freq->lift): was "39,040" (raw frequency).
+    # Real lift-table anchor: focal_associations() on either
+    # "Communication Skills" or "Verbal And Written Communication"
+    # returns the other with an identical lift=3.070 in both directions
+    # (confirmed against skill_lift_table.csv — lift is symmetric by
+    # construction). z differs by direction (13.89 vs 10.24) so
+    # intentionally not asserted.
+    - "3.07"
     # Removed: "Trade-off" — qwen writes "Trade-off/Caveat" which the runner
     # already matches case-insensitively, but removing avoids fragility if
     # the model uses "Considerations" or "Caveats" on a future run.
@@ -191,6 +208,13 @@
     - AI Industry News Researcher
   expected_substrings:
     - "MLOps"   # the query topic must appear in the answer
+    # 2026-09-15 (SUITE_step1, freq->lift): ADDED (this case never had a
+    # numeric assertion before — strengthening, not a strict conversion,
+    # since the query explicitly asks "how strong is the market demand").
+    # Real lift-table anchor: focal_associations("Mlops") -> "Mlflow" is
+    # the #1 hit, lift=19.987 (confirmed symmetric: Mlflow->Mlops is also
+    # 19.987; z differs by direction, 7.54 vs 4.55, so not asserted).
+    - "19.99"
     # Removed: "Trade-off" — style heading; qwen writes "Trade-off/Caveat"
     # which passes, but removing avoids fragility on future runs.
   forbidden_substrings: *SHARED_FORBIDDEN
@@ -214,6 +238,13 @@
     - "AWS"
     - "Azure"
     - "cloud"
+    # 2026-09-15 (SUITE_step1, freq->lift): ADDED (this case never had a
+    # numeric assertion before — strengthening, not a strict conversion).
+    # Real lift-table anchor: focal_associations("Cloud Computing") ->
+    # "Aws" is the #1 hit, lift=3.159 (confirmed symmetric: Aws->Cloud
+    # Computing is also 3.159; z differs by direction, 13.67 vs 10.92,
+    # so not asserted).
+    - "3.16"
     # Removed: "Trade-off" — style heading, same reasoning as other queries.
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
@@ -286,11 +317,19 @@
     - Skills Taxonomy Analyst
   expected_substrings:
     - "JAX"
-    # The agent should be honest about what frequency JAX has (it
-    # might be very low or absent). One of these signals must
-    # appear — either a number/frequency, or an honest "not in" /
-    # "low frequency" / "limited" signal.
-    # Refine after first run.
+    # The agent should be honest about what SIGNAL JAX has, not invent a
+    # confident lift/z pair. No hard numeric assertion added (SUITE_step1,
+    # 2026-09-15): checked skill_lift_table.csv directly — "Jax" IS a
+    # real focal skill (passed the n>=25 independent filter), but with
+    # only 2 associations, both thin (Pytorch lift=20.14/z=2.85,
+    # Distributed Training lift=48.55/z=2.07 — z right at the significance
+    # floor). This confirms the case's premise (genuinely thin, not
+    # absent, data) but a specific tool-call target still isn't
+    # predictable enough to assert a hard number without a real run to
+    # check against — asserting one now would risk being wrong about
+    # what the model actually queries, not about what the data says.
+    # Left flexible by design; refine after a real run if a stable
+    # pattern emerges.
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
     max_tool_calls: 70    # recalibrated 2026-07-14 (single-specialist, Sonnet 4.6 baseline)
