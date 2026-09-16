@@ -1,41 +1,67 @@
 """
 run_orchestrator_eval.py — End-to-end eval for the full 5-agent crew.
 
-Runs each query in orchestrator_queries.yaml through the live Orchestrator
-(`agents.orchestrator.run_query`-equivalent, but with verbose tracing
-captured so delegation + tool counts are observable) and applies four
-assertion types:
+2026-09-16 (SUITE_step2_harness-fix-and-devsmoke.md): REFACTORED onto the
+production, persisting run_query() path (agents/orchestrator.py) — the
+SAME path RUN2E/RUN2F's real Sonnet sector deliverables used. Previously
+this harness built its own separate Crew/Task and never called
+run_query(), never wrote chatbot/run_records/, never ran the five
+fabrication guards, and never captured cost — so running the §4.6
+battery through it would have validated a different, unguarded system
+than the one described in the paper, and produced no flag or cost data.
 
+Each case now:
+  - calls run_query() directly (same agents, same Task, same guards,
+    same _write_run_record() call this project's production/paper runs
+    use);
+  - locates the run_records/ entry that call just wrote (by directory-
+    listing diff — run_query() returns only the answer string, not the
+    path, so the harness recovers it the same way this session's own
+    ad hoc "re-scan a saved run record" work did) and reads back its
+    Metrics + Cost/Usage sections from the _full.md companion;
+  - grades on what's reliably checkable from that record: must_delegate_to
+    and expected_substrings (soft -> INSPECT) plus forbidden_substrings
+    (hard -> FAIL, the pre-existing known-junk-pattern check, distinct
+    from and complementary to the five guards). Guard flags and cost are
+    recorded and reported PER CASE but deliberately do NOT drive the
+    verdict — "a legitimate case can draw a false-positive or a benign
+    comment" (spec) — review them, don't gate on them.
+
+Consequence of running through run_query() (verbose=False internally, no
+console tool-call log exposed to the caller): the OLD max_tool_calls
+budget check is no longer measurable from here and has been dropped —
+the per-Agent max_iter caps in agents/*.py remain the real backstop
+against a runaway/expensive loop. max_wall_time_sec is still measured
+(the harness times the run_query() call itself) and still enforced.
+
+Applies, per case:
   1. expected_substrings    — every listed substring (case-insensitive)
-                              MUST appear in the Orchestrator's final answer.
-                              Number formatting is normalised: "39,040" and
-                              "39040" are treated as equivalent so slower
-                              local models that omit comma separators still
-                              pass the numeric check.
-  2. forbidden_substrings   — none of these may appear in the final answer.
-                              Catches known hallucination patterns.
-  3. must_delegate_to       — each listed sub-agent role MUST have been
-                              delegated to by the Orchestrator. Verified
-                              by parsing the verbose log for the
-                              `'coworker': '<role>'` arg patterns. ANSI
-                              escape codes are stripped from the log before
-                              parsing so rich/console colour codes don't
-                              corrupt role-name matching.
-  4. budget                 — total tool dispatches and wall time must
-                              stay under per-query caps. Use --no-time-check
-                              to skip the wall-time assertion when running
-                              slow local Ollama models on CPU.
+                              MUST appear in the answer. Comma-normalised
+                              numeric matching preserved ("39,040" ==
+                              "39040").
+  2. forbidden_substrings   — none of these may appear. Known-junk-pattern
+                              check, kept as a hard failure (a cheap
+                              complement to, not a replacement for, the
+                              five structural fabrication guards).
+  3. must_delegate_to       — each listed sub-agent role MUST appear in
+                              the run record's "Delegated to:" line.
+  4. max_wall_time_sec      — still enforced (harness-timed).
+
+Guard flags (all five: attribution, numeric, content-attribution,
+delegation-claim, plus required_specialist_missing) and cost/usage are
+read from the run record and reported per case — informational, not
+pass/fail.
 
 Writes a dated snapshot Markdown file next to this script with each
-query's full answer + PASS/FAIL grades. Re-running with the same model
-on a different day produces a new dated snapshot, so future diffs are
-easy.
+query's full answer, PASS/INSPECT/FAIL grade, guard flags, and cost.
+Re-running with the same model on a different day produces a new dated
+snapshot.
 
 THIS SCRIPT INTENTIONALLY RUNS THE LIVE LLM. Cost on Sonnet 4.6 is
-approximately $1-3 per query depending on how many delegations and
-tool calls fire. The hard `max_iter` caps in the Agent constructors
-bound the worst case (see chatbot/agents/*.py and the 2026-05-26 setup
-log in CLAUDE.md).
+approximately $0.30-0.66 per query depending on how many specialists get
+delegated to (see SUITE_step1's per-case cost estimate). The hard
+`max_iter` caps in the Agent constructors bound the worst case (see
+chatbot/agents/*.py).
 
 Run:
     KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py
@@ -48,14 +74,12 @@ Run:
 """
 
 import argparse
-import contextlib
-import io
+import glob
 import os
 import re
 import sys
 import threading
 import time
-import traceback
 from datetime import date
 
 # ── LangSmith tracing — must be configured BEFORE any LangChain/CrewAI import ─
@@ -89,36 +113,6 @@ os.environ["OTEL_SDK_DISABLED"] = "true"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mGKHFABCDJsu]")
-# Rich box-drawing characters injected when the verbose log is rendered
-# inside a panel (e.g. │, ╭, ─, ╰). These appear mid-string in captured
-# role names, turning 'AI Industry News Researcher' into
-# 'AI Industry News   │\n│  Researcher'.
-_BOX_RE = re.compile(r"[│╭╰╮╯─├┤┬┴┼╔╗╚╝╠╣╦╩╬═║╴╶╸╺]+")
-
-
-def _clean_log(text: str) -> str:
-    """Remove ANSI escape codes and rich box-drawing characters from log text.
-
-    Two-pass cleaning:
-    1. Strip ANSI colour/cursor codes  (\x1b[...m etc.)
-    2. Replace rich panel border chars (│, ─, ╭ …) with a space
-    The result is plain text safe for regex parsing.
-    """
-    text = _ANSI_RE.sub("", text)
-    text = _BOX_RE.sub(" ", text)
-    return text
-
-
-def _normalize_role(raw: str) -> str:
-    """Collapse whitespace and newlines in a captured coworker role name.
-
-    Rich wraps long strings across panel lines, injecting newlines and
-    indentation. After box-char removal the fragments remain separated
-    by whitespace/newlines — join them back into a single clean string.
-    """
-    return " ".join(raw.split())
-
 
 def _substring_match(needle: str, haystack: str) -> bool:
     """Case-insensitive substring check with number-comma normalisation.
@@ -133,11 +127,11 @@ def _substring_match(needle: str, haystack: str) -> bool:
     haystack_lc = haystack.lower()
     if needle_lc in haystack_lc:
         return True
-    # Numeric normalisation: strip commas and retry
     if any(c.isdigit() for c in needle):
         if needle_lc.replace(",", "") in haystack_lc.replace(",", ""):
             return True
     return False
+
 
 import yaml
 import litellm
@@ -150,222 +144,176 @@ if _CHATBOT_DIR not in sys.path:
 
 QUERIES_FILE = os.path.join(_HERE, "orchestrator_queries.yaml")
 
-# 2026-09-08: "frequencies" -> "lift (x) and significance (z)" — matches
-# the same fix in agents/orchestrator.py's run_query() Task.expected_output.
-# Raw frequency is the naive baseline this project's method is meant to
-# beat; it was steering the Analyst toward citing popularity instead of
-# distinctive co-demand. This eval harness builds its own Task separately
-# from run_query() (doesn't reuse its expected_output), so needed the same
-# fix independently to not silently regress back to frequency-grounding
-# next time this harness runs.
-#
-# 2026-09-09: that lift/z preference, unconditioned, turned into a real
-# fabrication bug — a gap-analysis run where the Analyst never got
-# delegated to still produced invented lift/z numbers attributed to "the
-# Analyst" to satisfy this expected_output's wording. Added an explicit
-# anti-fabrication + conditioning clause, matching the same fix applied
-# to agents/orchestrator.py's run_query() Task.expected_output — this
-# harness builds its own Task independently, so needed the same
-# conditioning applied here too, not just in production.
-DEFAULT_EXPECTED_OUTPUT = (
-    "A single coherent recommendation for the professor. Open with a 2-3 "
-    "sentence executive summary. Then a structured body of concrete "
-    "recommendations. ANTI-FABRICATION (non-negotiable): every number "
-    "you cite (lift, z, frequency, posting count) must be a value "
-    "actually returned by a tool call from a specialist you actually "
-    "delegated to this run — never invented, estimated, or converted "
-    "from one metric to another, and never attributed to a specialist "
-    "you did not delegate to. IF the Skills Taxonomy Analyst was "
-    "delegated to and returned lift/significance data, cite specific "
-    "skills with their lift (x) and significance (z) (from the Analyst) "
-    "— the grounding metric for what to recommend, not raw frequency. IF "
-    "the Analyst was NOT delegated to this run, do NOT include any "
-    "lift/z figures — cite whichever grounded metric the specialists you "
-    "did consult actually returned instead (e.g. a Cluster Interpreter "
-    "market frequency, clearly labelled as frequency, not lift). Also "
-    "cite peer-program courses with URLs (from the University Programs "
-    "researcher), and recent articles with titles + sources (from the "
-    "News researcher) where each is relevant. Close with a trade-off or "
-    "caveat."
-)
+
+# ── Run-record parsing (reads back what run_query() just wrote) ───────────
+# run_query() (agents/orchestrator.py) returns only the final answer
+# string — it doesn't hand the caller a path, delegated_to, guard flags,
+# or usage_metrics directly. Rather than change that production function's
+# public signature (used by chatbot/app.py too), this harness recovers
+# everything it needs the same way this session's own ad hoc "re-scan a
+# saved run record" work did: find the run_records/ entry the call just
+# wrote (directory-listing diff) and parse its Metrics / Cost-Usage
+# sections back out. _write_run_record()'s own format is the parsing
+# target, not a guess — see agents/orchestrator.py for the exact fields.
+
+_RECORD_FIELD_RE = {
+    "delegated_to": re.compile(r"\*\*Delegated to:\*\* (\[.*?\]|\(none\))"),
+    "required_specialist_missing": re.compile(r"\*\*required_specialist_missing:\*\* (\[.*?\])"),
+    "fabrication_flags": re.compile(r"\*\*fabrication_flags:\*\* (\[.*\])\s*\n"),
+    "model_line": re.compile(r"\*\*Model:\*\* (.+)"),
+    "prompt_tokens": re.compile(r"\*\*Prompt tokens:\*\* ([\d,]+)"),
+    "completion_tokens": re.compile(r"\*\*Completion tokens:\*\* ([\d,]+)"),
+    "total_tokens": re.compile(r"\*\*Total tokens:\*\* ([\d,]+)"),
+    "approx_cost": re.compile(r"\*\*Approx\. cost:\*\* \$([\d.]+) USD"),
+}
+
+
+def _list_run_record_files(run_records_dir: str) -> set:
+    return set(glob.glob(os.path.join(run_records_dir, "run_*.md")))
+
+
+def parse_run_record(main_path: str) -> dict:
+    """Read back one run_records/ entry (preferring its _full.md
+    companion, for the complete untruncated answer text) into the fields
+    this harness needs for grading + reporting.
+    """
+    full_path = main_path[:-len(".md")] + "_full.md"
+    read_path = full_path if os.path.exists(full_path) else main_path
+    with open(read_path, encoding="utf-8") as f:
+        content = f.read()
+
+    def _search(pattern):
+        m = pattern.search(content)
+        return m.group(1) if m else None
+
+    delegated_raw = _search(_RECORD_FIELD_RE["delegated_to"])
+    delegated_to = (
+        set(eval(delegated_raw))  # noqa: S307 - trusted local file this process just wrote
+        if delegated_raw and delegated_raw != "(none)" else set()
+    )
+    missing_raw = _search(_RECORD_FIELD_RE["required_specialist_missing"])
+    required_missing = eval(missing_raw) if missing_raw else []  # noqa: S307
+    flags_raw = _search(_RECORD_FIELD_RE["fabrication_flags"])
+    fabrication_flags = eval(flags_raw) if flags_raw else []  # noqa: S307
+
+    answer = ""
+    for heading in ("## Final Answer", "## Partial Answer"):
+        if heading in content:
+            start = content.index(heading) + content[content.index(heading):].index("\n")
+            rest = content[start:]
+            end_marker = "## Per-Agent Tool-Call Trace"
+            answer = (rest[:rest.index(end_marker)] if end_marker in rest else rest).strip()
+            break
+
+    return {
+        "delegated_to": delegated_to,
+        "required_specialist_missing": required_missing,
+        "fabrication_flags": fabrication_flags,
+        "model_line": _search(_RECORD_FIELD_RE["model_line"]) or "",
+        "prompt_tokens": _search(_RECORD_FIELD_RE["prompt_tokens"]),
+        "completion_tokens": _search(_RECORD_FIELD_RE["completion_tokens"]),
+        "total_tokens": _search(_RECORD_FIELD_RE["total_tokens"]),
+        "approx_cost_usd": _search(_RECORD_FIELD_RE["approx_cost"]),
+        "answer": answer,
+        "record_path": main_path,
+    }
 
 
 def run_single_query(case: dict, hard_timeout_sec: float = 2700) -> dict:
-    """Build a fresh 5-agent crew, run the query verbose, capture metrics.
+    """Run one case through the production, persisting run_query() path
+    and read back what it wrote.
 
     Returns a dict with:
-        answer            str  — Orchestrator's final answer
-        verbose_log       str  — captured stdout from the verbose run
-        wall_time_sec     float
-        tool_calls        int  — total `Tool Execution Started` events
-        delegated_to      set[str]  — sub-agent role names invoked
-        error             str | None
+        answer                      str
+        wall_time_sec                float
+        delegated_to                 set[str]
+        required_specialist_missing  list[str]
+        fabrication_flags            list[str]
+        model_line / prompt_tokens / completion_tokens / total_tokens /
+        approx_cost_usd              str | None (as rendered in the record)
+        record_path                  str | None
+        error                        str | None
 
-    hard_timeout_sec: a hard kill-switch around `crew.kickoff()`, added
-    2026-06-25 in response to a real, reported incident — a qwen3:14b run
-    of the SIMPLEST query in this file (single-specialist, the lightest
-    case) sat completely silent for ~1 hour with no result. Root cause of
-    the silence-while-possibly-still-working ambiguity: `Crew(verbose=True)`
-    output is captured via `contextlib.redirect_stdout`/`redirect_stderr`
-    into the in-memory `buf` below for clean snapshot logging, so NOTHING
-    reaches the console between this query's "running..." print and
-    `crew.kickoff()` actually returning — a slow-but-working run and a
-    genuinely hung one look IDENTICAL from outside. Worse, before this fix,
-    there was no timeout at all: `max_wall_time_sec` (the budget field) was
-    only ever checked AFTER `crew.kickoff()` returned (see `grade_case()`),
-    purely for grading — never enforced live — so a truly stuck call could
-    block the entire eval run indefinitely with no recovery.
-    Default of 2700s (45 min) is deliberately well above the ~35-minute
-    full 3-specialist orchestrator run documented for qwen2.5:14b in
-    CLAUDE.md's Model Comparison table, so a legitimately slow-but-working
-    local CPU run isn't cut off before it would have finished anyway — but
-    it IS finite, so a genuine hang (like the one that triggered this fix)
-    eventually gets killed and recorded as an honest FAIL instead of an
-    unbounded silent wait. Python cannot forcibly kill a thread blocked
-    inside a network/LLM call, so on timeout the worker thread is abandoned
-    (daemon=True — it will not block process exit, but it also keeps
-    running/consuming resources in the background until it eventually
-    finishes or errors on its own). This unblocks the EVAL LOOP, which is
-    the actual goal — not a true kill of the underlying call.
+    hard_timeout_sec: a hard kill-switch around run_query(), carried
+    forward from the pre-refactor harness's own incident response (a
+    qwen3:14b run once sat silent for ~1 hour with no result and no way
+    to recover short of killing the process) — wrapped around
+    run_query() now instead of a locally-built crew.kickoff(), since
+    that's the call that can hang. run_query() runs with verbose=False
+    internally, so there's no console log to capture/suppress here
+    (the old contextlib.redirect_stdout machinery is gone).
+    Default 2700s (45 min), same rationale as before. Python cannot
+    forcibly kill a thread blocked inside a network/LLM call, so on
+    timeout the worker thread is abandoned (daemon=True — won't block
+    process exit, but may keep running in the background until it
+    finishes or errors on its own). This unblocks the EVAL LOOP, which
+    is the actual goal, not a true kill of the underlying call.
     """
-    # Lazy imports — these touch crewai + ollama / anthropic and we want
-    # all-importable-before-actually-running so --help works without
-    # network or LLM keys present.
-    from crewai import Crew, Task  # noqa: E402
-    from agents.analyst import make_analyst  # noqa: E402
-    from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
-    from agents.news import make_news_agent  # noqa: E402
-    from agents.orchestrator import make_orchestrator  # noqa: E402
-    from agents.university_programs import make_university_programs_agent  # noqa: E402
+    from agents.orchestrator import run_query  # noqa: E402
+    from agents.orchestrator import _RUN_RECORDS_DIR  # noqa: E402
 
-    analyst = make_analyst()
-    univ = make_university_programs_agent()
-    news = make_news_agent()
-    cluster_interp = make_cluster_interpreter()
-    orch = make_orchestrator()
-    for a in (orch, analyst, univ, news, cluster_interp):
-        a.verbose = True
-
-    # ── Delegation detection via step_callback (robust) ───────────────────
-    # Parsing the verbose log for coworker arguments is brittle — the log
-    # format changes across CrewAI versions and Rich panel rendering corrupts
-    # multi-word role names. Instead, we attach a step_callback to each
-    # specialist: the callback fires whenever that agent actually executes a
-    # step, which only happens when the Orchestrator has delegated to it.
-    # This is version-agnostic and semantically correct.
-    delegated_to: set[str] = set()
-
-    def _make_step_tracker(role: str) -> callable:
-        def _tracker(_output) -> None:
-            delegated_to.add(role)
-        return _tracker
-
-    analyst.step_callback       = _make_step_tracker("Skills Taxonomy Analyst")
-    univ.step_callback          = _make_step_tracker("University AI Programs Researcher")
-    news.step_callback          = _make_step_tracker("AI Industry News Researcher")
-    cluster_interp.step_callback = _make_step_tracker("Cluster Interpreter")
-    # Note: orch (Orchestrator) is intentionally excluded — we only track
-    # specialists to reflect which agents were *delegated to*.
-
-    task = Task(
-        description=case["query"],
-        expected_output=DEFAULT_EXPECTED_OUTPUT,
-        agent=orch,
-    )
-    crew = Crew(
-        agents=[orch, analyst, univ, news, cluster_interp],
-        tasks=[task],
-        verbose=True,
-    )
-
-    buf = io.StringIO()
-    t0 = time.time()
-    answer = ""
-    error: str | None = None
+    os.makedirs(_RUN_RECORDS_DIR, exist_ok=True)
+    before = _list_run_record_files(_RUN_RECORDS_DIR)
 
     result_box: dict = {}
 
     def _kickoff() -> None:
         try:
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                result_box["answer"] = str(crew.kickoff())
+            result_box["answer"] = run_query(case["query"])
         except Exception as e:
             result_box["error"] = f"{type(e).__name__}: {e}"
-            traceback.print_exc(file=buf)
 
+    t0 = time.time()
     worker = threading.Thread(target=_kickoff, daemon=True)
     worker.start()
-    # hard_timeout_sec <= 0 (or None) means "no hard timeout" — block forever,
-    # i.e. the pre-2026-06-25 behavior. This is the supported way to run a
-    # debugging/long-test session without the kill-switch getting in the way
-    # (e.g. when deliberately testing a query you expect to be slow, not
-    # hung). Pass `--hard-timeout-sec 0` on the CLI for this.
     no_timeout = hard_timeout_sec is None or hard_timeout_sec <= 0
     worker.join(timeout=None if no_timeout else hard_timeout_sec)
-
-    if (not no_timeout) and worker.is_alive():
-        # crew.kickoff() did not return within the hard timeout — treat as
-        # a hard FAIL via the existing "runtime error" path in grade_case()
-        # rather than blocking the rest of the eval run. See this function's
-        # docstring for the full incident this responds to. The worker
-        # thread itself is left running in the background (can't be force-
-        # killed from here) — if timeouts recur across multiple queries in
-        # the same run, consider restarting the Ollama server before the
-        # next attempt, in case a wedged request is occupying its single
-        # processing slot.
-        error = (
-            f"TimeoutError: crew.kickoff() did not return within the hard "
-            f"timeout of {hard_timeout_sec:.0f}s — most likely hung, not "
-            f"just slow (see CLAUDE.md's documented qwen3:14b <-> CrewAI "
-            f"native-tool-calling reliability issues as the first thing to "
-            f"check). Abandoning this query so the eval loop can continue; "
-            f"the worker thread may still be running in the background."
-        )
-        # Defensive: the abandoned thread's redirect_stdout/redirect_stderr
-        # `with` blocks never got to exit (they're blocked mid-kickoff), so
-        # sys.stdout/sys.stderr may still be globally pointed at THIS query's
-        # `buf` even as we move on to the next query. Force them back to the
-        # real streams now so later queries' output isn't silently swallowed.
-        # This does NOT fully close the race: if the orphaned thread later
-        # unblocks on its own, its `with` block will try to restore
-        # sys.stdout/stderr to whatever they were when IT started — which
-        # could clobber a LATER query's redirect if that restore lands
-        # mid-run. Low-probability (requires the original hang to resolve
-        # itself at exactly the wrong moment) and a known residual risk of
-        # redirecting process-wide streams across threads; a full fix would
-        # mean capturing CrewAI's verbose output without swapping sys.stdout/
-        # sys.stderr at all, which is out of scope here.
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-    else:
-        answer = result_box.get("answer", "")
-        error = result_box.get("error")
-
+    timed_out = (not no_timeout) and worker.is_alive()
     elapsed = time.time() - t0
 
-    # NOTE: on the timeout path above, `buf` is still owned by the abandoned
-    # background thread, which may (rarely) still be mid-write to it right
-    # now. Reading it here is best-effort — the captured log for a timed-out
-    # query may occasionally be truncated or (very rarely) interleaved, but
-    # this is just a diagnostic log for an already-FAILed case, not something
-    # grading depends on.
-    log = _clean_log(buf.getvalue())
-    tool_calls = len(re.findall(r"Tool Execution Started", log))
+    after = _list_run_record_files(_RUN_RECORDS_DIR)
+    new_files = sorted(f for f in (after - before) if not f.endswith("_full.md"))
 
-    # ── DEBUG: dump verbose log to /tmp for format inspection ─────────────
-    # Uncomment the two lines below if delegated_to still shows empty after
-    # a run where LangSmith/CrewAI platform confirms delegation happened.
-    # Inspect /tmp/orch_verbose_log.txt to see the actual captured format,
-    # then remove the debug lines.
-    # with open("/tmp/orch_verbose_log.txt", "w") as _f:
-    #     _f.write(log)
+    error = None
+    if timed_out:
+        error = (
+            f"TimeoutError: run_query() did not return within the hard "
+            f"timeout of {hard_timeout_sec:.0f}s — most likely hung, not "
+            f"just slow. Abandoning this query so the eval loop can "
+            f"continue; the worker thread may still be running in the "
+            f"background."
+        )
+    elif "error" in result_box:
+        error = result_box["error"]
+
+    record: dict | None = None
+    if new_files:
+        # run_query() writes exactly one main + one _full.md per call;
+        # sequential (non-concurrent) case execution means at most one
+        # new main file is expected per case — take the newest if >1.
+        record = parse_run_record(new_files[-1])
+    elif not timed_out:
+        # run_query()'s own except clause is deliberately narrow (Gemini
+        # quota / API errors only) and still calls _write_run_record()
+        # before re-raising in those cases. A genuinely UNCAUGHT
+        # exception from crew.kickoff() (e.g. a raw Anthropic/litellm
+        # error) propagates with NO record written at all — surface
+        # that plainly rather than silently reporting empty fields.
+        note = "no run_records/ entry was written for this case"
+        error = f"{error} — {note}" if error else note
 
     return {
-        "answer": answer,
-        "verbose_log": log,
         "wall_time_sec": elapsed,
-        "tool_calls": tool_calls,
-        "delegated_to": delegated_to,
+        "delegated_to": record["delegated_to"] if record else set(),
+        "required_specialist_missing": record["required_specialist_missing"] if record else [],
+        "fabrication_flags": record["fabrication_flags"] if record else [],
+        "answer": record["answer"] if record else (result_box.get("answer") or ""),
+        "model_line": record["model_line"] if record else "",
+        "prompt_tokens": record["prompt_tokens"] if record else None,
+        "completion_tokens": record["completion_tokens"] if record else None,
+        "total_tokens": record["total_tokens"] if record else None,
+        "approx_cost_usd": record["approx_cost_usd"] if record else None,
+        "record_path": record["record_path"] if record else None,
         "error": error,
     }
 
@@ -373,53 +321,42 @@ def run_single_query(case: dict, hard_timeout_sec: float = 2700) -> dict:
 def grade_case(case: dict, result: dict, check_time: bool = True) -> dict:
     """Return a grading dict with three-state verdict.
 
+    2026-09-16 (SUITE_step2): verdict basis changed to what's reliably
+    checkable now that this harness reads a real run_records/ entry
+    rather than a hand-parsed verbose log. Guard flags (the five
+    fabrication guards + required_specialist_missing, all read from the
+    record) are reported per case but deliberately do NOT affect the
+    verdict — "a legitimate case can draw a false-positive or a benign
+    comment" (spec); review them, don't gate on them. Tool-call budget
+    checking is gone (not measurable via run_query()'s return value) —
+    the per-Agent max_iter caps remain the real backstop.
+
     Verdict logic:
         PASS    — all assertions met.
-        INSPECT — only soft assertions failed (expected_substrings missing or
-                  delegation issues). The answer may still be valid; a human
-                  should confirm. Typical cause: local model (qwen) phrases
-                  facts differently from the expected substrings, or delegated
-                  to 2/3 required agents but the answer is still substantive.
-        FAIL    — at least one hard assertion failed (hallucinated content,
-                  tool budget exceeded, or runtime error). Something definitely
-                  went wrong regardless of answer quality.
-
-    Hard failures → FAIL:
-        • forbidden_substrings found in the answer (hallucination signal)
-        • tool call count exceeds max_tool_calls (runaway loop)
-        • wall time exceeds max_wall_time_sec (when check_time=True)
-        • uncaught runtime exception
-
-    Soft failures → INSPECT (only if no hard failures):
-        • expected_substrings missing from the answer (brittle string match;
-          model may have used different but correct phrasing)
-        • must_delegate_to roles not reached (partial delegation)
-        • unexpected delegations on a no-delegation query
-
-    Returns:
-        {
-          "verdict": "PASS" | "INSPECT" | "FAIL",
-          "hard":    list[str],   # hard failure reasons
-          "soft":    list[str],   # soft failure reasons
-        }
+        INSPECT — only soft assertions failed (expected_substrings missing
+                  or partial delegation). The answer may still be valid; a
+                  human should confirm.
+        FAIL    — a hard assertion failed: forbidden_substrings appeared
+                  (known-junk-pattern check), wall time exceeded, or a
+                  genuine runtime/timeout error.
     """
     hard: list[str] = []
     soft: list[str] = []
     answer = result["answer"]
 
-    # ── Soft: expected_substrings ─────────────────────────────────────────────
+    # ── Soft: expected_substrings ──────────────────────────────────────
     expected = case.get("expected_substrings", []) or []
     missing = [s for s in expected if not _substring_match(s, answer)]
     if missing:
         soft.append(f"missing expected substrings: {missing}")
 
-    # ── Hard: forbidden_substrings ────────────────────────────────────────────
+    # ── Hard: forbidden_substrings ─────────────────────────────────────
     forbidden = case.get("forbidden_substrings", []) or []
     found_forbidden = [s for s in forbidden if _substring_match(s, answer)]
     if found_forbidden:
         hard.append(f"forbidden substrings appeared: {found_forbidden}")
 
-    # ── Soft: must_delegate_to ────────────────────────────────────────────────
+    # ── Soft: must_delegate_to ─────────────────────────────────────────
     expected_delegations = set(case.get("must_delegate_to", []) or [])
     actual = result["delegated_to"]
     if expected_delegations:
@@ -430,21 +367,13 @@ def grade_case(case: dict, result: dict, check_time: bool = True) -> dict:
                 f"(actual: {sorted(actual)})"
             )
     else:
-        # Empty must_delegate_to → no delegation expected (off-scope queries).
-        # Delegating when not expected is a soft signal: the agent went
-        # off-scope, but the final answer might still redirect correctly.
         if actual:
             soft.append(
                 f"unexpected delegations for no-delegation query: {sorted(actual)}"
             )
 
-    # ── Hard: budget ──────────────────────────────────────────────────────────
+    # ── Hard: wall-time budget ─────────────────────────────────────────
     budget = case.get("budget", {}) or {}
-    max_tools = budget.get("max_tool_calls")
-    if max_tools is not None and result["tool_calls"] > max_tools:
-        hard.append(
-            f"tool budget exceeded: {result['tool_calls']} > {max_tools}"
-        )
     if check_time:
         max_time = budget.get("max_wall_time_sec")
         if max_time is not None and result["wall_time_sec"] > max_time:
@@ -452,11 +381,11 @@ def grade_case(case: dict, result: dict, check_time: bool = True) -> dict:
                 f"wall time exceeded: {result['wall_time_sec']:.1f}s > {max_time}s"
             )
 
-    # ── Hard: runtime error ───────────────────────────────────────────────────
+    # ── Hard: runtime error ────────────────────────────────────────────
     if result["error"]:
         hard.append(f"runtime error: {result['error']}")
 
-    # ── Verdict ───────────────────────────────────────────────────────────────
+    # ── Verdict ─────────────────────────────────────────────────────────
     if hard:
         verdict = "FAIL"
     elif soft:
@@ -478,6 +407,8 @@ def model_slug() -> str:
         return os.getenv("LLM_MODEL", "gemini-1.5-pro")
     if provider == "ollama":
         return f"ollama-{os.getenv('LLM_MODEL', 'llama3.1:8b')}"
+    if provider == "ollama-cloud":
+        return f"ollama-cloud-{os.getenv('LLM_MODEL', 'gpt-oss:120b')}"
     return f"{provider}-{os.getenv('LLM_MODEL', 'default')}"
 
 
@@ -498,6 +429,7 @@ def write_snapshot(
     n_pass    = sum(1 for g in grades if g["verdict"] == "PASS")
     n_inspect = sum(1 for g in grades if g["verdict"] == "INSPECT")
     n_fail    = sum(1 for g in grades if g["verdict"] == "FAIL")
+    n_flagged = sum(1 for r in results if r["fabrication_flags"])
 
     body: list[str] = [
         f"# Orchestrator end-to-end baseline — {today}",
@@ -508,23 +440,34 @@ def write_snapshot(
         f"- PASS: {n_pass}",
         f"- INSPECT: {n_inspect}  _(soft failures only — review manually)_",
         f"- FAIL: {n_fail}",
+        f"- cases with >=1 guard flag: {n_flagged}  _(informational — does not affect verdict; review manually)_",
         "",
         "Verdict key: **PASS** all assertions met · "
         "**INSPECT** only soft assertions failed (check phrasing/delegation) · "
-        "**FAIL** hard assertion violated (hallucination / budget / error)",
+        "**FAIL** hard assertion violated (known-junk pattern / budget / runtime error)",
+        "",
+        "Every case ran through the persisting `run_query()` path "
+        "(chatbot/agents/orchestrator.py) — each has a real "
+        "`chatbot/run_records/` entry + `_full.md` companion, was "
+        "evaluated by the five fabrication guards in FLAG mode, and has "
+        "real token/USD cost captured. Guard flags are reported below "
+        "per case but do NOT drive the verdict.",
         "",
         f"Re-run: `KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/eval/run_orchestrator_eval.py`",
         "",
         "## Per-query summary",
         "",
-        "| ID | verdict | delegations | tool calls | wall (s) |",
-        "|---|---|---|---|---|",
+        "| ID | verdict | delegations | guard flags | cost (USD) | wall (s) |",
+        "|---|---|---|---|---|---|",
     ]
     for case, result, grade in zip(cases, results, grades):
+        cost = result["approx_cost_usd"]
+        cost_str = f"${cost}" if cost else ("n/a" if result["total_tokens"] else "unavailable")
         body.append(
             f"| {case['id']} | {grade['verdict']} "
             f"| {sorted(result['delegated_to'])} "
-            f"| {result['tool_calls']} "
+            f"| {len(result['fabrication_flags'])} "
+            f"| {cost_str} "
             f"| {result['wall_time_sec']:.1f} |"
         )
 
@@ -534,6 +477,7 @@ def write_snapshot(
 
     for case, result, grade in zip(cases, results, grades):
         verdict = grade["verdict"]
+        cost = result["approx_cost_usd"]
         body += [
             f"## [{case['id']}] **{verdict}**",
             "",
@@ -546,8 +490,14 @@ def write_snapshot(
             "```",
             "",
             f"**Wall time:** {result['wall_time_sec']:.1f}s",
-            f"**Tool calls:** {result['tool_calls']}",
             f"**Delegated to:** {sorted(result['delegated_to']) or '(none)'}",
+            f"**required_specialist_missing:** {result['required_specialist_missing'] or '[]'}",
+            f"**Model:** {result['model_line'] or '(unavailable — no run record)'}",
+            f"**Tokens:** prompt={result['prompt_tokens']}, "
+            f"completion={result['completion_tokens']}, "
+            f"total={result['total_tokens']}",
+            f"**Approx. cost:** {'$' + cost + ' USD' if cost else 'not estimated / usage unavailable'}",
+            f"**Run record:** {result['record_path'] or '(none written)'}",
             "",
         ]
         if grade["hard"]:
@@ -560,16 +510,24 @@ def write_snapshot(
             for msg in grade["soft"]:
                 body.append(f"- {msg}")
             body.append("")
+        if result["fabrication_flags"]:
+            body.append(
+                f"**Guard flags ({len(result['fabrication_flags'])}, informational — "
+                f"does not affect verdict, review manually):**"
+            )
+            for flag in result["fabrication_flags"]:
+                body.append(f"- {flag}")
+            body.append("")
         body += [
             "**Orchestrator's final answer:**",
             "",
-            result["answer"] or "*(no answer produced — see verbose log)*",
+            result["answer"] or "*(no answer produced — see the run record, if any, for details)*",
             "",
             "---",
             "",
         ]
 
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(body))
     return path
 
@@ -613,22 +571,13 @@ def main() -> None:
         type=float,
         default=2700.0,
         help=(
-            "Hard kill-switch (in seconds) around each query's crew.kickoff() "
-            "call, added 2026-06-25 after a reported qwen3:14b run sat fully "
-            "silent for ~1 hour with no result and no way to recover short of "
-            "killing the whole process. Default 2700s (45 min) is generous "
-            "above the ~35-min full 3-specialist Ollama run documented in "
-            "CLAUDE.md's Model Comparison table. Lower this for fast-fail "
-            "debugging (e.g. --hard-timeout-sec 120 to quickly confirm a "
-            "single query at least starts producing tool calls). Pass 0 (or "
-            "any value <= 0) to DISABLE the kill-switch entirely and block "
-            "forever, i.e. the pre-2026-06-25 behavior — use this if you "
-            "deliberately want to let a known-slow (not hung) run finish on "
-            "its own, e.g. a first-time qwen run on new hardware where you "
-            "don't yet have a wall-time baseline to set a sensible timeout "
-            "against. See run_single_query()'s docstring for the full "
-            "incident + the honest limitation that a blocked thread can't "
-            "be force-killed, only abandoned so the eval loop can move on."
+            "Hard kill-switch (in seconds) around each query's run_query() "
+            "call. Default 2700s (45 min). Lower this for fast-fail "
+            "debugging. Pass 0 (or any value <= 0) to DISABLE the "
+            "kill-switch entirely and block forever — use this if you "
+            "deliberately want to let a known-slow (not hung) run finish "
+            "on its own. See run_single_query()'s docstring for the full "
+            "rationale."
         ),
     )
     args = parser.parse_args()
@@ -640,7 +589,7 @@ def main() -> None:
 
     # dotenv already loaded at module level (top of file) before LangChain init.
 
-    with open(QUERIES_FILE) as f:
+    with open(QUERIES_FILE, encoding="utf-8") as f:
         all_cases = yaml.safe_load(f)
     # Strip any anchor-only entries (those start with underscore).
     cases = [c for c in all_cases if not str(c.get("id", "")).startswith("_")]
@@ -654,9 +603,12 @@ def main() -> None:
     print(f"Loaded {len(cases)} queries from {os.path.basename(QUERIES_FILE)}.")
     print(f"LLM: provider={os.getenv('LLM_PROVIDER', 'anthropic')}, "
           f"model={model_slug()}.")
+    print("Each case runs through the persisting run_query() path — "
+          "writes run_records/ + _full.md, runs the 5 fabrication guards "
+          "in FLAG mode, captures cost.")
     if args.hard_timeout_sec <= 0:
         print("Hard timeout per query: DISABLED (--hard-timeout-sec <= 0) — "
-              "will block forever on a hang, same as before 2026-06-25.")
+              "will block forever on a hang.")
     else:
         print(f"Hard timeout per query: {args.hard_timeout_sec:.0f}s "
               f"(override with --hard-timeout-sec, or pass 0 to disable).")
@@ -694,9 +646,6 @@ def main() -> None:
         print(f"\n[{i}/{len(cases)}] {case['id']} — running...")
 
         # ── LangSmith: query-level child run ──────────────────────────────────
-        # Creates a child run under eval_run for this specific query. Passing
-        # its ID to litellm.metadata makes every LLM call during crew.kickoff()
-        # appear nested under it rather than as isolated top-level runs.
         query_run: "RunTree | None" = None
         if eval_run is not None:
             query_run = eval_run.create_child(
@@ -714,49 +663,51 @@ def main() -> None:
             result = run_single_query(case, hard_timeout_sec=args.hard_timeout_sec)
             grade = grade_case(case, result, check_time=not args.no_time_check)
         finally:
-            # Always clear LiteLLM metadata so the next query doesn't inherit
-            # a stale parent_run_id (even if run_single_query raised somehow).
             litellm.metadata = {}
 
         results.append(result)
         grades.append(grade)
 
-        # ── Close query run ───────────────────────────────────────────────────
         if query_run is not None:
             query_run.end(outputs={
                 "verdict": grade["verdict"],
                 "answer": result["answer"],
-                "tool_calls": result["tool_calls"],
                 "wall_time_sec": round(result["wall_time_sec"], 1),
                 "delegated_to": sorted(result["delegated_to"]),
+                "fabrication_flags": result["fabrication_flags"],
+                "approx_cost_usd": result["approx_cost_usd"],
                 "hard_failures": grade["hard"],
                 "soft_failures": grade["soft"],
             })
             query_run.patch()
 
         verdict = grade["verdict"]
-        # Emoji prefix for quick scanning in terminal output
         symbol = {"PASS": "✅", "INSPECT": "🔍", "FAIL": "❌"}.get(verdict, "?")
+        cost = result["approx_cost_usd"]
         print(f"  {symbol} {verdict}  "
               f"wall={result['wall_time_sec']:.1f}s, "
-              f"tools={result['tool_calls']}, "
-              f"delegated={sorted(result['delegated_to'])}")
+              f"delegated={sorted(result['delegated_to'])}, "
+              f"flags={len(result['fabrication_flags'])}, "
+              f"cost={'$' + cost if cost else 'n/a'}")
         for msg in grade["hard"]:
             print(f"    ❌ [hard] {msg}")
         for msg in grade["soft"]:
             print(f"    🔍 [soft] {msg}")
+        if result["fabrication_flags"]:
+            print(f"    ⚠️  {len(result['fabrication_flags'])} guard flag(s) — see snapshot for detail")
 
     snapshot_path = write_snapshot(cases, results, grades)
     n_pass    = sum(1 for g in grades if g["verdict"] == "PASS")
     n_inspect = sum(1 for g in grades if g["verdict"] == "INSPECT")
     n_fail    = sum(1 for g in grades if g["verdict"] == "FAIL")
+    n_flagged = sum(1 for r in results if r["fabrication_flags"])
 
-    # ── Close eval-level run ──────────────────────────────────────────────────
     if eval_run is not None:
         eval_run.end(outputs={
             "n_pass": n_pass,
             "n_inspect": n_inspect,
             "n_fail": n_fail,
+            "n_flagged": n_flagged,
             "summary": f"{n_pass} PASS | {n_inspect} INSPECT | {n_fail} FAIL",
         })
         eval_run.patch()
@@ -764,7 +715,7 @@ def main() -> None:
     print()
     print("=" * 72)
     print(f"SUMMARY: {n_pass} PASS  |  {n_inspect} INSPECT  |  {n_fail} FAIL  "
-          f"(out of {len(cases)})")
+          f"(out of {len(cases)})  |  {n_flagged} case(s) with guard flags")
     print(f"Snapshot: {snapshot_path}")
 
 

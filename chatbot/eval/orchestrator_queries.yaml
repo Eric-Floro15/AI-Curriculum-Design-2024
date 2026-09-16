@@ -452,3 +452,42 @@
   budget:
     max_tool_calls: 80    # recalibrated 2026-07-14: 2-specialist (Univ + Cluster)
     max_wall_time_sec: 1200
+
+# ── SECTOR QUERIES (composed-sector tool) ───────────────────────────────────
+
+- id: sector-wrap-finance-curriculum
+  query: |
+    Design a finance-focused AI/ML Master's curriculum grounded in the
+    market data. Cover both the core agentic-AI skills every such program
+    needs and the finance-specific skills this sector distinctively
+    demands. Report lift and statistical significance (z) for the skills
+    you cite, and give concrete course recommendations.
+  category: update-sector
+  # Added 2026-09-16 (SUITE_step2) — closes a real coverage gap the
+  # SUITE_step1 audit found: none of the other 13 cases exercise the
+  # composed-sector tool (sector_wrap / sector_wrap_tool,
+  # chatbot/tools/compose_tool.py), which is what the RUN2E/RUN2F sector
+  # deliverables actually used. Query wording is REUSED VERBATIM from
+  # RUN2E (commit 36535be), which ran on Sonnet with this exact wording
+  # and drew ZERO fabrication flags — deliberately not "how does it
+  # differ from other programs" phrasing, which made the weak dev-lane
+  # model fabricate a peer-university comparison in an earlier smoke
+  # test (RUN2C).
+  must_delegate_to:
+    # Minimum to exercise sector_wrap; University Programs and/or News
+    # may also delegate (RUN2E's real Sonnet run delegated all 4) — that
+    # is fine, not asserted as required or forbidden here.
+    - Skills Taxonomy Analyst
+  expected_substrings:
+    # Real ground truth from chatbot/data/compose_finance_W2026.csv
+    # (RUN2D-conformed, independently verified against a direct
+    # lift_analysis.py run on the finance segment — see RUN2D's commit
+    # b06e7db). Financial Services is the #1 finance-wrap skill by z.
+    - "Financial Services"
+    - "4.32"
+  forbidden_substrings: *SHARED_FORBIDDEN
+  budget:
+    # max_tool_calls intentionally omitted: no longer measurable via the
+    # run_query()-based harness (SUITE_step2) and would be dead weight
+    # on a newly-added case — see this file's harness for the reasoning.
+    max_wall_time_sec: 1200
