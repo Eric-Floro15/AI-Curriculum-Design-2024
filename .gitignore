@@ -10,8 +10,15 @@ News-Agent-Chatbot-Code-Example/
 .~*
 ~$*
 
-# Root-level env files (defence in depth — chatbot/.gitignore also covers chatbot/.env)
+# Env files anywhere in the repo (defence in depth — chatbot/.gitignore
+# also covers chatbot/.env; final_implementation/.env was found tracked
+# and untracked on 2026-09-17, see git log for that path). Explicit
+# **/ form covers every subdirectory, not just root-level; .env.example
+# templates are intentionally re-allowed.
 .env
+**/.env
+**/.env.*
+!**/.env.example
 
 # Claude Cowork session files
 .claude/
