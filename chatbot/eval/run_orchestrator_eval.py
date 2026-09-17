@@ -133,6 +133,89 @@ def _substring_match(needle: str, haystack: str) -> bool:
     return False
 
 
+# 2026-09-17 (SUITE_step5, Item 1): cues that mark a forbidden-phrase
+# occurrence as an honest disclaimer of its ABSENCE, or a neutral,
+# forward-looking reference to a hypothetical future use — not an
+# instance of the forbidden thing actually happening NOW. Deliberately
+# generic (not hardcoded to "gap analysis" specifically) so any future
+# forbidden_substrings entry with the same "the model correctly says it
+# did NOT do X" shape benefits, not just the one case that surfaced
+# this.
+#
+# Two SEPARATE cue sets, checked on two DIFFERENT sides of the match —
+# NOT one combined list checked on both sides. A combined "check either
+# side" design was tried first and rejected: it let a genuine violation
+# slip through whenever an UNRELATED negation word happened to sit
+# within the window somewhere after the match ("Here is the gap
+# analysis you requested, even though it **wasn't** asked for: ..." —
+# "wasn't" negates "asked for", not the gap analysis itself, but a
+# blanket either-side check couldn't tell the difference). Natural
+# English negation ("No X", "X was not performed") always precedes the
+# negated phrase, so _NEGATION_CUES is checked ONLY in the preceding
+# window; the forward-reference pattern this project's real false-FAIL
+# text needed ("...used for gap analysis in a future step...") always
+# follows the phrase, so _FORWARD_REFERENCE_CUES is checked ONLY in the
+# following window, and is a much narrower, more specific list for
+# exactly that reason (looser cues there would reopen the same
+# either-side loophole from the other direction).
+_NEGATION_CUES = (
+    "no ", "not ", "n't ", "non-", "none ", "without ",
+    "wasn't", "isn't", "hasn't", "won't", "didn't", "doesn't",
+    "❌ not",
+)
+_FORWARD_REFERENCE_CUES = (
+    "in a future", "in the future", "a future step", "not yet",
+)
+
+
+def _forbidden_match_is_disclaimer_only(needle: str, haystack: str, window: int = 60) -> bool:
+    """True only when EVERY occurrence of `needle` in `haystack` has a
+    negation/disclaimer cue within `window` characters on EITHER side —
+    i.e. the text is honestly reporting that the forbidden thing did NOT
+    happen (or referencing a hypothetical future use), not doing it now.
+    Checked on both sides because a cue can follow the match just as
+    naturally as precede it ("...gap analysis in a future step" — see
+    the real example below). A single occurrence with no such cue nearby
+    on either side means a real violation, so this bails out (returns
+    False) the moment it finds one — this can only ever make a
+    forbidden-substring check STRICTER in effect for a genuine violation
+    than a blanket exemption would, never looser: a fabricated instance
+    with no negation/forward-reference cue anywhere nearby still gets
+    caught exactly as before.
+
+    Confirmed against a real case (SUITE_step5, 2026-09-17):
+    curriculum-fetch-mmai's query says "Do not perform gap analysis" and
+    the model fully honoured it — but its own honest disclaimer text
+    contains the literal forbidden phrase "gap analysis" three times
+    ("No gap analysis has been performed at this stage...", "❌ Not
+    consulted — No gap analysis was requested...", and "...used for gap
+    analysis in a future step..." — the third has its cue AFTER the
+    match, not before), which the old unconditional substring check
+    mechanically FAILed despite the underlying behaviour being exactly
+    correct. found_any guards the case where `needle` never actually
+    occurs — the caller only invokes this after `_substring_match`
+    already confirmed a hit, but this function is also directly
+    unit-testable on its own, so it stays correct standalone too.
+    """
+    needle_lc = needle.lower()
+    hay_lc = haystack.lower()
+    start = 0
+    found_any = False
+    while True:
+        idx = hay_lc.find(needle_lc, start)
+        if idx == -1:
+            break
+        found_any = True
+        preceding = hay_lc[max(0, idx - window): idx]
+        following = hay_lc[idx + len(needle_lc): idx + len(needle_lc) + window]
+        negated = any(cue in preceding for cue in _NEGATION_CUES)
+        forward_ref = any(cue in following for cue in _FORWARD_REFERENCE_CUES)
+        if not (negated or forward_ref):
+            return False  # a genuine, non-negated occurrence: real violation
+        start = idx + len(needle_lc)
+    return found_any
+
+
 import yaml
 import litellm
 from langsmith.run_trees import RunTree
@@ -351,8 +434,16 @@ def grade_case(case: dict, result: dict, check_time: bool = True) -> dict:
         soft.append(f"missing expected substrings: {missing}")
 
     # ── Hard: forbidden_substrings ─────────────────────────────────────
+    # 2026-09-17 (SUITE_step5, Item 1): a present-but-disclaimer-only
+    # match (every occurrence preceded by a negation cue — "No gap
+    # analysis has been performed...") is compliance, not a violation —
+    # see _forbidden_match_is_disclaimer_only()'s docstring for the real
+    # false-FAIL this fixes.
     forbidden = case.get("forbidden_substrings", []) or []
-    found_forbidden = [s for s in forbidden if _substring_match(s, answer)]
+    found_forbidden = [
+        s for s in forbidden
+        if _substring_match(s, answer) and not _forbidden_match_is_disclaimer_only(s, answer)
+    ]
     if found_forbidden:
         hard.append(f"forbidden substrings appeared: {found_forbidden}")
 

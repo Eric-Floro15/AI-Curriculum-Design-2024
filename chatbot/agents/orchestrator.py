@@ -675,8 +675,23 @@ _MARKET_NUM_KINDS = {
 # integer) of some real grounded lift — narrow enough that a fabricated
 # range ("5x to 99x") still gets its bad endpoint flagged normally, since
 # a single specific claim (not part of a recognised range) is untouched.
+#
+# 2026-09-17 (SUITE_step5, Item 3): the leading "[×x]" is now OPTIONAL —
+# was previously required on BOTH endpoints ("A×–B×"), which missed the
+# equally common single-trailing-symbol prose shape "A–B×" (one × after
+# only the range's end, e.g. "12–13×"). Real false positive on a live
+# paid-Sonnet run (SUITE_step4, 2026-09-17): "the highest in the dataset
+# (12–13×)" summarizing three real, individually-cited values (LangGraph
+# 12.25×, CrewAI 13.14×, AutoGen 12.60×) never matched the old regex at
+# all, so its "13" endpoint fell straight through to the normal flag
+# logic. Still safe to broaden: the groundedness check below
+# (_range_endpoint_grounded against the real lift pool) is the actual
+# false-positive control, not the regex shape — a fabricated range still
+# needs a real grounded value near EACH endpoint to be exempted, so
+# broadening what counts as "a range construct" can only ever let MORE
+# genuinely-grounded prose through, never mask a fabrication.
 _RANGE_LIFT_RE = re.compile(
-    r"(\d[\d,]*\.?\d*)\s?[×x]\s*(?:[" + "\\-\u2010\u2011\u2012\u2013\u2014" + r"]|to)\s*"
+    r"(\d[\d,]*\.?\d*)\s?[×x]?\s*(?:[" + "\\-\u2010\u2011\u2012\u2013\u2014" + r"]|to)\s*"
     r"(\d[\d,]*\.?\d*)\s?[×x](?!\w)",
     re.IGNORECASE,
 )
@@ -816,26 +831,48 @@ def _detect_numeric_fabrication_flags(
         if kind == "lift" and (start, end) in range_exempt_spans:
             continue
         # Exempt approximate/threshold phrasing ("lift ≈ 11–13×", "lift
-        # ≥ 18×", "≈ 30× total"). Added 2026-09-10 after 4/4 of a live
-        # finance rerun's remaining flags (post the extraction fixes
-        # above) were all this exact shape — a legitimate qualitative
-        # range/threshold the Advisor derived across several real
-        # numbers, not a specific value copied from a tool. Checked only
-        # against a short window immediately before the match (not the
-        # whole answer) to avoid accidentally exempting an unrelated
-        # later number that happens to follow one of these symbols
-        # somewhere earlier in the text. The optional
+        # ≥ 18×", "≈ 30× total", "over 20×", "more than 9×"). Added
+        # 2026-09-10 after 4/4 of a live finance rerun's remaining flags
+        # (post the extraction fixes above) were all this exact shape —
+        # a legitimate qualitative range/threshold the Advisor derived
+        # across several real numbers, not a specific value copied from
+        # a tool. Checked only against a short window immediately before
+        # the match (not the whole answer) to avoid accidentally
+        # exempting an unrelated later number that happens to follow one
+        # of these symbols somewhere earlier in the text. The optional
         # "<number><dash>" tail handles a range's END number ("13" in
         # "≈ 11–13×") — the symbol precedes the range START, not the
         # matched number itself.
+        #
+        # 2026-09-17 (SUITE_step5, Item 3): TIGHTENED from an
+        # unconditional skip to a groundedness-gated one, and the
+        # qualifier list widened to cover "over"/"more than"/"greater
+        # than"/"upwards of"/"in excess of"/"up to"/"at least" — the
+        # original 2026-09-10 version trusted ANY number preceded by one
+        # of the (narrower) qualifier words, with no check that the
+        # value was actually grounded in anything. Real false positives
+        # on a live paid-Sonnet run (SUITE_step4, 2026-09-17): "over 20×"
+        # for a real, grounded 20.14× (Jax->Pytorch) and "over 9×" for a
+        # real, grounded 9.03× (Mlops->Responsible Ai) both got flagged,
+        # since "over" wasn't in the old qualifier list at all. Reusing
+        # _range_endpoint_grounded (the same floor/nearest-integer test
+        # Item A already uses for range endpoints) instead of a blanket
+        # trust keeps the still-catches guarantee: a genuinely fabricated
+        # threshold ("over 90×" with nothing near it) has no grounded
+        # value that floors/rounds to 90, so it still falls through to
+        # the normal flag logic below.
         preceding = answer[max(0, start - 25): start]
         if re.search(
-            r"(?:[≈~≥≤><]|approx(?:imately)?|about|roughly)\s*"
+            r"(?:[≈~≥≤><]|approx(?:imately)?|about|roughly|over|"
+            r"more\s+than|greater\s+than|upwards?\s+of|in\s+excess\s+of|"
+            r"up\s+to|at\s+least)\s*"
             r"(?:\d[\d,]*\.?\d*\s*[-–—]\s*)?$",
             preceding,
             re.IGNORECASE,
         ):
-            continue
+            pool_for_kind = grounded_numbers.get(kind, []) + bare_table_numbers
+            if _range_endpoint_grounded(val, pool_for_kind):
+                continue
         _pattern, _idxs, tol = _MARKET_NUM_KINDS[kind]
         pool = grounded_numbers.get(kind, []) + bare_table_numbers
         if any(abs(val - g) <= max(tol * abs(g), tol) for g in pool):
@@ -927,6 +964,22 @@ _COURSE_CODE_RE = re.compile(
     r"\b(?:[A-Z]{2,5}[ " + _DASH_CHARS + r"]?\d[\d." + _DASH_CHARS + r"]*[A-Z]?"
     r"|\d{1,2}[." + _DASH_CHARS + r"]\d{3,4}[A-Za-z]?)\b"
 )
+
+# 2026-09-17 (SUITE_step5, Item 3): a bare "N-NNN" frequency-count range
+# ("80-190 postings") structurally matches the bare-digit-pair course-
+# code shape _COURSE_CODE_RE's second alternative also recognizes (real
+# MIT/CMU codes like "10-601", "15-619"). Real false positive on a live
+# paid-Sonnet run (SUITE_step4, 2026-09-17): "~80–190 postings" —
+# CrewAI/LangGraph/AutoGen's individually-grounded 91/183/82 posting
+# counts summarized as a rounded range — got flagged as
+# unattributed_course_code. Narrow, context-gated exemption below: only
+# a code with NO alphabetic characters at all (real course codes always
+# have a subject prefix or trailing letter; this branch's shape never
+# does) AND immediately followed by "posting(s)" is treated as a
+# frequency range, not a course code — a fabricated course-code-shaped
+# string is never immediately followed by "posting(s)" in this project's
+# real output, so this can't mask a genuine fabrication.
+_POSTINGS_CONTEXT_RE = re.compile(r"^\s*(?:job\s+)?postings?\b", re.IGNORECASE)
 
 # 2026-09-10 (GUARD_TUNEUP_sonnet.md Item 3a): a report/publication
 # citation shaped as "ACRONYM YEAR" — "WEF 2025", "Stanford HAI 2026",
@@ -1133,6 +1186,14 @@ def _detect_content_attribution_flags(
         # remainder ("17-762") is independently grounded in the trace.
         stripped = _strip_institution_code_prefix(code_norm)
         if stripped and stripped in consulted_lc:
+            continue
+        # SUITE_step5 Item 3: a bare digit-pair immediately followed by
+        # "posting(s)" is a frequency range, not a course code — see
+        # _POSTINGS_CONTEXT_RE's module-level comment for the real false
+        # positive this fixes.
+        if not any(c.isalpha() for c in code) and _POSTINGS_CONTEXT_RE.match(
+            answer[m.end(): m.end() + 20]
+        ):
             continue
         seen_codes.add(code_norm)
         idx = m.start()

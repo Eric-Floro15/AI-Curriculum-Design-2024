@@ -1166,6 +1166,137 @@ finally:
 
 
 # =====================================================================
+# SUITE_step5_regrade-cleanup.md, Item 3: two new FP guard shapes found
+# on the real paid-Sonnet SUITE_step4 batch (2026-09-17)
+# =====================================================================
+print("\n=== SUITE_step5 Item 3: floored lift + residual range-summary ===")
+
+# --- Shape 1: floored/approximate lift ("over N×", "more than N×") ---
+_s5_trace_jax = "JAX co-demand: PyTorch (lift 20.14x, z=2.85)."
+_s5_steps_jax = _steps(("Skills Taxonomy Analyst", _s5_trace_jax))
+
+_s5_flags_over20 = _detect_numeric_fabrication_flags(
+    "When a job mentions JAX, it is over 20x more likely to also require PyTorch.",
+    _s5_steps_jax, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: 'over 20x' floored from a real grounded 20.14x is not flagged",
+    _s5_flags_over20 == [],
+    f"unexpected flags: {_s5_flags_over20}",
+)
+
+_s5_trace_mlops = "MLOps co-demand: Responsible AI (lift 9.03x, z=4.09)."
+_s5_steps_mlops = _steps(("Skills Taxonomy Analyst", _s5_trace_mlops))
+
+_s5_flags_over9 = _detect_numeric_fabrication_flags(
+    "Responsible AI clears z=4.09 with lift over 9x — not a footnote.",
+    _s5_steps_mlops, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: 'more than'-style qualifier ('lift over 9x') floored "
+    "from a real grounded 9.03x is not flagged",
+    _s5_flags_over9 == [],
+    f"unexpected flags: {_s5_flags_over9}",
+)
+
+_s5_flags_more_than = _detect_numeric_fabrication_flags(
+    "This skill shows more than 20x the baseline co-demand rate.",
+    _s5_steps_jax, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: 'more than 20x' (new qualifier word) floored from the "
+    "same real grounded 20.14x is not flagged",
+    _s5_flags_more_than == [],
+    f"unexpected flags: {_s5_flags_more_than}",
+)
+
+_s5_flags_bad_over90 = _detect_numeric_fabrication_flags(
+    "This skill shows a lift of over 90x versus baseline, dwarfing everything else.",
+    _s5_steps_jax, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "still-catches: a fabricated floored value ('over 90x' with no "
+    "grounded value anywhere near it) still flags — the qualifier word "
+    "alone is not a blanket exemption",
+    len(_s5_flags_bad_over90) >= 1 and any("90" in f for f in _s5_flags_bad_over90),
+    f"got: {_s5_flags_bad_over90}",
+)
+
+# --- Shape 2a: residual range-summary, numeric guard (single trailing x) ---
+_s5_trace_orch = (
+    "LangGraph (lift 12.25x, z=6.83) ... CrewAI (lift 13.14x, z=5.01) ... "
+    "AutoGen (lift 12.60x, z=4.65)"
+)
+_s5_steps_orch = _steps(("Skills Taxonomy Analyst", _s5_trace_orch))
+
+_s5_flags_range_single_x = _detect_numeric_fabrication_flags(
+    "Their lift scores are the highest in the dataset (12-13x) — intensely concentrated.",
+    _s5_steps_orch, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: a range with only ONE trailing '×' symbol ('12-13x', "
+    "not '12x-13x') whose endpoints are grounded is not flagged",
+    _s5_flags_range_single_x == [],
+    f"unexpected flags: {_s5_flags_range_single_x}",
+)
+
+_s5_flags_bad_range_single_x = _detect_numeric_fabrication_flags(
+    "Their lift scores are the highest in the dataset (50-99x) — unmatched by anything real.",
+    _s5_steps_orch, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "still-catches: a fabricated single-trailing-x range ('50-99x' with "
+    "nothing grounded near either endpoint) still flags",
+    len(_s5_flags_bad_range_single_x) >= 1
+    and any("99" in f for f in _s5_flags_bad_range_single_x),
+    f"got: {_s5_flags_bad_range_single_x}",
+)
+
+# --- Shape 2b: residual range-summary, content-attribution guard ------
+# A bare "N-NNN" posting-count range structurally matches the same
+# bare-digit-pair course-code shape as real MIT/CMU codes ("10-601").
+_s5_flags_postings_range = _detect_content_attribution_flags(
+    "Their posting frequencies are moderate (~80-190 postings), but their lift scores lead.",
+    "How strong is market demand for these tools?",
+    _s5_steps_orch, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "no-longer-FP: a bare digit-pair range immediately followed by "
+    "'postings' ('80-190 postings') is not flagged as unattributed_course_code",
+    not any("80" in f or "190" in f for f in _s5_flags_postings_range),
+    f"unexpected flags: {_s5_flags_postings_range}",
+)
+
+_s5_flags_bad_code = _detect_content_attribution_flags(
+    "See course 15-999 for the full syllabus and prerequisites.",
+    "What courses does this program require?",
+    _s5_steps_orch, ["Skills Taxonomy Analyst"],
+)
+_check(
+    "still-catches: a genuinely fabricated bare-digit-pair course code "
+    "('15-999', NOT followed by 'postings', not grounded anywhere) "
+    "still flags — the postings-context exemption is structurally "
+    "narrow, not a blanket bare-digit-pair exemption",
+    any("15" in f and "999" in f for f in _s5_flags_bad_code),
+    f"got: {_s5_flags_bad_code}",
+)
+
+_s5_flags_real_bare_code_unaffected = _detect_content_attribution_flags(
+    "This program's core sequence includes MIT's 10-601 (Machine Learning).",
+    "What courses does this program require?",
+    _steps(("University AI Programs Researcher", "10-601 Machine Learning is a required course.")),
+    ["University AI Programs Researcher"],
+)
+_check(
+    "a real, grounded bare-digit-pair course code ('10-601', verbatim in "
+    "the trace) is still correctly exempted via the pre-existing "
+    "verbatim-trace check, unaffected by the new postings-context check",
+    _s5_flags_real_bare_code_unaffected == [],
+    f"unexpected flags: {_s5_flags_real_bare_code_unaffected}",
+)
+
+
+# =====================================================================
 # Summary
 # =====================================================================
 print(f"\n{'='*60}")

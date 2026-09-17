@@ -152,7 +152,29 @@
     # actually queries. z is NOT symmetric (9.91 one way, 10.43 the
     # other) so intentionally not asserted here.
     - "5.31"
-    - "DevOps"
+    # 2026-09-17 (SUITE_step5, Item 2): was "DevOps" — intended to verify
+    # Cluster Interpreter's gap-analysis contribution reached the
+    # synthesized Final Answer, but on the real canary run (8110b74)
+    # "DevOps" only ever appeared in Cluster Interpreter's raw relayed
+    # trace (a genuine, still-true content-completeness finding, see
+    # memory/action-items.md), never in the Final Answer text this
+    # harness grades — not because the taxonomy renamed Cluster 9 away
+    # from DevOps (confirmed current: tools/cluster_tool.py's
+    # CLUSTER_THEMES[9] == "DevOps, Agile & Automation", unchanged), but
+    # because this query's actual gap-analysis focus landed on a
+    # DIFFERENT cluster. Confirmed against the real canary record
+    # (chatbot/run_records/run_20260917T034032Z_success_full.md): of all
+    # 10 official CLUSTER_THEMES strings, only Cluster 7 "Data Analytics,
+    # Science & Engineering" appears verbatim in the Final Answer's own
+    # Cluster Coverage row ("| **Cluster 7** | *Data Analytics, Science &
+    # Engineering* | ⚠️ Partial | 🟡 MEDIUM |"), directly describing a
+    # real data-engineering-adjacent gap (Data Mining, BI Tools,
+    # Scripting Languages not covered). Replacing with the verified-
+    # current, verified-present theme name preserves the original
+    # intent (cluster-gap content genuinely reached the synthesis)
+    # without betting on a specific cluster number/label surviving future
+    # re-runs of an inherently stochastic multi-cluster gap analysis.
+    - "Data Analytics, Science & Engineering"
     - "Big Data"
     # Queen's MMAI was explicitly asked about — answer must reference it.
     - "Queen"         # relaxed from "smith.queensu.ca": URL is Sonnet-specific
@@ -430,12 +452,24 @@
   # clusters 2/4 specifically (unlike "4,278"/"39,040" elsewhere in this
   # file) — a frequency-number assertion would be too brittle.
   #
-  # So this case anchors on a structural marker instead: "Data
-  # Engineering" is the literal theme name of Cluster 8, which the
-  # backstory's required OUTPUT FORMAT ("Cluster Coverage Assessment: for
-  # each of the 10 clusters...") makes near-certain to appear verbatim
-  # regardless of which specific skill the model chooses to recommend —
-  # a more robust check than betting on one stochastic skill pick.
+  # So this case anchors on a structural marker instead: a real official
+  # cluster theme name, required to appear verbatim in the backstory's
+  # required OUTPUT FORMAT ("Cluster Coverage Assessment: for each of the
+  # 10 clusters...") regardless of which specific skill the model
+  # chooses to recommend — a more robust check than betting on one
+  # stochastic skill pick.
+  #
+  # 2026-09-17 (SUITE_step5, Item 2): was "Data Engineering" — the
+  # taxonomy has since changed (the V4/W2026 cluster set, confirmed
+  # current in tools/cluster_tool.py's CLUSTER_THEMES, has no cluster
+  # literally named "Data Engineering"). Confirmed against the real run
+  # (chatbot/run_records/run_20260917T150140Z_success_full.md): of all
+  # 10 official CLUSTER_THEMES strings, "Cloud, Infrastructure & Systems
+  # Engineering" (Cluster 5) appears verbatim in the Final Answer's
+  # Cluster Coverage table and is directly the cluster this case's real
+  # priority gap addresses ("PRIORITY GAP 2 — Cloud Data Platforms &
+  # Pipeline Engineering"). Preserves the original intent (a real,
+  # currently-accurate cluster-taxonomy anchor) without guessing.
   must_delegate_to:
     - University AI Programs Researcher
     - Cluster Interpreter
@@ -444,10 +478,11 @@
     - "Rotman"
     # Cluster Interpreter must reference the cluster analysis.
     - "cluster"
-    # Structural marker: the real Cluster 8 theme name, required to
-    # appear in the Cluster Coverage Assessment table by OUTPUT FORMAT
-    # regardless of which clusters end up flagged as gaps.
-    - "Data Engineering"
+    # Structural marker: the real, current Cluster 5 theme name (see
+    # note above), required to appear in the Cluster Coverage Assessment
+    # table by OUTPUT FORMAT regardless of which clusters end up flagged
+    # as gaps.
+    - "Cloud, Infrastructure & Systems Engineering"
   forbidden_substrings: *SHARED_FORBIDDEN
   budget:
     max_tool_calls: 80    # recalibrated 2026-07-14: 2-specialist (Univ + Cluster)
