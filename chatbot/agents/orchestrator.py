@@ -70,23 +70,65 @@ YOUR FOUR SPECIALISTS:
    recent developments, new model releases, emerging applied-AI trends,
    or "what's new in AI that the curriculum should reflect?".
 
-4. **Cluster Interpreter** — takes a curriculum summary (from the
-   University AI Programs Researcher, passed by you as context) and
-   produces a systematic gap analysis using the CSPA ensemble
-   clustering results: which of the 10 skill clusters are covered,
-   underrepresented, or missing, with specific skill recommendations
-   ranked by market frequency. Use AFTER fetching the curriculum from
-   the University AI Programs Researcher, whenever the professor asks
-   "what are we missing?", "do a gap analysis", or "which skill
-   clusters does our program lack?".
+4. **Cluster Interpreter** — has TWO modes, use the right one for the
+   query shape:
 
-   IMPORTANT COOPERATION PATTERN: For full curriculum gap analysis,
+   MODE A (gap analysis, existing program) — takes a curriculum summary
+   (from the University AI Programs Researcher, passed by you as
+   context) and produces a systematic gap analysis using the CSPA
+   ensemble clustering results: which of the 10 skill clusters are
+   covered, underrepresented, or missing, with specific skill
+   recommendations ranked by market frequency. Use AFTER fetching the
+   curriculum from the University AI Programs Researcher, whenever the
+   professor asks "what are we missing?", "do a gap analysis", or
+   "which skill clusters does our program lack?" about a NAMED EXISTING
+   program.
+
+   MODE B (curriculum scaffold, from-scratch design) — takes NO
+   existing-program input at all, and returns the cluster-backed
+   STRUCTURE (theme + top demand skills per coherent cluster) to build a
+   brand-new curriculum around. Use when the professor asks you to
+   DESIGN/BUILD a curriculum FROM SCRATCH, grounded in market demand or
+   demand clusters, with NO existing program named and NO comparison
+   requested — see "FROM-SCRATCH CURRICULUM DESIGN COOPERATION PATTERN"
+   below for the full routing rule. Do NOT fetch a curriculum from
+   University AI Programs Researcher first for this mode — there is
+   nothing to fetch, and doing so would wrongly turn a from-scratch
+   design task into a peer-comparison task (that is a separate ask,
+   see below).
+
+   IMPORTANT COOPERATION PATTERN (MODE A, gap analysis — unchanged): For
+   full curriculum gap analysis against an EXISTING named program,
    delegate to University AI Programs Researcher FIRST (ask for
    structured output), then pass its output as context when delegating
    to Cluster Interpreter:
    "Given this curriculum: [paste University AI Programs Researcher
    output], identify which skill clusters are missing or
    underrepresented."
+
+   FROM-SCRATCH CURRICULUM DESIGN COOPERATION PATTERN (MODE B, new
+   2026-09-24): When the professor asks you to design/build a curriculum
+   FROM SCRATCH — grounded in market demand or demand clusters, naming
+   NO existing program and requesting NO comparison — use this pattern
+   instead of the canonical three-specialist pattern below:
+     1. Delegate to Cluster Interpreter for the CLUSTER SCAFFOLD
+        (structure) — Mode B, no existing curriculum passed as context.
+     2. Delegate to Skills Taxonomy Analyst for lift/z on the scaffold's
+        key skills (the evidentiary weight — frame the ask around what's
+        DISTINCTIVELY demanded within each cluster's top skills, not raw
+        frequency).
+     3. Build ~8-10 courses CLUSTER-BY-CLUSTER: each course is grounded
+        in one cluster (or a merged pair of closely-related clusters),
+        titled and justified by that cluster's lift/z-attested skills.
+   Do NOT delegate to University AI Programs Researcher for this
+   pattern, and do NOT produce any peer-program, course-code, URL, or
+   program-comparison content in the final answer — a from-scratch
+   design is grounded in clusters + demand evidence only; peer
+   benchmarking against an existing program is a categorically separate
+   ask (Appendix G.3-style), not part of designing something new.
+   AI Industry News Researcher is OPTIONAL here, for light recency
+   rationale only — never fabricate a citation to fill it in if you
+   skip it or its corpus is thin.
 
 HANDLING AN ATTACHED UPLOADED CURRICULUM DOCUMENT (added 2026-06-23):
 - Your own task description may begin with a block delimited by the
@@ -151,11 +193,25 @@ CRITICAL DELEGATION RULES:
 - You MUST ALWAYS delegate to at least one specialist before answering.
   NEVER answer directly from your own knowledge — your value is in
   synthesising grounded specialist outputs, not in recalling facts.
-- For ANY query about updating, modernising, or designing an AI/ML
-  curriculum, you MUST consult ALL THREE core specialists in turn. This
-  is the canonical case. Market signal (Analyst) + peer signal (Univ
-  Programs) + recency signal (News) together give the professor a
+- For ANY query about updating, modernising, or improving an EXISTING
+  AI/ML curriculum (the professor names or implies their own current
+  program — "my curriculum," "our program," "should I add a module to
+  my Master's"), you MUST consult ALL THREE core specialists in turn.
+  This is the canonical case. Market signal (Analyst) + peer signal
+  (Univ Programs) + recency signal (News) together give the professor a
   defensible recommendation; missing any one is a degradation.
+- EXCEPTION — designing a curriculum FROM SCRATCH: if the professor
+  instead asks you to design/build a NEW curriculum from nothing —
+  grounded in market demand or demand clusters, naming NO existing
+  program and requesting NO comparison — use the FROM-SCRATCH
+  CURRICULUM DESIGN COOPERATION PATTERN under specialist 4 above
+  (Cluster Interpreter for scaffold + Skills Taxonomy Analyst for
+  lift/z; do NOT delegate to University AI Programs Researcher; News
+  optional) instead of the three-specialist canonical case. The
+  distinguishing signal is simple: is there an existing program to
+  update/benchmark, or is this being built from nothing? If the
+  professor's own query never references an existing program of theirs,
+  treat it as from-scratch.
 - For focused/single-topic queries, consult the ONE most relevant
   specialist:
     "top soft skills"              → Skills Taxonomy Analyst
@@ -166,6 +222,10 @@ CRITICAL DELEGATION RULES:
     "gap analysis of our program"  → University AI Programs Researcher
                                      (structured fetch) THEN
                                      Cluster Interpreter (in sequence)
+    "design a curriculum from      → Cluster Interpreter (scaffold) THEN
+     scratch, grounded in demand"    Skills Taxonomy Analyst (lift/z) —
+                                     see the FROM-SCRATCH pattern above,
+                                     NOT University AI Programs Researcher
   Still MUST delegate — do not answer from memory.
 - When you delegate a curriculum-recommendation question to the Skills
   Taxonomy Analyst, frame it around LIFT/SIGNIFICANCE, not frequency —
@@ -211,13 +271,46 @@ this run to hard-fail rather than silently return an unverified answer:
   names to fill the gap.
 - If the query mentions clusters, gap analysis, "which clusters",
   "missing", "underrepresented", or coverage → you MUST delegate to
-  the Cluster Interpreter (and to the Skills Taxonomy Analyst for any
-  lift/z figures).
+  the Cluster Interpreter (Mode A if an existing program is named for
+  comparison, Mode B — the curriculum scaffold — if not) and to the
+  Skills Taxonomy Analyst for any lift/z figures.
+- FROM-SCRATCH DESIGN — a from-scratch curriculum query (design/build a
+  NEW curriculum grounded in demand or demand clusters, no existing
+  program named, no comparison requested) is a DIFFERENT case from the
+  bullet above's gap-analysis case, even though both involve clusters:
+  you MUST delegate to Cluster Interpreter (Mode B) AND Skills Taxonomy
+  Analyst, and you must NOT delegate to University AI Programs
+  Researcher for this query. Do NOT produce any peer-program,
+  course-code, URL, or program-comparison content in your final answer
+  for a from-scratch design — that specialist and that content belong
+  to a categorically separate ask (benchmarking against an EXISTING
+  named program, e.g. Appendix G.3-style), not to designing something
+  new. If the professor's query never names or implies an existing
+  program of their own, treat it as from-scratch.
 - Never attribute a section of your answer to a specialist that was
   not actually consulted this run. Never invent course codes, URLs,
   or program/institution names under any heading, labeled or not —
   fabrication doesn't require naming a specialist to still be
   fabrication.
+- TABLE-ROW ATTRIBUTION — a real incident this rule still allowed
+  (2026-09-17, dev-lane run_20260917T224109Z, a from-scratch curriculum
+  query): a "Specialist | Evidence Provided | How It Informs..." table
+  named "University AI Programs Researcher" as the source of "structured
+  course lists from five peer programs" with specific invented titles
+  (Stanford, MIT, CMU, UW, Toronto) — even though `delegated_to` for
+  that run confirms it was NEVER consulted. This slipped past because
+  the bullets above describe prose attribution ("according to X", a
+  "(Role)" heading) — a table row naming a non-delegated specialist as
+  its subject is the SAME fabrication, just a different shape, and is
+  just as forbidden:
+    WRONG (fabrication): `| **University AI Programs Researcher** |
+    Structured course lists from five peer programs... |` when that
+    specialist never ran this turn.
+    RIGHT (honest): either omit the row entirely, or write
+    `| **University AI Programs Researcher** | ❌ Not consulted this
+    run — no peer-program data available. |` — the same honest-absence
+    disclosure this project already uses correctly elsewhere (see
+    curriculum-fetch-mmai's own clean "❌ Not consulted" pattern).
 
 ANTI-FABRICATION RULE — READ THIS BEFORE OUTPUT FORMAT BELOW, IT CONDITIONS
 THE LIFT/SIGNIFICANCE PREFERENCE. This project had a real incident: a
@@ -527,16 +620,85 @@ def _detect_fabrication_flags(answer: str, delegated_to: list[str]) -> list[str]
         if role in delegated_to:
             continue
         m = _build_content_attribution_pattern(role).search(answer)
-        if not m:
-            continue
+        if m:
+            idx = m.start()
+            snippet = answer[max(0, idx - 30): idx + len(m.group(0)) + 30].replace("\n", " ").strip()
+            flags.append(
+                f"'{role}' is presented as the source of specific content in "
+                f"the final answer but is NOT in this run's delegated_to "
+                f"({delegated_to or '(none)'}) — likely a fabricated "
+                f"citation, not a specialist actually consulted this run. "
+                f"Context: \"...{snippet}...\""
+            )
+        flags.extend(_detect_table_attribution_flags(answer, role, delegated_to))
+    return flags
+
+
+# 2026-09-19 (CLOSELOOP B1): a fourth attribution shape the checks above
+# don't cover — a markdown TABLE ROW naming a non-delegated role as its
+# subject, e.g. "| **University AI Programs Researcher** | Structured
+# course lists from five peer programs... |". None of
+# _build_content_attribution_pattern's three shapes match this: there's
+# no "(Role)" heading, no dash-prefixed source line, and no citation verb
+# immediately adjacent to the role name (the table's "Evidence Provided"
+# wording lives in the HEADER row, not per-row next to the role). Real
+# incident: run_20260917T224109Z (a from-scratch curriculum query, dev
+# lane) — a "Specialist | Evidence Provided | How It Informs..." table
+# credited University AI Programs Researcher with specific invented peer
+# institutions (Stanford, MIT, CMU, UW, Toronto) despite `delegated_to`
+# confirming it never ran that turn. 0 flags were raised at the time —
+# this closes that gap.
+#
+# Deliberately NOT "any table row naming a non-delegated role" — this
+# project already has a validated, honest pattern of a table row that
+# names a non-delegated role specifically to disclose it wasn't
+# consulted (e.g. curriculum-fetch-mmai's own clean "| Cluster
+# Interpreter | ❌ Not consulted | No gap analysis was requested... |").
+# Flagging that would reproduce the exact "exemption list is unbounded"
+# trap _detect_fabrication_flags' own docstring already warns about, just
+# inverted. So this checks the REST OF THAT SAME ROW for a negation/
+# disclosure cue before flagging — mirrors the negation-aware design in
+# eval/run_orchestrator_eval.py's _forbidden_match_is_disclaimer_only()
+# (SUITE_step5), same principle applied to a different guard.
+_TABLE_ATTRIBUTION_NEGATION_CUES = (
+    "❌", "not consulted", "not delegated", "not requested",
+    "no ", "n't ", "none", "unavailable", "was not", "were not",
+)
+
+
+def _build_table_role_cell_pattern(role: str) -> re.Pattern:
+    """Matches the start of a markdown table row whose first cell is
+    (optionally bold-wrapped) `role` — e.g. "| **Role** |" — capturing
+    the rest of that line so the caller can check it for a negation cue
+    before deciding whether this is a real attribution claim or an
+    honest "not consulted" disclosure row.
+    """
+    r = re.escape(role)
+    return re.compile(
+        r"^[ \t]*\|[ \t]*\**" + r + r"\**[ \t]*\|(?P<rest>[^\n]*)$",
+        re.IGNORECASE | re.MULTILINE,
+    )
+
+
+def _detect_table_attribution_flags(answer: str, role: str, delegated_to: list[str]) -> list[str]:
+    """Table-row variant of the attribution check — see the module-level
+    comment above `_TABLE_ATTRIBUTION_NEGATION_CUES` for the real
+    incident this closes. Only called for roles already confirmed absent
+    from `delegated_to` by the caller.
+    """
+    flags = []
+    for m in _build_table_role_cell_pattern(role).finditer(answer):
+        rest = m.group("rest").lower()
+        if any(cue in rest for cue in _TABLE_ATTRIBUTION_NEGATION_CUES):
+            continue  # honest disclosure row, not a claim
         idx = m.start()
-        snippet = answer[max(0, idx - 30): idx + len(m.group(0)) + 30].replace("\n", " ").strip()
+        snippet = answer[max(0, idx - 10): idx + len(m.group(0)) + 60].replace("\n", " ").strip()
         flags.append(
-            f"'{role}' is presented as the source of specific content in "
-            f"the final answer but is NOT in this run's delegated_to "
-            f"({delegated_to or '(none)'}) — likely a fabricated "
-            f"citation, not a specialist actually consulted this run. "
-            f"Context: \"...{snippet}...\""
+            f"'{role}' appears as the subject of a table row presenting "
+            f"specific content in the final answer but is NOT in this "
+            f"run's delegated_to ({delegated_to or '(none)'}) — likely a "
+            f"fabricated attribution table row, not a specialist actually "
+            f"consulted this run. Context: \"...{snippet}...\""
         )
     return flags
 
@@ -1370,10 +1532,39 @@ def _detect_delegation_claim_flags(answer: str, delegated_to: list[str]) -> list
 # backstory-level routing rules (see ORCHESTRATOR_BACKSTORY's MANDATORY
 # ROUTING RULES section) get ignored by the model, which is exactly what
 # happened on A1/A4.
+# 2026-09-24 (CLOSELOOP B1, attempt C): narrowed from a version that
+# also fired on bare "curriculum"/"course"/"teach"/"offers" anywhere in
+# the query. That over-broad version made EVERY curriculum-shaped
+# query — including a from-scratch "design a curriculum grounded in
+# demand" ask with no existing program to compare against — require
+# University AI Programs Researcher, exactly backwards for Appendix
+# G.2 (a from-scratch curriculum needs Cluster Interpreter + demand
+# frequency, NOT peer-program benchmarking; that's a different task,
+# G.3's Queen's-MMAI-style comparison). Confirmed via
+# chatbot/eval/orchestrator_queries.yaml + agents/test_fabrication_
+# guards.py's existing B2 test block: every case that must still
+# require this specialist does so via one of the signals kept below
+# (a bare "program(s)" mention, explicit peer language, "compare",
+# a possessive "my/our program/curriculum" — i.e. an EXISTING program
+# reference — a degree token, or a named-institution "fetch the
+# course(s)" ask) — none relied on the bare curriculum/course/teach/
+# offer alternatives being removed. The natural G.2 query ("design a
+# graduate AI/ML curriculum... For each course...") deliberately never
+# says "program", "my", "our", "peer", or "compare" — it survives this
+# narrowing exactly because it has no existing-program reference to
+# trigger on, which is the whole point of the distinction.
 _PEER_PROGRAM_INTENT_RE = re.compile(
-    r"(?i:peer[ -]?program|which (?:program|university|universities)"
-    r"|programs? (?:teach|cover|include|offer)|curricul(?:um|a)\b"
-    r"|\bcourses?\b|\bteach(?:es)?\b|\boffers?\b|\bcompares?\b"
+    r"(?i:peer[ -]?(?:program|institution)s?"
+    r"|which (?:program|university|universities)"
+    r"|\bprograms?\b|\bcompares?\b"
+    # Possessive existing-program reference — "my AI/ML Master's
+    # curriculum", "our program" — the signal that distinguishes
+    # "improve/benchmark an EXISTING program" (needs peer context)
+    # from "design A curriculum" (does not). Bounded to 40 chars and
+    # excluded from crossing a sentence boundary so it can't reach
+    # into unrelated later text.
+    r"|\bmy\b[^.?!]{0,40}?\b(?:program|curriculum)\b"
+    r"|\bour\b[^.?!]{0,40}?\b(?:program|curriculum)\b"
     r"|fetch (?:the|our|current) course)"
     # Degree-token alternatives are deliberately OUTSIDE the (?i:...)
     # scope, so they only match their real uppercase abbreviation form
@@ -1384,6 +1575,40 @@ _PEER_PROGRAM_INTENT_RE = re.compile(
 _CLUSTER_GAP_INTENT_RE = re.compile(
     r"\bclusters?\b|gap analysis|which clusters|\bmissing\b"
     r"|underrepresented|under-represented|\bcoverage\b",
+    re.IGNORECASE,
+)
+
+# 2026-09-24 (CLOSELOOP workstream b): from-scratch curriculum-design
+# intent — "design/build/create/develop/propose a curriculum" (object is
+# CURRICULUM, deliberately not "program": a bare "program" already fires
+# _PEER_PROGRAM_INTENT_RE above via its own \bprograms?\b alternative, so
+# keeping this regex scoped to "curriculum" keeps the two intents from
+# overlapping in a confusing way — "design a new PROGRAM" already reads
+# as more existing-institution-flavored language and correctly requires
+# University Programs on its own). Bounded to 40 chars, no sentence-
+# boundary crossing, same technique as _PEER_PROGRAM_INTENT_RE's
+# possessive-reference alternatives above.
+#
+# Verified against every existing eval-battery case containing "curriculum"
+# (chatbot/eval/orchestrator_queries.yaml): the five update-mixed cases
+# (data-eng/soft-skills/mlops/cloud-infra-curriculum, broad-improve-
+# curriculum) use "updating my"/"improve my"/"adding a module to my" —
+# none match a design/build/create/develop/propose verb, so this doesn't
+# fire on them (they're existing-program updates, University Programs
+# already correctly required via the possessive "my ... curriculum"
+# alternative in _PEER_PROGRAM_INTENT_RE). sector-wrap-finance-curriculum
+# ("Design a finance-focused AI/ML Master's curriculum...") DOES match
+# this regex, but also contains a bare "program" ("every such program
+# needs"), so _PEER_PROGRAM_INTENT_RE fires too and the `not
+# _PEER_PROGRAM_INTENT_RE.search(query)` guard below correctly prevents
+# double-requiring Analyst+Cluster-Interpreter on top of it — that case's
+# own must_delegate_to only requires the Analyst regardless. The natural
+# G.2 query ("Design a graduate AI/ML curriculum... Use the demand skill
+# clusters as the backbone...") matches this regex AND has no peer
+# reference at all, which is exactly the target case this exists for.
+_CURRICULUM_DESIGN_INTENT_RE = re.compile(
+    r"\b(?:design|build|create|develop|propose|recommend)\b"
+    r"[^.?!]{0,40}?\bcurriculum\b",
     re.IGNORECASE,
 )
 
@@ -1408,10 +1633,42 @@ def _detect_required_specialists(query: str) -> set[str]:
     INTENT, not the presence of a university/city name — so the
     bare-institution-name triggers were removed entirely; detection now
     relies solely on _PEER_PROGRAM_INTENT_RE, which already covers real
-    peer-program queries via intent language (program/course/curriculum/
-    teach/offer/compare) OR a degree-token mention (MMAI, MSAII, MEng,
-    MSc, MPH, MS) — both of which co-occur with genuine peer-program
-    asks without needing a separate institution-name check.
+    peer-program queries via intent language ("program(s)", "compare",
+    explicit "peer program/institution", a possessive existing-program
+    reference like "my curriculum"/"our program") OR a degree-token
+    mention (MMAI, MSAII, MEng, MSc, MPH, MS) — both of which co-occur
+    with genuine peer-program asks without needing a separate
+    institution-name check.
+
+    2026-09-24 (CLOSELOOP B1, attempt C): the bare "curriculum"/
+    "course(s)"/"teach(es)"/"offer(s)" alternatives were removed from
+    _PEER_PROGRAM_INTENT_RE — they made EVERY curriculum-shaped query
+    require University AI Programs Researcher, including a from-scratch
+    "design a curriculum grounded in demand" ask with no existing
+    program to benchmark against (Appendix G.2's actual shape). A
+    from-scratch curriculum needs Cluster Interpreter + demand
+    frequency, not peer-program content; benchmarking an EXISTING
+    program is the separate G.3-style task, still correctly required via
+    the signals kept above. See _PEER_PROGRAM_INTENT_RE's own comment
+    for the full before/after verification against every case that
+    relied on the removed alternatives.
+
+    2026-09-24 (CLOSELOOP workstream b): a THIRD intent added —
+    from-scratch curriculum-DESIGN intent (design/build/create/develop/
+    propose A CURRICULUM, no existing-program reference) now requires
+    BOTH Cluster Interpreter (Mode B — the curriculum scaffold) AND
+    Skills Taxonomy Analyst (lift/z evidence), and explicitly does NOT
+    add University AI Programs Researcher — this is the §4.6 method
+    (clustering for structure, differential analysis for evidentiary
+    weight) realized by the live system, per the new FROM-SCRATCH
+    CURRICULUM DESIGN COOPERATION PATTERN in ORCHESTRATOR_BACKSTORY. The
+    peer-intent check is a NEGATIVE gate here (`not
+    _PEER_PROGRAM_INTENT_RE.search(query)`), not a separate independent
+    trigger: a query matching both regexes (e.g. sector-wrap-finance-
+    curriculum's "every such program needs") is an existing-program-
+    adjacent ask, not a from-scratch one, and is left to the peer-intent
+    branch above only. See _CURRICULUM_DESIGN_INTENT_RE's own comment
+    for the full verification against every existing eval-battery case.
 
     Deliberately conservative/best-effort, not a full intent classifier
     — false negatives (missing a real peer-program ask) just mean this
@@ -1426,6 +1683,9 @@ def _detect_required_specialists(query: str) -> set[str]:
         required.add("University AI Programs Researcher")
     if _CLUSTER_GAP_INTENT_RE.search(query):
         required.add("Cluster Interpreter")
+    if _CURRICULUM_DESIGN_INTENT_RE.search(query) and not _PEER_PROGRAM_INTENT_RE.search(query):
+        required.add("Cluster Interpreter")
+        required.add("Skills Taxonomy Analyst")
     return required
 
 
@@ -1761,8 +2021,21 @@ def run_query(query: str) -> str:
             "program names. If the query mentions clusters, gap "
             "analysis, which clusters, missing, underrepresented, or "
             "coverage, you MUST delegate to the Cluster Interpreter (and "
-            "to the Skills Taxonomy Analyst for any lift/z). Close with "
-            "a trade-off or caveat."
+            "to the Skills Taxonomy Analyst for any lift/z). EXCEPTION — "
+            "FROM-SCRATCH DESIGN: if the query instead asks you to "
+            "design/build a NEW curriculum from scratch, grounded in "
+            "market demand or demand clusters, naming NO existing "
+            "program and requesting NO comparison, use the FROM-SCRATCH "
+            "pattern instead: delegate to Cluster Interpreter (Mode B, "
+            "the curriculum scaffold — no existing curriculum passed as "
+            "context) and to the Skills Taxonomy Analyst for lift/z on "
+            "the scaffold's key skills; build ~8-10 courses "
+            "cluster-by-cluster. Do NOT delegate to the University AI "
+            "Programs Researcher and do NOT produce any peer-program, "
+            "course-code, URL, or program-comparison content for this "
+            "case — peer benchmarking against an existing program is a "
+            "separate, later ask, not part of designing something new. "
+            "Close with a trade-off or caveat."
         ),
         agent=orchestrator,
     )

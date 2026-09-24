@@ -1297,6 +1297,531 @@ _check(
 
 
 # =====================================================================
+# CLOSELOOP B1 (2026-09-19): table-row attribution — 4th shape the
+# prose-citation attribution guard didn't cover
+# =====================================================================
+print("\n=== CLOSELOOP B1: table-row attribution fabrication ===")
+
+_realincident_table = (
+    "| Specialist | Evidence Provided | How It Informs the Recommendation |\n"
+    "|------------|-------------------|-----------------------------------|\n"
+    "| **University AI Programs Researcher** | Structured course lists from "
+    "five peer programs (Stanford, CMU, MIT, University of Washington, "
+    "University of Toronto). For example, UW's \"Artificial Intelligence "
+    "Foundations\" course. | Demonstrates benchmark alignment. |\n"
+)
+_b1_flags_real = _detect_fabrication_flags(_realincident_table, ["Skills Taxonomy Analyst"])
+_check(
+    "still-catches: the real incident (run_20260917T224109Z) — a table row "
+    "crediting a non-delegated 'University AI Programs Researcher' with "
+    "specific peer-program content — is flagged",
+    len(_b1_flags_real) == 1
+    and "University AI Programs Researcher" in _b1_flags_real[0]
+    and "table row" in _b1_flags_real[0],
+    f"got: {_b1_flags_real}",
+)
+
+_honest_table_emoji = (
+    "| Cluster Interpreter | ❌ Not consulted | No gap analysis was "
+    "requested at this stage. |\n"
+)
+_b1_flags_honest = _detect_fabrication_flags(_honest_table_emoji, ["Skills Taxonomy Analyst"])
+_check(
+    "no-longer-a-gap / correctly clean: an honest '❌ Not consulted' table "
+    "row (curriculum-fetch-mmai's own real pattern) is NOT flagged",
+    _b1_flags_honest == [],
+    f"unexpected flags: {_b1_flags_honest}",
+)
+
+_honest_table_words = (
+    "| AI Industry News Researcher | Not delegated this run — no recent "
+    "articles retrieved. | N/A |\n"
+)
+_b1_flags_honest2 = _detect_fabrication_flags(_honest_table_words, ["Skills Taxonomy Analyst"])
+_check(
+    "a differently-worded honest disclosure row ('Not delegated this "
+    "run...') is also NOT flagged — the negation-cue list isn't limited "
+    "to the emoji spelling",
+    _b1_flags_honest2 == [],
+    f"unexpected flags: {_b1_flags_honest2}",
+)
+
+_b1_flags_delegated = _detect_fabrication_flags(
+    _realincident_table, ["University AI Programs Researcher"]
+)
+_check(
+    "the identical table row is NOT flagged when the role genuinely IS in "
+    "delegated_to this run",
+    _b1_flags_delegated == [],
+    f"unexpected flags: {_b1_flags_delegated}",
+)
+
+_different_role_table = (
+    "| **AI Industry News Researcher** | Recent articles on agentic AI "
+    "adoption from three major outlets. | Confirms industry momentum. |\n"
+)
+_b1_flags_other = _detect_fabrication_flags(_different_role_table, ["Skills Taxonomy Analyst"])
+_check(
+    "still-catches: a fabricated table row for a DIFFERENT non-delegated "
+    "role (News Researcher, not University Programs) is also flagged — "
+    "not hardcoded to the one incident's specific role",
+    len(_b1_flags_other) == 1 and "AI Industry News Researcher" in _b1_flags_other[0],
+    f"got: {_b1_flags_other}",
+)
+
+
+# =====================================================================
+# CLOSELOOP B1: STRICT_DELEGATION raises for a curriculum query missing
+# the required specialists (Step 2 — enforce delegation for this run)
+# =====================================================================
+print("\n=== CLOSELOOP B1: STRICT_DELEGATION on a curriculum/cluster query ===")
+
+_g2_query = (
+    "Recommend an 8-10 course graduate AI/ML curriculum grounded in the "
+    "most recent wave of demand. Consult the Cluster Interpreter for "
+    "cluster labels and the University AI Programs Researcher for "
+    "peer-program context."
+)
+_g2_required = _detect_required_specialists(_g2_query)
+_check(
+    "the G.2-style query is detected as requiring BOTH University AI "
+    "Programs Researcher and Cluster Interpreter",
+    _g2_required == {"University AI Programs Researcher", "Cluster Interpreter"},
+    f"got: {_g2_required}",
+)
+
+_prev_strict = os.environ.get("STRICT_DELEGATION")
+os.environ["STRICT_DELEGATION"] = "true"
+try:
+    _check(
+        "_strict_delegation_enabled() reads the env var correctly",
+        _strict_delegation_enabled() is True,
+    )
+    _g2_path = _write_run_record(
+        _g2_query,
+        _steps(("Skills Taxonomy Analyst", "some real analyst output")),
+        wall_time_sec=1.0, answer="a curriculum answer missing the required specialists",
+        error=None, usage_metrics=None,
+    )
+    _delegated = sorted({"Skills Taxonomy Analyst"})
+    _missing = sorted(_detect_required_specialists(_g2_query) - set(_delegated))
+    _raised = False
+    try:
+        if _missing and _strict_delegation_enabled():
+            raise RequiredSpecialistMissingError(
+                f"STRICT_DELEGATION is on and this query's detected intent "
+                f"required {_missing}, which was/were never delegated."
+            )
+    except RequiredSpecialistMissingError:
+        _raised = True
+    _check(
+        "STRICT_DELEGATION raises RequiredSpecialistMissingError when a "
+        "G.2-style query's required specialists (Cluster Interpreter + "
+        "University Programs) were never delegated — mirrors run_query()'s "
+        "own STRICT_DELEGATION block (agents/orchestrator.py, ~line 1812)",
+        _raised,
+    )
+finally:
+    if os.path.exists(_g2_path):
+        os.remove(_g2_path)
+    full_path = _g2_path[:-len(".md")] + "_full.md"
+    if os.path.exists(full_path):
+        os.remove(full_path)
+    if _prev_strict is None:
+        os.environ.pop("STRICT_DELEGATION", None)
+    else:
+        os.environ["STRICT_DELEGATION"] = _prev_strict
+
+
+# =====================================================================
+# CLOSELOOP B1 attempt C (2026-09-24): narrowed _PEER_PROGRAM_INTENT_RE —
+# a from-scratch curriculum design no longer requires University AI
+# Programs Researcher; benchmarking an EXISTING program still does.
+# =====================================================================
+print("\n=== CLOSELOOP B1 attempt C: from-scratch vs. existing-program intent ===")
+
+_natural_g2_query = (
+    "Design a graduate AI/ML curriculum of about 8-10 courses, grounded "
+    "in the most recent wave of labour-market demand. For each course, "
+    "give a title, the demand skills or clusters it covers, and a "
+    "brief rationale."
+)
+_natural_g2_required = _detect_required_specialists(_natural_g2_query)
+_check(
+    "the NATURAL G.2 query (no hand-holding, the paper-provenance text) "
+    "requires Cluster Interpreter but NOT University AI Programs "
+    "Researcher — a from-scratch curriculum is a demand-grounding task, "
+    "not a program-comparison task. UPDATED 2026-09-24 (CLOSELOOP "
+    "workstream b): this query ALSO now requires Skills Taxonomy "
+    "Analyst — the from-scratch curriculum-design intent requires BOTH "
+    "Cluster Interpreter (structure) and the Analyst (lift/z evidence), "
+    "see _CURRICULUM_DESIGN_INTENT_RE. Was `== {'Cluster Interpreter'}` "
+    "only, before workstream b added the Analyst requirement.",
+    _natural_g2_required == {"Cluster Interpreter", "Skills Taxonomy Analyst"},
+    f"got: {_natural_g2_required}",
+)
+
+# still-required: every case that names/compares an EXISTING program
+# must keep requiring University AI Programs Researcher.
+_check(
+    "still-required: 'improve MY curriculum' (broad-improve-curriculum's "
+    "real query, references an EXISTING program via 'my') still requires "
+    "University AI Programs Researcher",
+    "University AI Programs Researcher" in _detect_required_specialists(
+        "I want to improve my AI/ML Master's curriculum. What should I focus on?"
+    ),
+)
+_check(
+    "still-required: 'peer institutions cover MLOps' (mlops-coverage-"
+    "benchmark's real query — 'institution', not 'program') still "
+    "requires University AI Programs Researcher via the widened "
+    "peer[ -]?(?:program|institution) alternative",
+    "University AI Programs Researcher" in _detect_required_specialists(
+        "I'm considering adding a dedicated MLOps module to my AI/ML "
+        "Master's. How strong is the market demand, how do peer "
+        "institutions cover MLOps today, and what recent industry "
+        "developments should shape the module's content?"
+    ),
+)
+_check(
+    "still-required: the real Rotman gap-analysis query (names a "
+    "specific existing program, MMA — not the MMAI degree token) still "
+    "requires University AI Programs Researcher via the bare "
+    "'program' trigger",
+    "University AI Programs Researcher" in _detect_required_specialists(
+        "Analyse the University of Toronto Rotman Master of Management "
+        "Analytics (MMA) program curriculum for skill gaps. First fetch "
+        "the current course list, then use the CSPA ensemble clustering "
+        "results to identify which skill clusters are missing or "
+        "underrepresented."
+    ),
+)
+_check(
+    "still-required: MIT peer-program query ('program offer') still "
+    "requires University AI Programs Researcher",
+    "University AI Programs Researcher" in _detect_required_specialists(
+        "What does MIT's AI / data science Master's program offer? "
+        "Cite specific URLs for the program page."
+    ),
+)
+_check(
+    "still-required: Queen's MMAI data-eng-curriculum-update query "
+    "('program compare') still requires University AI Programs Researcher",
+    "University AI Programs Researcher" in _detect_required_specialists(
+        "I'm updating my AI/ML Master's curriculum. What are the most "
+        "in-demand data engineering skills I should make sure my program "
+        "covers, and how does Queen's University's MMAI program compare "
+        "on this dimension?"
+    ),
+)
+
+# Re-run the full original B2 block's 9 assertions inline as a single
+# regression check — the narrowing must not have touched any of them
+# (verified individually above already; this is a compact re-assertion).
+_check(
+    "B2 regression: all 9 original required-specialist assertions still "
+    "hold after the _PEER_PROGRAM_INTENT_RE narrowing",
+    (
+        "University AI Programs Researcher" in _detect_required_specialists("which peer programs teach data engineering?")
+        and "University AI Programs Researcher" in _detect_required_specialists("What does Queen's MMAI cover?")
+        and _detect_required_specialists("Can you tell me about the best restaurants near the University of Toronto?") == set()
+        and "University AI Programs Researcher" in _detect_required_specialists(
+            "Tell me about Johns Hopkins' MPH program in biostatistics and how it compares to AI/ML programs."
+        )
+        and _detect_required_specialists("Have you heard of Stanford University?") == set()
+        and "Cluster Interpreter" in _detect_required_specialists("Which skill clusters are missing from our curriculum?")
+        and _detect_required_specialists(
+            "Which of the 6 peer programs cover these clusters, and which clusters are missing?"
+        ) >= {"University AI Programs Researcher", "Cluster Interpreter"}
+        and _detect_required_specialists("What's the best pizza place downtown?") == set()
+        and _detect_required_specialists("What are the top 5 in-demand technical skills for AI/ML roles?") == set()
+    ),
+)
+
+# --- Step 3(a): a from-scratch answer grounded in cluster labels +
+# demand frequency, with NO peer-program content, passes guard-clean ---
+_clean_g2_answer = (
+    "## Recommended 8-Course Curriculum\n\n"
+    "| # | Course | Cluster | Demand frequency |\n"
+    "|---|--------|---------|-------------------|\n"
+    "| 1 | Foundations of LLMs | Cluster 4 (AI/ML Core) | 910 postings, rising |\n"
+    "| 2 | Agentic Systems & Orchestration | Cluster 4 (AI/ML Core) | 190 postings, rising |\n\n"
+    "### Evidence Base\n\n"
+    "| Specialist | Evidence Provided |\n"
+    "|------------|--------------------|\n"
+    "| Cluster Interpreter | 10-cluster breakdown with per-cluster demand frequency. |\n"
+    "| Skills Taxonomy Analyst | Demand frequency and rising/falling trend per skill. |\n"
+)
+_clean_g2_flags = (
+    _detect_fabrication_flags(_clean_g2_answer, ["Cluster Interpreter", "Skills Taxonomy Analyst"])
+    + _detect_numeric_fabrication_flags(
+        _clean_g2_answer,
+        _steps(
+            ("Cluster Interpreter", "Cluster 4 (AI/ML Core): 910 postings, rising. 190 postings, rising."),
+            ("Skills Taxonomy Analyst", "910 postings, rising. 190 postings, rising."),
+        ),
+        ["Cluster Interpreter", "Skills Taxonomy Analyst"],
+    )
+    + _detect_content_attribution_flags(
+        _clean_g2_answer, _natural_g2_query,
+        _steps(
+            ("Cluster Interpreter", "Cluster 4 (AI/ML Core): 910 postings, rising. 190 postings, rising."),
+            ("Skills Taxonomy Analyst", "910 postings, rising. 190 postings, rising."),
+        ),
+        ["Cluster Interpreter", "Skills Taxonomy Analyst"],
+    )
+)
+_check(
+    "Step 3(a): a from-scratch curriculum answer grounded in real "
+    "Cluster Interpreter + Analyst frequency output, with no peer-"
+    "program content, passes all three content guards clean",
+    _clean_g2_flags == [],
+    f"unexpected flags: {_clean_g2_flags}",
+)
+
+# --- Step 3(b): the guards still fire on peer-program content or an
+# ungrounded lift value with no matching specialist/tool output ---
+_fabricated_g2_answer = (
+    "| University AI Programs Researcher | Stanford offers CS229 "
+    "covering this material. | \n"
+    "Large Language Models (lift 6.17x, z=9.56) anchors the core course.\n"
+)
+_fab_g2_flags = (
+    _detect_fabrication_flags(_fabricated_g2_answer, ["Cluster Interpreter"])
+    + _detect_numeric_fabrication_flags(
+        _fabricated_g2_answer,
+        _steps(("Cluster Interpreter", "Cluster 4 (AI/ML Core): 910 postings.")),
+        ["Cluster Interpreter"],
+    )
+)
+_check(
+    "Step 3(b): loosening the University-Programs requirement does NOT "
+    "blind the guards — a table-row peer-program claim with no matching "
+    "delegated specialist still flags",
+    any("University AI Programs Researcher" in f and "table row" in f for f in _fab_g2_flags),
+    f"got: {_fab_g2_flags}",
+)
+_check(
+    "Step 3(b): an ungrounded lift/z value (no real focal-skill tool "
+    "call behind it) still flags even on a from-scratch-curriculum-"
+    "shaped answer",
+    any("6.17" in f or "9.56" in f for f in _fab_g2_flags),
+    f"got: {_fab_g2_flags}",
+)
+
+# --- Step 3(c): STRICT_DELEGATION requires the RIGHT specialist for
+# each intent — Cluster Interpreter for from-scratch, University
+# Programs for an existing-program comparison ---
+_prev_strict_c = os.environ.get("STRICT_DELEGATION")
+os.environ["STRICT_DELEGATION"] = "true"
+try:
+    _fromscratch_missing = sorted(
+        _detect_required_specialists(_natural_g2_query) - {"Skills Taxonomy Analyst"}
+    )
+    _check(
+        "Step 3(c): STRICT_DELEGATION on the natural G.2 query requires "
+        "ONLY Cluster Interpreter (not University Programs) when only "
+        "the Analyst was delegated",
+        _fromscratch_missing == ["Cluster Interpreter"],
+        f"got: {_fromscratch_missing}",
+    )
+
+    _existing_program_query = (
+        "Compare the Queen's University MMAI programme against current "
+        "labour-market demand: which in-demand skills does it cover, "
+        "which is it missing?"
+    )
+    _comparison_missing = sorted(
+        _detect_required_specialists(_existing_program_query) - {"Skills Taxonomy Analyst"}
+    )
+    _check(
+        "Step 3(c): STRICT_DELEGATION on an existing-program comparison "
+        "query (G.3-style, names Queen's MMAI + 'compare') still "
+        "requires University AI Programs Researcher",
+        "University AI Programs Researcher" in _comparison_missing,
+        f"got: {_comparison_missing}",
+    )
+finally:
+    if _prev_strict_c is None:
+        os.environ.pop("STRICT_DELEGATION", None)
+    else:
+        os.environ["STRICT_DELEGATION"] = _prev_strict_c
+
+
+# =====================================================================
+# CLOSELOOP workstream b (2026-09-24): Cluster Interpreter gets a
+# from-scratch curriculum-generation role (Mode B, curriculum scaffold).
+# _CURRICULUM_DESIGN_INTENT_RE now requires {Cluster Interpreter, Skills
+# Taxonomy Analyst} for a genuine from-scratch design intent, and
+# explicitly does NOT add University AI Programs Researcher. Tests here
+# use Eric's exact STEP 5 natural-query wording from this workstream's
+# prompt (distinct phrasing from attempt C's older natural_g2_query
+# above — both now correctly resolve the same way).
+# =====================================================================
+print("\n=== CLOSELOOP workstream b: from-scratch generation role ===")
+
+_g2b_query = (
+    "Design a graduate AI/ML curriculum of about 8-10 courses grounded "
+    "in the most recent wave of labour-market demand. Use the demand "
+    "skill clusters as the backbone, and for each course give a title, "
+    "the cluster(s) and key skills it covers, and a brief rationale "
+    "grounded in how distinctively those skills are demanded."
+)
+_g2b_required = _detect_required_specialists(_g2b_query)
+_check(
+    "Step 4(c): the workstream-b natural G.2 query requires EXACTLY "
+    "{Cluster Interpreter, Skills Taxonomy Analyst} and NOT University "
+    "AI Programs Researcher",
+    _g2b_required == {"Cluster Interpreter", "Skills Taxonomy Analyst"},
+    f"got: {_g2b_required}",
+)
+
+# Regression: the existing update-mixed / gap-analysis battery cases
+# must NOT pick up a spurious Skills Taxonomy Analyst requirement from
+# the new _CURRICULUM_DESIGN_INTENT_RE branch — verified by checking
+# that branch is correctly gated off (peer-intent already fires on all
+# of these, or no design verb is present near "curriculum" at all).
+_check(
+    "regression: 'improve my curriculum' (broad-improve-curriculum) "
+    "does not gain a spurious from-scratch requirement — 'improve' is "
+    "not a design/build/create/develop/propose/recommend verb",
+    _detect_required_specialists(
+        "I want to improve my AI/ML Master's curriculum. What should I focus on?"
+    ) == {"University AI Programs Researcher"},
+)
+_check(
+    "regression: sector-wrap-finance-curriculum's real query ('Design a "
+    "... curriculum' + bare 'program') is gated off by the peer-intent "
+    "negative guard, not double-counted",
+    _detect_required_specialists(
+        "Design a finance-focused AI/ML Master's curriculum grounded in "
+        "the market data. Cover both the core agentic-AI skills every "
+        "such program needs and the finance-specific skills this sector "
+        "distinctively demands. Report lift and statistical "
+        "significance (z) for the skills you cite, and give concrete "
+        "course recommendations."
+    ) == {"University AI Programs Researcher"},
+)
+_check(
+    "regression: the Rotman gap-analysis query ('Analyse ... program "
+    "curriculum for skill gaps') has no design/build/create/develop/"
+    "propose/recommend verb near 'curriculum' — no spurious Analyst "
+    "requirement added, University Programs + Cluster Interpreter "
+    "(gap-analysis intent) unchanged",
+    _detect_required_specialists(
+        "Analyse the University of Toronto Rotman Master of Management "
+        "Analytics (MMA) program curriculum for skill gaps. First fetch "
+        "the current course list, then use the CSPA ensemble clustering "
+        "results to identify which skill clusters are missing or "
+        "underrepresented."
+    ) == {"University AI Programs Researcher", "Cluster Interpreter"},
+)
+
+# 2026-09-24 finding, out of scope for this workstream, flagged not
+# fixed: curriculum-fetch-mmai's real query contains the literal phrase
+# "Do not perform gap analysis" — _CLUSTER_GAP_INTENT_RE has no
+# negation-awareness (unlike _TABLE_ATTRIBUTION_NEGATION_CUES elsewhere
+# in this file), so "gap analysis" inside a NEGATED sentence still
+# spuriously requires Cluster Interpreter. Pre-existing (unrelated to
+# _CURRICULUM_DESIGN_INTENT_RE, confirmed unaffected by this
+# workstream's diff), reported to Eric rather than silently fixed here —
+# see the workstream-b report. Documented as a known/expected result,
+# not asserted as correct behavior.
+_check(
+    "KNOWN PRE-EXISTING ISSUE (not fixed this workstream): "
+    "curriculum-fetch-mmai's 'Do not perform gap analysis' spuriously "
+    "requires Cluster Interpreter due to no negation-awareness in "
+    "_CLUSTER_GAP_INTENT_RE — documenting current (wrong) behavior so a "
+    "future fix's diff is visible here, not asserting it's correct",
+    "Cluster Interpreter" in _detect_required_specialists(
+        "Fetch and structure the publicly available curriculum for "
+        "Queen's University MMAI program. Return a clean course list "
+        "with source URLs and the broad topic areas covered. Do not "
+        "perform gap analysis."
+    ),
+)
+
+# --- Step 4(a): a Mode-B-shaped Cluster Scaffold answer, grounded in
+# real Cluster Interpreter + Analyst output, with NO peer-program
+# content anywhere, passes all three content guards clean. ---
+_scaffold_answer = (
+    "## Cluster Scaffold — Graduate AI/ML Curriculum\n\n"
+    "**Cluster 1 — Machine Learning & Generative AI** (174 skills)\n"
+    "Top demand skills: Machine Learning (freq=5952), Generative Ai (freq=1975), "
+    "Mlops (freq=885). Anchors Course 1: Foundations of ML & GenAI.\n\n"
+    "**Cluster 3 — Data Engineering & Data Platforms** (159 skills)\n"
+    "Top demand skills: Python (freq=7198), Sql (freq=6725), Cloud Computing (freq=6155). "
+    "Anchors Course 2: Data Engineering & Cloud Platforms.\n\n"
+    "### Evidence Base\n\n"
+    "| Specialist | Evidence Provided |\n"
+    "|------------|--------------------|\n"
+    "| Cluster Interpreter | Cluster Scaffold — 4 focused clusters, top demand skills by frequency. |\n"
+    "| Skills Taxonomy Analyst | Lift/z on the scaffold's key skills. |\n"
+    "| University AI Programs Researcher | Not consulted this run — from-scratch design, no existing program to benchmark. |\n"
+)
+_scaffold_grounding_steps = _steps(
+    (
+        "Cluster Interpreter",
+        "Cluster 1 - Machine Learning & Generative AI (174 skills): "
+        "Machine Learning (freq=5952), Generative Ai (freq=1975), Mlops (freq=885). "
+        "Cluster 3 - Data Engineering & Data Platforms (159 skills): "
+        "Python (freq=7198), Sql (freq=6725), Cloud Computing (freq=6155).",
+    ),
+    ("Skills Taxonomy Analyst", "Machine Learning demand grounding, no lift/z figures cited this excerpt."),
+)
+_scaffold_flags = (
+    _detect_fabrication_flags(_scaffold_answer, ["Cluster Interpreter", "Skills Taxonomy Analyst"])
+    + _detect_numeric_fabrication_flags(
+        _scaffold_answer, _scaffold_grounding_steps, ["Cluster Interpreter", "Skills Taxonomy Analyst"]
+    )
+    + _detect_content_attribution_flags(
+        _scaffold_answer, _g2b_query, _scaffold_grounding_steps,
+        ["Cluster Interpreter", "Skills Taxonomy Analyst"],
+    )
+    + _detect_delegation_claim_flags(_scaffold_answer, ["Cluster Interpreter", "Skills Taxonomy Analyst"])
+)
+_check(
+    "Step 4(a): a Mode-B Cluster Scaffold answer (real cluster themes + "
+    "frequencies, honest '❌ Not consulted' row for University Programs, "
+    "no peer-program content) passes all four content guards clean",
+    _scaffold_flags == [],
+    f"unexpected flags: {_scaffold_flags}",
+)
+
+# --- Step 4(b): guards STILL catch a fabricated lift/z value AND
+# fabricated peer-program content on a Mode-B-shaped answer where
+# neither Cluster Interpreter nor University Programs Researcher was
+# actually delegated to. ---
+_fab_scaffold_answer = (
+    "**Cluster 1 — Machine Learning & Generative AI**\n"
+    "Top skills: Large Language Models (lift 6.17x, z=9.56).\n\n"
+    "| University AI Programs Researcher | Stanford's CS229 and MIT's "
+    "6.7960 both cover this cluster's core material. |\n"
+)
+_fab_scaffold_flags = (
+    _detect_fabrication_flags(_fab_scaffold_answer, [])
+    + _detect_numeric_fabrication_flags(_fab_scaffold_answer, [], [])
+)
+_check(
+    "Step 4(b): a fabricated peer-program table row STILL flags on a "
+    "Mode-B-shaped answer even though University Programs was never "
+    "required by _detect_required_specialists for this query shape — "
+    "the content guards are independent of the required-specialist "
+    "backstop and don't get weaker just because a specialist is now "
+    "optional rather than required",
+    any("University AI Programs Researcher" in f and "table row" in f for f in _fab_scaffold_flags),
+    f"got: {_fab_scaffold_flags}",
+)
+_check(
+    "Step 4(b): an ungrounded lift/z value on a Mode-B-shaped answer "
+    "still flags (no Cluster Interpreter/Analyst tool output behind it "
+    "at all in this fixture)",
+    any("6.17" in f or "9.56" in f for f in _fab_scaffold_flags),
+    f"got: {_fab_scaffold_flags}",
+)
+
+
+# =====================================================================
 # Summary
 # =====================================================================
 print(f"\n{'='*60}")
