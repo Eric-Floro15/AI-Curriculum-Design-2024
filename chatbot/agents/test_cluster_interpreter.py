@@ -8,7 +8,7 @@ and validated independently.
 
 What a passing run produces:
   - A coverage assessment for all 10 CSPA clusters (✅ / ⚠️ / ❌)
-  - Priority gaps for the focused clusters (2, 4, 7, 8, 9)
+  - Priority gaps for the focused clusters (1, 2, 3, 7)
   - Specific skill recommendations per missing cluster, sorted by frequency
   - A summary table
   - Caveats about cluster coverage limitations
@@ -85,7 +85,7 @@ QUERY = (
     f"{MMAI_CURRICULUM_SUMMARY}\n\n"
     "Using the CSPA ensemble clustering results, perform a systematic gap analysis: "
     "which of the 10 skill clusters are covered, underrepresented, or entirely missing "
-    "from this curriculum? For each missing or partial focused cluster (2, 4, 7, 8, 9), "
+    "from this curriculum? For each missing or partial focused cluster (1, 2, 3, 7), "
     "list the top skills the program should add, sorted by market demand frequency. "
     "End with a prioritised summary table and caveats."
 )

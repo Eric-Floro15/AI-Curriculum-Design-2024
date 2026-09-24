@@ -10,17 +10,32 @@ The co-occurrence CSVs in final_implementation/ are not used here because
 the row index was not preserved during export, making skill-to-skill lookup
 unreliable. The cluster membership file is the clean source of truth.
 
-⚠️ CLUSTER_THEMES and FOCUSED_CLUSTERS below are STALE — they're the old
-labels for the pre-clean partition (kept verbatim from before this repoint,
-per build_index_V4_repoint.md's guidance that this step is deferred to a
-paid Cluster Interpreter relabel run, not blocking). The clean partition's
-cluster IDs hold DIFFERENT skills — per CLAUDE.md, clean-W2026 cluster 2 is
-now the 282-skill agentic core, which does not correspond to old cluster 2's
-"Software Architecture & Human-Centered Design" label below. Do not trust
-these theme names or the focused-cluster set until relabeled; skill_count
-per cluster_id will also differ from what's written here since it was
-computed on the old file. Run the eyeball snippet in the repoint doc (Step
-1e/2c) for provisional labels, or wait for the production relabel run.
+2026-09-24 RELABEL (CLOSELOOP workstream a): CLUSTER_THEMES and
+FOCUSED_CLUSTERS below were rewritten offline against the clean W2026
+partition. Ground truth: clust_ensembled_results_W2026_clean.csv gives 10
+clusters sized 174/282/159/71/54/2/69/2/12/137 (sum 962), which matches
+the paper's canonical set exactly and confirms this is the clean V4
+partition. Labels were derived from
+FOR_CASSIE_AUGUST_2026_V4-TAXONOMY/01_APPENDIX_G_W2026_LABELS_CURRICULUM/
+cluster_composition_W2026.md (top-15 skills by frequency + mean job
+level/education level/salary premium per cluster) — that file, plus a
+cross-check against Clustered_Skills_W2026.xlsx in the same folder (a
+962-row per-skill file using a differently-aliased skill vocabulary but
+identical cluster sizes/numbering), confirm the live cluster_id here maps
+1:1 to that file's cluster number for all 10 clusters — sizes match
+exactly and small clusters 6/8/9 match on exact skill content (cluster 9's
+12 skills match verbatim; 6 and 8's 2-skill pairs match semantically under
+each file's own vocabulary). No membership realignment was needed.
+
+2026-09-24 CONFIRMED (post-review): CLUSTER_THEMES below was first
+drafted by hand from cluster_composition_W2026.md's stats (no canonical
+label-string source existed in the repo at that point) and reported to
+Eric for review; Eric + Cowork then approved a final wording that now
+matches Appendix G.1 verbatim — code == paper. Clusters 6, 8, and 9 are
+deliberately NOT forced into a coherent theme (2/2/12 skills, 9 is
+largely near-zero-frequency) — labeled "(heterogeneous)" rather than
+themed, per this repo's own README guidance ("don't force a label on
+incoherent clusters").
 
 Exposes:
   Python API   — all_clusters(), cluster_detail(id), skill_frequency(name)
@@ -63,26 +78,34 @@ CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "clust_ensembled_resul
 # with the V4 repoint, see build_index.py module docstring).
 V4_TAXONOMY_XLSX = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx")
 
-# Provisional cluster themes for the Winter 2026 CSPA ensemble.
-# Derived from top-frequency skills per cluster; formal labels are flagged as
-# future work in the paper — update this dict once official labels are assigned.
+# Cluster themes for the clean Winter 2026 CSPA ensemble partition.
+# FINAL labels (2026-09-24) — Eric + Cowork approved; these match the
+# paper's Appendix G.1 verbatim, so code == paper. Do not edit without a
+# corresponding Appendix G.1 change (and vice versa).
 CLUSTER_THEMES = {
-    1:  "Security & Applied AI Engineering",
-    2:  "Software Architecture & Human-Centered Design",
-    3:  "Leadership, Program Management & Strategy",
-    4:  "AI/ML Core — Generative AI, NLP & LLMs",
-    5:  "Cloud, Infrastructure & Systems Engineering",
-    6:  "Software Dev Tools — Mobile & Scientific",
-    7:  "Data Analytics, Science & Engineering",
-    8:  "Communication, Problem-Solving & Office Tools",
-    9:  "DevOps, Agile & Automation",
-    10: "Business Intelligence & Analytical Thinking",
+    1:  "Machine Learning & Generative AI",
+    2:  "Cloud, DevOps & AI Systems Deployment",
+    3:  "Data Engineering & Data Platforms",
+    4:  "Business Intelligence & Data Communication",
+    5:  "Office Productivity, Business Analysis & Admin Tools",
+    6:  "Cross-cutting analytical & collaboration terms (heterogeneous)",
+    7:  "Data Science & Statistical Foundations",
+    8:  "Training & community terms (heterogeneous)",
+    9:  "Niche & Emerging ML/AI Tooling (heterogeneous)",
+    10: "Strategic Planning, Program Management & Business Development",
 }
 
-# Clusters worth highlighting in gap analysis (focused, high-signal technical areas).
-# Excludes the large, broad-spectrum clusters (3, 5, 8) which contain diverse
-# soft/general skills and are less discriminative for targeted recommendations.
-FOCUSED_CLUSTERS = {1, 4, 7, 9, 10}
+# Clusters worth highlighting in gap analysis (focused, high-signal technical
+# areas). Selection criterion (2026-09-24 relabel, Eric + Cowork approved):
+# coherent, discriminative, TECHNICAL clusters only — 1 (Machine Learning &
+# Generative AI), 2 (Cloud, DevOps & AI Systems Deployment), 3 (Data
+# Engineering & Data Platforms), 7 (Data Science & Statistical Foundations).
+# Excludes the tiny/heterogeneous catch-alls (6, 8, 9) and the broad
+# soft-skill / general-business clusters (4, 5, 10 — BI/communication,
+# office/admin, strategy/sales/PM) which are less discriminative for
+# targeted curriculum-gap recommendations, mirroring the same
+# broad-cluster-exclusion logic the old (stale) partition used.
+FOCUSED_CLUSTERS = {1, 2, 3, 7}
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -190,9 +213,11 @@ try:
         doing gap analysis. Each cluster represents a group of skills that
         co-occur in AI/ML job postings.
 
-        Focused clusters (most discriminative for gap analysis): 1, 4, 7, 9, 10.
-        Clusters 3, 5, and 8 are large, broad-spectrum groups — less useful for
-        targeted gap-analysis recommendations.
+        Focused clusters (most discriminative for gap analysis): 1, 2, 3, 7.
+        Clusters 4, 5, and 10 are large, broad-spectrum soft-skill/business
+        groups — less useful for targeted gap-analysis recommendations.
+        Clusters 6, 8, and 9 are small/incoherent catch-alls — disclose,
+        don't theme.
         """
         clusters = all_clusters()
         lines = ["CSPA Ensemble Skill Clusters (10 total)\n"]
@@ -251,12 +276,12 @@ if __name__ == "__main__":
         flag = "⭐" if c["focused"] else "  "
         print(f"{flag} Cluster {c['cluster_id']:2d} | {c['theme']:45s} | {c['skill_count']:3d} skills | top: {c['top_skills_by_frequency'][:3]}")
 
-    print("\n=== Cluster 4 detail (AI/ML Core) ===")
-    d = cluster_detail(4)
+    print("\n=== Cluster 1 detail (Machine Learning & Generative AI) ===")
+    d = cluster_detail(1)
     for s in d["skills"][:10]:
         print(f"  {s['skill']:40s} freq={s['frequency']}")
 
-    print("\n=== Cluster 7 detail (Data Analytics, Science & Engineering) ===")
-    d = cluster_detail(7)
+    print("\n=== Cluster 3 detail (Data Engineering & Data Platforms) ===")
+    d = cluster_detail(3)
     for s in d["skills"][:10]:
         print(f"  {s['skill']:40s} freq={s['frequency']}")
