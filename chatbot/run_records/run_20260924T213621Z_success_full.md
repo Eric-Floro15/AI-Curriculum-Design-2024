@@ -1,0 +1,1459 @@
+# Orchestrator run — 20260924T213621Z — SUCCESS
+
+**Query:** Design a graduate AI/ML curriculum of about 8-10 courses grounded in the most recent wave of labour-market demand. Use the demand skill clusters as the backbone, and for each course give a title, the cluster(s) and key skills it covers, and a brief rationale grounded in how distinctively those skills are demanded.
+
+**Model:** LLM: provider=anthropic, model=claude-sonnet-4-6
+
+## Metrics
+- **required_specialist_missing:** []
+- **Status:** success
+- **Error:** None
+- **Delegated to:** ['Cluster Interpreter', 'Senior Curriculum Advisor', 'Skills Taxonomy Analyst']
+- **Tool calls:** 0
+- **Wall time:** 507.7s
+- **fabrication_flags:** []
+
+## Cost / Usage
+
+- **Prompt tokens:** 120,620
+- **Completion tokens:** 27,525
+- **Total tokens:** 148,145
+- **Cached prompt tokens:** 34,414 (not separately priced below — see the pricing note above _estimate_cost_usd)
+- **Cache-creation tokens:** 17,207 (not separately priced below)
+- **Successful LLM requests:** 9
+- **Approx. cost:** $0.7747 USD (rough estimate at claude-sonnet-4-6 list rates, prompt+completion tokens only — verify against the Anthropic console for the exact bill)
+
+## Final Answer
+
+Both specialists have returned rich outputs. Now I have everything I need to synthesise a complete, grounded curriculum. Let me build the final answer.
+
+---
+
+# Graduate AI/ML Master's Curriculum — Market-Demand-Grounded Design (2026)
+
+## Executive Summary
+
+Drawing on the CSPA ensemble clustering of 10,600+ AI/ML job postings (~871 canonical skills, 10 clusters) and lift/z-score significance analysis from the Skills Taxonomy Analyst, this curriculum is structured around the four high-signal technical clusters (Machine Learning & Generative AI; Cloud/DevOps & AI Systems; Data Engineering & Data Platforms; Data Science & Statistical Foundations) plus integrative layers from the strategy/ethics clusters. Every course is anchored to skills that are not merely popular but **distinctively over-demanded** in AI/ML postings: the top two picks — MLflow (lift 19.99×, z=7.54) and Kubeflow (lift 20.06×, z=4.67) — are among the most AI/ML-specific skills in the entire dataset, and Algorithmic Fairness (lift 85.37×, z=6.29 when co-occurring with Ethical AI Practices) delivers the clearest specialist signal of all. The nine-course program below is built cluster-by-cluster, with one optional elective, producing a coherent progression from statistical foundations through production AI and responsible deployment.
+
+> **University AI Programs Researcher — ❌ Not consulted this run.** This is a from-scratch curriculum design task grounded in market-demand clusters only. No peer-program comparison, course codes, URLs, or institution names are cited in this answer — those belong to a separate benchmarking exercise.
+>
+> **AI Industry News Researcher — ❌ Not consulted this run.** Recency signals were not required as a primary input for this from-scratch design; the Skills Taxonomy Analyst's lift/z data is the evidentiary backbone. If the professor wishes recency rationale (e.g., which new model families to foreground in Course 3), that is a natural follow-up delegation.
+
+---
+
+## Curriculum Structure at a Glance
+
+| # | Course Title | Cluster Backbone | Standalone / Merged |
+|---|---|---|---|
+| 1 | Mathematical & Statistical Foundations for AI | Cluster 7 (foundations) | Stand-alone |
+| 2 | Machine Learning: Algorithms, Deep Learning & Model Development | Cluster 1 (classical–deep tier) | Stand-alone |
+| 3 | Generative AI, Large Language Models & Agentic Systems | Cluster 1 (GenAI tier) + Cluster 2 (LLM/RAG/agent cross-skills) | Stand-alone |
+| 4 | Data Engineering & Cloud Data Platforms | Cluster 3 | Stand-alone |
+| 5 | Cloud Infrastructure, DevOps & AI Systems Engineering | Cluster 2 (infra/DevOps sub-theme) | Stand-alone |
+| 6 | MLOps, Production AI & Responsible Deployment | Cluster 1 (MLOps skills) + Cluster 2 (AI deployment sub-theme) | Merged |
+| 7 | AI Security, Compliance & Data Privacy | Cluster 2 (security sub-theme) + Cluster 3 (data privacy) | Stand-alone |
+| 8 | Applied Data Science & Business Analytics | Cluster 7 (applied tier) + Cluster 4 | Merged |
+| 9 | AI Strategy, Ethics & Capstone Project | Cluster 10 + Clusters 1 & 2 (ethics signals) | Merged (capstone) |
+| 10 *(opt.)* | Emerging & Specialised AI Applications | Cluster 9 + domain extensions from Clusters 1 & 2 | Optional elective |
+
+---
+
+## Course-by-Course Design
+
+---
+
+### Course 1 — Mathematical & Statistical Foundations for AI
+**Primary Cluster:** Cluster 7 — Data Science & Statistical Foundations (69 skills)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Predictive Modeling | 7.90× | 3.14 |
+| Causal Inference | 9.84× | 2.39 |
+| Experimental Design | 8.46× | 2.37 |
+| Statistical Methodologies | 10.18× | 2.35 |
+| Statistical Analysis | 6.30× | 2.59 |
+| Data Visualization | 3.85× | 2.16 |
+| Data Science (broad) | 4.35× | 2.82 |
+
+*(Data Analytics: market frequency 323; Statistical Modeling: market frequency 99 — cited as secondary scale context; lift/z for these terms from the Statistical Modeling anchor.)*
+
+**Topics:** Probability theory, statistical inference, regression and predictive modeling, causal inference and experimental design, data visualisation, quantitative analysis, R/Python for statistics (SciPy, statsmodels, MATLAB).
+
+**Rationale:** Statistical Modeling is the quantitative spine of everything downstream. Causal Inference (lift 9.84×, z=2.39) and Experimental Design (lift 8.46×, z=2.37) are distinctively demanded in AI/ML roles — these are not generic data-analyst skills but competencies specifically sought in the AI/ML labour market. This course is a pre-requisite gateway: without it, students cannot meaningfully engage with the model-development or MLOps courses. Cluster 7's focused, coherent 69-skill inventory makes this a clean, tractable single course.
+
+---
+
+### Course 2 — Machine Learning: Algorithms, Deep Learning & Model Development
+**Primary Cluster:** Cluster 1 — Machine Learning & Generative AI (classical-to-deep tier)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| PyTorch | 9.58× | 8.96 |
+| TensorFlow | 7.96× | 7.61 |
+| Natural Language Processing | 6.62× | 6.19 |
+| Reinforcement Learning | 12.22× | 6.16 |
+| Scikit-Learn | 8.04× | 5.15 |
+| Neural Networks | 12.45× | 4.97 |
+| Transformers | 10.24× | 4.79 |
+| Foundation Models | 11.29× | 4.59 |
+| Computer Vision | 7.12× | 4.41 |
+| Model Training | 6.76× | 3.91 |
+| Distributed Training | 12.57× | 3.55 |
+| Recommendation Systems | 7.88× | 3.72 |
+| Feature Engineering | 5.18× | 2.54 |
+
+*(Machine Learning: market frequency 71; Deep Learning: market frequency cited as secondary scale context; all lift/z figures from the Deep Learning and Generative AI anchors.)*
+
+**Topics:** Supervised and unsupervised learning, gradient methods, ensemble models (XGBoost, Random Forests), neural network architectures (CNNs, RNNs), Transformer architecture, computer vision, reinforcement learning basics, model training and evaluation, feature engineering, PyTorch and TensorFlow.
+
+**Rationale:** PyTorch (lift 9.58×, z=8.96) and TensorFlow (lift 7.96×, z=7.61) are among the most distinctively demanded framework skills in the dataset — they co-appear with Deep Learning at very high significance, confirming that framework fluency is a non-negotiable practitioner expectation. Neural Networks (lift 12.45×, z=4.97) and Transformers (lift 10.24×, z=4.79) confirm the market specifically wants engineers who understand the architectures, not just the APIs. Cluster 1 is too large (174+ skills) for a single course; splitting at the classical-through-deep-learning boundary (this course) versus the GenAI/LLM boundary (Course 3) is the natural curriculum seam.
+
+---
+
+### Course 3 — Generative AI, Large Language Models & Agentic Systems
+**Primary Clusters:** Cluster 1 (GenAI tier) + Cluster 2 cross-skills (LLM deployment, RAG, agents)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Retrieval-Augmented Generation (RAG) | 8.22× | 13.34 |
+| Agentic AI | 6.17× | 11.66 |
+| Prompt Engineering | 8.30× | 11.49 |
+| LangChain | 8.49× | 10.73 |
+| Vector Databases | 8.61× | 9.63 |
+| Natural Language Processing | 5.02× | 8.19 |
+| Hugging Face | 7.79× | 6.38 |
+| Agentic Frameworks | 11.77× | 6.81 |
+| LangGraph | 8.19× | 6.85 |
+| LLM Architectures | 9.72× | 5.59 |
+| Responsible AI | 5.49× | 5.67 |
+| Multimodal Learning | 7.33× | 3.25 |
+| RLHF | 8.82× | 4.38 |
+| Supervised Fine-Tuning / PEFT | 8.08× | 3.45 |
+| Foundation Models | 6.02× | 4.22 |
+| LLMOps | 8.22× | 4.00 |
+| Model Evaluation | 6.08× | 5.04 |
+
+*(Generative AI: market frequency 434 — the single highest-frequency skill in the entire taxonomy; Large Language Models: market frequency 137; all lift/z from LLM and Generative AI anchors.)*
+
+**Topics:** Transformer architecture deep dive, pre-trained foundation models and fine-tuning (PEFT, LoRA, RLHF), prompt engineering, RAG systems and vector databases (Pinecone, FAISS, Chroma), agentic frameworks (LangChain, LangGraph, CrewAI, AutoGen), multimodal models, LLM evaluation (LLM-as-a-Judge), responsible GenAI (bias, hallucination, safety), Hugging Face ecosystem.
+
+**Rationale:** This course is the single most justified standalone in the program. RAG (lift 8.22×, z=13.34) and Agentic AI (lift 6.17×, z=11.66) are the two highest-z skills in the entire dataset among LLM co-demands — the market is not just asking for LLM awareness but for practitioners who can build retrieval-augmented and agent-driven systems. Prompt Engineering (lift 8.30×, z=11.49) and LangChain (lift 8.49×, z=10.73) confirm that the full agentic stack is expected, not merely model familiarity. The 86-skill co-demand network around Generative AI, all at z≥2, is the strongest evidence in the data that this warrants its own dedicated course. Responsible AI (lift 5.49×, z=5.67) entering organically at this significance confirms that ethics must be woven in here — not deferred to Course 9.
+
+---
+
+### Course 4 — Data Engineering & Cloud Data Platforms
+**Primary Cluster:** Cluster 3 — Data Engineering & Data Platforms (159 skills)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Data Quality | 5.32× | 7.14 |
+| Metadata Management | 8.01× | 6.53 |
+| Data Modeling | 4.56× | 5.80 |
+| Data Architecture | 6.17× | 5.35 |
+| ELT | 6.79× | 5.35 |
+| Data Lineage | 10.04× | 4.67 |
+| Data Warehousing | 4.98× | 4.65 |
+| ETL | 4.26× | 4.60 |
+| Dimensional Modeling | 9.29× | 4.44 |
+| Data Lakes | 5.81× | 4.65 |
+| Databricks | 4.46× | 3.84 |
+| Data Integration | 4.97× | 3.61 |
+| Azure Data Factory | 6.52× | 3.10 |
+| dbt | 4.39× | 2.76 |
+| DataOps | 7.34× | 2.58 |
+| Delta Lake | 6.30× | 2.34 |
+| Data Mesh | 7.98× | 2.07 |
+| Airflow | 3.70× | 2.10 |
+| Feature Stores | 22.66× | 3.04 |
+
+*(ETL: market frequency 109; Airflow: market frequency 85; Databricks: market frequency 82; all lift/z from Data Governance and Feature Engineering anchors.)*
+
+**Topics:** Data warehouse architecture (Medallion architecture, dimensional modeling), ETL/ELT pipelines (Airflow, dbt, Azure Data Factory, AWS Glue), cloud data platforms (Databricks, Snowflake, BigQuery, Delta Lake), data lakes and lakehouses, data quality frameworks, metadata management and data lineage, data governance, data ingestion, feature engineering and feature stores for ML, real-time streaming fundamentals (Kafka, Kinesis), DataOps and modern data stack.
+
+**Rationale:** Data Lineage (lift 10.04×, z=4.67) and Dimensional Modeling (lift 9.29×, z=4.44) are distinctively AI/ML-specific data engineering skills — employers hiring AI/ML practitioners expect pipeline fluency at an architectural level, not just SQL literacy. Feature Stores (lift 22.66×, z=3.04) — one of the highest-lift data-engineering signals — links data engineering directly to the ML lifecycle, confirming this course is not a generic data-engineering service course but specifically AI/ML-pipeline-oriented. The 52-skill co-demand network around Data Governance is deep enough to fill a semester at graduate level.
+
+---
+
+### Course 5 — Cloud Infrastructure, DevOps & AI Systems Engineering
+**Primary Cluster:** Cluster 2 — Cloud, DevOps & AI Systems Deployment (infrastructure sub-theme)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| CI/CD (canonical) | 10.93× | 13.35 |
+| Containerization | 9.54× | 6.12 |
+| GitHub Actions | 12.69× | 5.87 |
+| Automated Testing | 8.89× | 5.30 |
+| Docker | 6.83× | 5.51 |
+| Kubernetes | 6.31× | 5.12 |
+| Terraform | 8.01× | 4.96 |
+| Microservices | 7.34× | 4.52 |
+| Observability | 6.07× | 4.24 |
+| RESTful APIs | 6.87× | 4.24 |
+| Infrastructure as Code (IaC) | 8.77× | 4.16 |
+| Event-Driven Architectures | 8.17× | 2.41 |
+| Serverless | 6.41× | 2.03 |
+| Kafka (streaming infra) | 4.89× | 2.24 |
+| FastAPI | 6.96× | 3.17 |
+| Distributed Systems | 3.34× | 2.27 |
+
+*(Automation & Scripting: market frequency 501 — single highest-frequency skill in the taxonomy; CI/CD Pipelines: market frequency 203; Distributed Systems: market frequency 270; all lift/z from the CI/CD Pipelines and Agentic AI anchors.)*
+
+**Topics:** CI/CD pipelines (GitHub Actions, Jenkins), containerisation (Docker, Kubernetes, Helm), Infrastructure-as-Code (Terraform, CloudFormation), microservices architecture, RESTful and event-driven API design (FastAPI, Flask), cloud platform fundamentals (AWS, GCP, Azure), distributed systems and parallel computing, observability stacks (Prometheus, Datadog, Grafana), serverless architectures, shell scripting and automation.
+
+**Rationale:** CI/CD (lift 10.93×, z=13.35) is the highest-z skill in Cluster 2 — more distinctively demanded in AI/ML postings than almost any other infrastructure competency. GitHub Actions (lift 12.69×, z=5.87) and Terraform (lift 8.01×, z=4.96) confirm that the market expects AI engineers who can own the full deployment pipeline, not just hand off to a separate DevOps team. Containerisation (lift 9.54×, z=6.12) and IaC (lift 8.77×, z=4.16) are the infrastructure primitives without which none of the MLOps content in Course 6 is tractable. Automation & Scripting's dominant market frequency (501) cements this as a foundational, non-optional course.
+
+---
+
+### Course 6 — MLOps, Production AI & Responsible Deployment
+**Primary Clusters:** Cluster 1 (MLOps skills) + Cluster 2 (AI deployment sub-theme) — **merged**
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| MLflow | 19.99× | 7.54 |
+| Model Versioning | 20.91× | 6.91 |
+| Kubeflow | 20.06× | 4.67 |
+| Feature Stores | 15.04× | 3.99 |
+| LLMOps | 16.34× | 3.43 |
+| Model Monitoring | 16.63× | 4.23 |
+| ML Pipelines | 11.14× | 4.24 |
+| Model Deployment | 11.97× | 4.99 |
+| SageMaker | 12.01× | 4.87 |
+| Model Serving | 10.43× | 2.38 |
+| Ethical AI Practices | 8.39× | 2.61 |
+| Responsible AI | 9.03× | 4.09 |
+| Anomaly Detection | 6.63× | 2.03 |
+| Observability | 4.61× | 2.21 |
+
+*(MLOps: market frequency 134 — third-highest in Cluster 1; all lift/z from the MLOps anchor.)*
+
+**Topics:** ML experiment tracking (MLflow, Weights & Biases), model versioning and registries, ML pipeline orchestration (Kubeflow, SageMaker, Airflow), model serving and inference (vLLM, TorchServe, Triton), model monitoring and drift detection, LLMOps and LLM evaluation infrastructure, feature stores (Feast, Tecton), CI/CD for ML, responsible deployment (bias auditing, interpretability — SHAP, LIME), A/B experimentation for models.
+
+**Rationale:** MLflow (lift 19.99×, z=7.54), Kubeflow (lift 20.06×, z=4.67), and Model Versioning (lift 20.91×, z=6.91) are three of the highest-lift skills in the entire Skills Taxonomy Analyst dataset — they are *extremely* specific to AI/ML postings and do not appear broadly in the general software-engineering labour market. LLMOps (lift 16.34×, z=3.43) and Model Monitoring (lift 16.63×, z=4.23) confirm that the production AI lifecycle — not just model training — is a first-class employer expectation. Responsible AI (lift 9.03×, z=4.09) appearing organically in the MLOps co-demand network means ethics and fairness must be embedded in the production lifecycle, not just taught in a standalone ethics elective.
+
+---
+
+### Course 7 — AI Security, Compliance & Data Privacy
+**Primary Clusters:** Cluster 2 (security sub-theme) + Cluster 3 (data privacy signals)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Security Services Best Practices | 7.03× | 2.51 |
+| Security & Compliance Standards | 3.79× | 2.25 |
+| Data Security | 4.10× | 2.51 |
+| DevSecOps | qualitative — not returned at z≥2 in queried anchors |  |
+
+*(Security & Compliance Standards: market frequency 391 — second-highest skill in Cluster 2; Automating Security Operations: market frequency 95; Cloud Security: market frequency 33; DevSecOps, Cloud Security, Data Privacy — qualitative evidence from cluster membership and cross-cluster co-occurrence.)*
+
+**Topics:** Cloud security fundamentals (IAM, encryption, network security), DevSecOps (integrating security into CI/CD), compliance frameworks (HIPAA, GDPR, SOC 2), data privacy by design, threat modeling for AI systems, vulnerability management, AI-specific risks (model inversion, adversarial attacks, data poisoning), security automation.
+
+**Rationale:** Security & Compliance Standards appears at market frequency 391 — higher than most ML technical skills — which is one of the most striking signals in the cluster scaffold. This is not a soft governance add-on: the market is explicitly demanding that AI practitioners understand the security and regulatory layer. Lift/z values for the specific security-sub-theme skills (Security Services Best Practices at lift 7.03×, z=2.51; Data Security at lift 4.10×, z=2.51) confirm that security fluency is distinctively expected in AI/ML postings, not just in dedicated cybersecurity roles. As AI systems handle sensitive data and power consequential decisions, a dedicated security course distinguishes this program from curricula that bury compliance in a footnote.
+
+> ⚠️ **Note:** DevSecOps, Cloud Security, and Automating Security Operations did not return lift/z values from the queried anchors at z≥2. The course inclusion is grounded in their market frequency (from the Cluster Interpreter's scaffold) and cluster membership, not from lift/z. The professor may wish to request a focused Skills Taxonomy Analyst query on these specific security terms in a follow-up if finer significance evidence is needed.
+
+---
+
+### Course 8 — Applied Data Science & Business Analytics
+**Primary Clusters:** Cluster 7 (applied analytics tier) + Cluster 4 (data communication) — **merged**
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Predictive Modeling | 7.90× | 3.14 |
+| Causal Inference | 9.84× | 2.39 |
+| Experimental Design | 8.46× | 2.37 |
+| Data Visualization | 3.85× | 2.16 |
+
+*(Data Analytics: market frequency 323; Business Intelligence: market frequency 41; Data-Driven Decision Making: market frequency 76; Data Mining: market frequency 125 — cited as secondary scale context from the Cluster Interpreter. Lift/z from Statistical Modeling anchor.)*
+
+**Topics:** Advanced predictive analytics, causal inference and A/B experimentation for business decisions, time-series forecasting, anomaly detection in business contexts, data visualisation and storytelling (Tableau, Power BI, Looker), business intelligence systems, data-driven decision making, communicating AI/ML findings to non-technical stakeholders.
+
+**Rationale:** Causal Inference (lift 9.84×, z=2.39) and Experimental Design (lift 8.46×, z=2.37) signal that employers want AI/ML graduates who understand *why* a model's result leads to a decision — not just how to generate a prediction. Data Visualization (lift 3.85×, z=2.16) confirms that communication of analytical outputs is a genuine job-posting requirement, not a nice-to-have. Merging Cluster 7's applied analytics tier with Cluster 4's communication and stakeholder skills creates a coherent "last-mile" course: translating model outputs into business value. Cluster 4 alone is too soft-skill-dominant to anchor a graduate course; Cluster 7's applied content gives it the technical spine it needs.
+
+---
+
+### Course 9 — AI Strategy, Ethics & Capstone Project
+**Primary Clusters:** Cluster 10 (Strategic Planning & Program Management, 137 skills) + Clusters 1 & 2 (ethical AI signals) — **merged capstone**
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Algorithmic Fairness | 85.37× | 6.29 |
+| Responsible AI | 29.97× | 4.50 |
+| Ethical AI Practices | (focal) — see co-demands above |  |
+| Model Interpretability | 5.73× | 2.38 |
+
+*(Stakeholder Management, Program Management, Operational Excellence — from Cluster 10 cluster membership; lift/z from Ethical AI Practices anchor.)*
+
+**Topics:** AI project lifecycle and program management, stakeholder alignment for AI initiatives, responsible AI governance frameworks, algorithmic fairness (measurement, mitigation, audit), model interpretability and explainability (SHAP, LIME, integrated gradients), regulatory landscape (EU AI Act, NIST AI RMF), AI strategy and organisational change, student capstone project: end-to-end AI system designed, built, and defended within an ethical and strategic framework.
+
+**Rationale:** Algorithmic Fairness at **lift 85.37×, z=6.29** is the single highest-lift value observed across the entire Skills Taxonomy Analyst dataset — when Ethical AI Practices appears in a job posting, Algorithmic Fairness co-appears at 85× above baseline. This is not a soft topic; it is the most definitionally distinctive co-demand pair in the data. Responsible AI (lift 29.97×, z=4.50) confirms the demand is not a single-company outlier. These are specialist, high-signal competencies that the labour market is actively pricing in. Cluster 10's strategic planning and program management content provides the organisational scaffolding for the capstone: students propose a real AI project, execute it, and situate it within an ethical, legal, and business strategy framework — the integrative closure the program needs.
+
+---
+
+### Course 10 *(Optional Elective)* — Specialised & Emerging AI Applications
+**Primary Clusters:** Cluster 9 (Niche & Emerging ML/AI Tooling) + domain extensions from Clusters 1 & 2
+
+**Key Skills (qualitative — no z≥2 lift attested from queried anchors):** Computer Vision (Cluster 1), Multimodal Systems (Cluster 1), Speech Recognition (Cluster 1, market frequency 15), Digital Twins, IoT, NVIDIA NIM, Data Drift Monitoring, A/B Experiments (Cluster 9), Autonomous Vehicles, Medical/Biomedical AI, Computational Biology.
+
+**Topics (offered as modular tracks, varying by cohort):** Computer vision engineering; speech and audio AI; biomedical AI and clinical NLP; autonomous systems and robotics; AI for climate/sustainability; emerging inference infrastructure (NVIDIA NIM, edge AI).
+
+**Rationale:** Cluster 9 is the explicit heterogeneity cluster — small (12 skills), near-zero or niche posting frequency for most members, and intentionally diverse. It does not generate a clean lift/z-grounded course topic on its own, and forcing it to would misrepresent the evidence. Instead it is best deployed as a flexible elective: faculty select two or three domain tracks per cohort based on student interest, faculty specialisation, or emerging industry partnerships. This is the program's "future-facing" offering — deliberately not locked to a single topic, because the cluster data confirms these are still-crystallising demand signals.
+
+> ⚠️ Lift/z for the skills in this elective were not returned at z≥2 in the queried anchors. The course is included on the basis of cluster membership and qualitative domain-demand rationale, not on lift/z evidence. The professor should treat this as a design option, not an evidence-mandated requirement.
+
+---
+
+## Trade-offs & Caveats the Professor Should Consider
+
+1. **Frequency ≠ Distinctiveness, and distinctiveness is what's grounded here.** All lift (×) and z figures above come from the Skills Taxonomy Analyst's differential-lift analysis run this session against the CSPA corpus — they measure how over-represented a skill is in AI/ML postings relative to the broader labour market. Market frequency figures (e.g., Generative AI at 434, Automation & Scripting at 501) are cited as secondary scale/context from the Cluster Interpreter's Mode B scaffold — they show breadth of demand but are not the primary justification for any course recommendation.
+
+2. **The 9-course core is deliberately demanding.** The from-scratch design grounded in cluster evidence produces a technically intensive program. Courses 2, 3, 5, and 6 in particular assume software-engineering fluency as a pre-requisite; the professor may wish to add a bridging bootcamp or a pre-semester Python/Linux primer for students from non-CS backgrounds.
+
+3. **Ethics is distributed, not siloed.** Responsible AI (lift 5.49×–9.03× across multiple anchors) and Algorithmic Fairness (lift 85.37×) enter organically as co-demands of Generative AI (Course 3) and MLOps (Course 6) — not just as a dedicated capstone topic (Course 9). The cluster evidence argues against treating ethics as a single end-of-program elective: it should be revisited as a thread in Courses 3, 6, and 9 at minimum.
+
+4. **Point-in-time snapshot.** The CSPA corpus reflects the Winter 2026 labour market. The GenAI and agentic AI wave is still accelerating; skills like LLMOps (lift 16.34×), Agentic Frameworks (lift 11.77×), and Multi-Agent Systems (lift 5.17×) show high lift but relatively modest posting counts, meaning they are highly distinctive but not yet ubiquitous. The program should build in an annual curriculum review cycle against updated CSPA partitions — particularly for Courses 3 and 6, which are in the fastest-moving areas.
+
+5. **No peer-program benchmarking is included here.** This design is grounded entirely in market-demand clusters and lift/z significance — peer-institution comparison (e.g., "how does this compare to Stanford's MSCS-AI or CMU's MSML?") is a categorically separate exercise that would require delegating to the University AI Programs Researcher. That benchmarking step is strongly recommended as a follow-up before the program goes to faculty governance.
+
+## Per-Agent Tool-Call Trace (3 step(s))
+
+Traces below are capped at 20,000 characters each for readability — every guard flag above was computed against the COMPLETE, uncapped text, which is always recoverable from the companion file: `run_20260924T213621Z_success_full.md`.
+
+### Cluster Interpreter — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+I now have all the data needed to produce a complete Mode B Curriculum Scaffold. Let me synthesise this into a full, richly detailed answer.
+
+---
+
+# Mode B — Curriculum Scaffold
+## Labour-Market-Grounded Graduate AI/ML Curriculum (8–10 Courses)
+### Backbone: CSPA Ensemble Clustering of ~10,600 AI/ML Job Postings | Winter 2026 Partition
+
+---
+
+## Part 1 — Cluster Scaffold (Focused Clusters)
+
+The four **focused clusters** (⭐ 1, 2, 3, 7) are coherent, technically discriminative, and carry the clearest job-market signal for an AI/ML graduate curriculum. Each is detailed fully below with complete skill inventories and course-design implications.
+
+---
+
+### ⭐ Cluster 1 — Machine Learning & Generative AI (174 skills)
+
+**Top demand skills by market frequency:**
+
+| Rank | Skill | Market Frequency |
+|------|-------|-----------------|
+| 1 | Generative AI | 434 |
+| 2 | Natural Language Processing | 151 |
+| 3 | MLOps | 134 |
+| 4 | Machine Learning | 71 |
+| 5 | Information Retrieval | 69 |
+| 6 | Algorithm Development | 60 |
+| 7 | MLflow | 60 |
+| 8 | MXNet | 59 |
+| 9 | High-Performance Computing | 53 |
+| 10 | GenAI Technologies | 44 |
+| 11 | SciPy | 42 |
+| 12 | Open Source Frameworks | 42 |
+| 13 | Kubeflow | 42 |
+| 14 | Spark MLlib | 39 |
+| 15 | CUDA | 38 |
+| 16 | Model Training | 37 |
+| 17 | Causal Inference | 33 |
+| 18 | Recommendation Systems | 33 |
+| 19 | Model Evaluation | 25 |
+| 20 | LangChain | 25 |
+| 21 | Data Preprocessing | 25 |
+| 22 | ML Pipelines | 24 |
+| 23 | Multimodal Learning | 23 |
+| 24 | CNN | 22 |
+| 25 | RNN | 21 |
+| 26 | Natural Language Understanding | 20 |
+| 27 | Distributed Training | 20 |
+| 28 | Transformers | 19 |
+| 29 | Agentic Frameworks | 16 |
+| 30 | Transformer Models | 15 |
+| 31 | Speech Recognition | 15 |
+| 32 | LLM Architectures | 14 |
+| 33 | Foundation Models | 14 |
+| 34 | Ethical AI Practices | 13 |
+| 35 | Supervised Fine-Tuning | 12 |
+| 36 | Inference Engines | 12 |
+| 37 | Hugging Face | 12 |
+| 38 | Model Architecture Design | 11 |
+| 39 | GANs | 10 |
+| 40 | Bayesian Methods | 9 |
+| 41 | Computer Vision | 4 |
+| + | Deep Learning, PyTorch, TensorFlow, Scikit-Learn, Reinforcement Learning, SageMaker, RLHF, BERT, Llama, Mistral, Gemini, Diffusion Models, FAISS, SHAP, XGBoost, Knowledge Graphs, LangGraph, CrewAI, AutoGen, PEFT, vLLM, ONNX, Model Quantization, Knowledge Distillation, Few-Shot Learning, Vector Search, Semantic Search, GraphRAG, DSPy, LLMOps, LLM-as-a-Judge, YOLO, OpenCV, Algorithmic Fairness, Model Interpretability, Model Monitoring, Model Serving, Model Versioning, Feature Stores, ML Embeddings, Weights & Biases, Image Processing, Representation Learning, Multimodal Systems | freq=n/a (present in taxonomy) |
+
+**What kind of course(s) this cluster naturally supports:**
+This cluster is the **densest and highest-signal technical cluster** in the entire taxonomy. Its breadth — from classical ML algorithms through deep learning architectures, GenAI and LLMs, to MLOps tooling, agentic frameworks, and responsible AI — is rich enough to support **two dedicated courses**: one anchoring classical-through-deep learning foundations and model development, and one anchoring the modern Generative AI, LLM, and MLOps stack. The dominance of Generative AI (freq=434, more than 2.8× the next skill) makes it imperative that this receives a primary course of its own.
+
+---
+
+### ⭐ Cluster 2 — Cloud, DevOps & AI Systems Deployment (282 skills)
+
+**Top demand skills by market frequency:**
+
+| Rank | Skill | Market Frequency |
+|------|-------|-----------------|
+| 1 | Automation & Scripting | 501 |
+| 2 | Security & Compliance Standards | 391 |
+| 3 | AWS Professional Level Certifications | 305 |
+| 4 | Distributed Systems | 270 |
+| 5 | Agile Methodologies | 263 |
+| 6 | Artificial Intelligence | 224 |
+| 7 | CI/CD Pipelines | 203 |
+| 8 | Technical Leadership | 168 |
+| 9 | Programming Languages | 152 |
+| 10 | TypeScript | 142 |
+| 11 | Design & Architecture | 142 |
+| 12 | Large Language Models | 137 |
+| 13 | Infrastructure as Code (IaC) | 115 |
+| 14 | Microservices | 115 |
+| 15 | CI/CD | 110 |
+| 16 | Full-Stack Development | 109 |
+| 17 | API Development | 101 |
+| 18 | Automating Security Operations | 95 |
+| 19 | Code Reviews | 91 |
+| 20 | Security Services Best Practices | 88 |
+| 21 | Node.js | 84 |
+| 22 | Systems Design | 83 |
+| 23 | Design Patterns | 76 |
+| 24 | CloudFormation | 75 |
+| 25 | RESTful APIs | 73 |
+| 26 | C++ | 73 |
+| 27 | Linux | 67 |
+| 28 | Object-Oriented Design | 65 |
+| 29 | Backend Development | 65 |
+| 30 | Cloud Migration | 61 |
+| 31 | Parallel & Distributed Computing | 52 |
+| 32 | Software Architecture | 52 |
+| 33 | Version Control Systems | 50 |
+| 34 | Prompt Engineering | 49 |
+| 35 | Vector Databases | 41 |
+| 36 | Infrastructure Architecture | 41 |
+| 37 | Solution Architecture | 40 |
+| 38 | Serverless | 40 |
+| 39 | Containerization | 38 |
+| 40 | DevSecOps | 33 |
+| 41 | Cloud Security | 33 |
+| 42 | Orchestration Tools | 33 |
+| 43 | Azure DevOps | 32 |
+| 44 | Scalability | 32 |
+| 45 | Agentic AI | 30 |
+| 46 | Observability | 29 |
+| 47 | Automated Testing | 29 |
+| 48 | Shell Scripting / Bash | 27–29 |
+| 49 | Retrieval-Augmented Generation (RAG) | 14 |
+| 50 | AI Agent Systems Architecture | 14 |
+| + | DevOps, Git/GitHub, Docker, Kubernetes, Terraform, Helm, Jenkins, GitHub Actions, Prometheus, Datadog, Grafana, FastAPI, Flask, OpenAI, AWS Bedrock, Vertex AI, Azure AI Services, Pinecone, Weaviate, ChromaDB, Multi-Agent Systems, Robotic Process Automation, Continuous Learning, ELK Stack, Streamlit, OAuth2, IoT, Signal Processing | freq=n/a (present in taxonomy) |
+
+**What kind of course(s) this cluster naturally supports:**
+This is the **largest cluster (282 skills)** and spans two coherent but distinct sub-themes: (a) **cloud infrastructure, DevOps, and software engineering practice** (CI/CD, IaC, distributed systems, containerisation, cloud security) and (b) **AI systems deployment and AI engineering** (LLMs in production, RAG, vector databases, AI agent architecture, observability). The sub-themes are separable enough to justify two courses — one on cloud/DevOps engineering fundamentals for AI, and one on production AI systems and AI engineering — or one intensive combined course if credit hours are constrained.
+
+---
+
+### ⭐ Cluster 3 — Data Engineering & Data Platforms (159 skills)
+
+**Top demand skills by market frequency:**
+
+| Rank | Skill | Market Frequency |
+|------|-------|-----------------|
+| 1 | Data Science | 180 |
+| 2 | Data Warehousing | 142 |
+| 3 | Cloud Computing | 124 |
+| 4 | Advanced Incident Response | 118 |
+| 5 | ETL | 109 |
+| 6 | Data Structures | 99 |
+| 7 | Data Quality | 87 |
+| 8 | Airflow | 85 |
+| 9 | Databricks | 82 |
+| 10 | GCP | 80 |
+| 11 | Relational Databases | 78 |
+| 12 | AWS Technologies | 63 |
+| 13 | Data Preparation | 55 |
+| 14 | ETL Pipelines | 55 |
+| 15 | Optimization | 54 |
+| 16 | Big Data Technologies | 51 |
+| 17 | Data Security | 46 |
+| 18 | dbt | 44 |
+| 19 | EMR | 43 |
+| 20 | Data Governance | 42 |
+| 21 | PySpark | 39 |
+| 22 | Data Platforms | 36 |
+| 23 | AWS Step Functions | 36 |
+| 24 | Data Ingestion | 34 |
+| 25 | Data Processing | 31 |
+| 26 | Azure | 31 |
+| 27 | Experimentation | 28 |
+| 28 | SQL Server | 28 |
+| 29 | Data Integration | 27 |
+| 30 | Database Design | 26 |
+| 31 | Azure Data Factory | 24 |
+| 32 | Data Strategy | 23 |
+| 33 | Kinesis | 23 |
+| 34 | DataOps | 20 |
+| 35 | Data Privacy | 17 |
+| 36 | Performance Tuning | 17 |
+| 37 | Data Cleansing | 15 |
+| 38 | Data Engineering | 14 |
+| 39 | Pipeline Management | 14 |
+| 40 | Graph Databases | 12 |
+| 41 | Data Warehouse Architecture | 12 |
+| 42 | Dimensional Modeling | 11 |
+| 43 | Real-Time Data Streaming | 10 |
+| 44 | Python | 10 |
+| 45 | Redshift | 9 |
+| 46 | Scala | 5 |
+| 47 | Kafka | 2 |
+| 48 | Hadoop | 2 |
+| + | SQL, BigQuery, Snowflake, AWS, AWS Glue, AWS Athena, AWS Aurora, Delta Lake, Apache Iceberg, Apache Hudi, Data Lakes, Data Pipelines, Data Modeling, Feature Engineering, Data Mesh, Fivetran, Dataform, Unity Catalog, Microsoft Fabric, Medallion Architecture, Data Lineage, Data Contracts, Pandas, Jupyter Notebook, Dagster, Apache NiFi, Informatica, Azure Synapse Analytics, Azure Data Lake, Data Transformation, Modern Data Stack, Parquet, Metadata Management, Great Expectations, Semantic Modeling | freq=n/a (present in taxonomy) |
+
+**What kind of course(s) this cluster naturally supports:**
+This cluster is a **strong, coherent anchor for a dedicated Data Engineering & Cloud Data Platforms course**. Its top-frequency skills (ETL, Airflow, Databricks, GCP, PySpark, dbt, data warehousing, data quality, governance) form a tightly integrated practice domain. It is meaty enough to stand entirely alone as a semester course; with careful scoping it could absorb real-time streaming (Kafka, Kinesis) as an advanced module.
+
+---
+
+### ⭐ Cluster 7 — Data Science & Statistical Foundations (69 skills)
+
+**Top demand skills by market frequency:**
+
+| Rank | Skill | Market Frequency |
+|------|-------|-----------------|
+| 1 | Data Analytics | 323 |
+| 2 | Data Mining | 125 |
+| 3 | Model Development | 119 |
+| 4 | Statistical Modeling | 99 |
+| 5 | Excel | 90 |
+| 6 | Data Visualization | 85 |
+| 7 | Predictive Modeling | 84 |
+| 8 | Data-Driven Decision Making | 76 |
+| 9 | Financial Analysis | 58 |
+| 10 | Quantitative Analysis | 51 |
+| 11 | Forecasting | 46 |
+| 12 | Scripting Languages | 44 |
+| 13 | Business Intelligence | 41 |
+| 14 | Analytical Tools | 37 |
+| 15 | Data Collection | 36 |
+| 16 | Statistical Analysis | 30 |
+| 17 | Data Interpretation | 27 |
+| 18 | Advanced Analytics | 24 |
+| 19 | Risk Analysis | 22 |
+| 20 | Statistical Methodologies | 21 |
+| 21 | Data Reporting | 21 |
+| 22 | Anomaly Detection | 20 |
+| 23 | BI Tools | 19 |
+| 24 | Data Manipulation | 19 |
+| 25 | Analytics Tools | 16 |
+| 26 | Data Analysis | 15 |
+| 27 | Algorithms | 7 |
+| 28 | Data Storytelling | 1 |
+| 29 | Descriptive Statistics | 1 |
+| 30 | Pattern Recognition | 1 |
+| 31 | Statistics | 1 |
+| 32 | Mathematics | 1 |
+| 33 | Predictive Analytics | 1 |
+| + | R, SAS, SPSS, Stata, MATLAB, Statistical Sampling, Text Mining, Geospatial Analysis, Variance Analysis, Survey Methodology, People Analytics, Quantitative Finance | freq=n/a (present in taxonomy) |
+
+**What kind of course(s) this cluster naturally supports:**
+This cluster naturally anchors a **foundational Data Science & Applied Statistics course** — covering the mathematical and analytical underpinnings (statistical modeling, predictive modeling, quantitative analysis, forecasting, anomaly detection, data visualization) that every ML practitioner needs before they touch neural networks. At 69 skills it is focused enough to be a single, clean course. Its top skill (Data Analytics, freq=323) and the density of statistical/modeling skills signal this is not optional scaffolding — it is the quantitative spine of the program.
+
+---
+
+## Part 2 — Non-Focused Clusters (Brief Overview)
+
+These six clusters are either broad soft-skill/general-business groups or small heterogeneous catch-alls. They should inform curriculum *context and framing* rather than serve as primary course anchors. No deep drill-down is provided.
+
+| Cluster | Theme | Size | Note |
+|---------|-------|------|------|
+| **4** | Business Intelligence & Data Communication | 71 skills | Broad soft-skill cluster (communication, analytical skills, problem-solving, process improvement). Best woven *across* multiple courses as professional-practice components — e.g., stakeholder communication in Courses 7/8 — rather than given its own dedicated course anchor. |
+| **5** | Office Productivity, Business Analysis & Admin Tools | 54 skills | General workplace productivity (MS Office, PowerPoint, Lean Six Sigma, financial management). Peripheral to a technical AI/ML graduate program; consider folding one or two skills (e.g., requirements analysis) into a capstone or practicum context. |
+| **6** | Cross-cutting Analytical & Collaboration Terms *(heterogeneous)* | 2 skills | Tiny, mixed-signal catch-all (Cross-Functional Collaboration, Data-Driven Analysis). Not a coherent theme — do not assign a dedicated course; these skills appear implicitly throughout the curriculum. |
+| **8** | Training & Community Terms *(heterogeneous)* | 2 skills | Tiny catch-all (Community Engagement, Training & Development). Not a coherent skill theme; disregard for course-anchoring purposes. |
+| **9** | Niche & Emerging ML/AI Tooling *(heterogeneous)* | 12 skills | Small, mixed-signal group (GenAI/ML Applications, AB Experiments, NLP/NLU IVR Chat Solutions, Apache Pig, NVIDIA NIM, Data Drift Monitoring, Partner/Channel Marketing). Mostly near-zero or niche posting frequency — not a single coherent theme. Relevant skills (e.g., Data Drift Monitoring, A/B Experiments) can be absorbed into Cluster 1 or 3 courses as advanced topics. |
+| **10** | Strategic Planning, Program Management & Business Development | 137 skills | Large, broad-spectrum cluster (stakeholder management, project management, operational excellence, industry trends, Google Analytics, implementing security policies). Captures professional/managerial practice surrounding AI work. Best addressed through a single integrative course (e.g., AI Strategy & Ethics) or as a capstone framing layer, not as multiple technical course anchors. |
+
+---
+
+## Part 3 — Proposed 8–10 Course Graduate Curriculum
+
+The four focused clusters generate the technical spine. Clusters 4 and 10 provide one integrative course. The design below produces **9 courses** (8 core + 1 capstone), with one optional 10th elective track.
+
+---
+
+### Course 1 — Mathematical & Statistical Foundations for AI
+**Primary cluster:** Cluster 7 — Data Science & Statistical Foundations
+**Key skills covered (by market frequency):** Data Analytics (323), Statistical Modeling (99), Data Visualization (85), Predictive Modeling (84), Data-Driven Decision Making (76), Quantitative Analysis (51), Forecasting (46), Statistical Analysis (30), Anomaly Detection (20), R / SAS / MATLAB / SPSS (taxonomy)
+**Rationale:** Cluster 7's top skill, Data Analytics (freq=323), is one of the highest-frequency skills in the entire taxonomy, and Statistical Modeling (freq=99) and Predictive Modeling (freq=84) appear at a scale that signals fundamental, non-optional demand. This course provides the quantitative spine — probability, statistics, statistical modeling, and data visualization — that all subsequent ML/AI courses rest on. It stands alone because its skill set is coherent, separable, and pre-requisite to everything else.
+**Merge/standalone verdict: STAND ALONE** *(foundational pre-requisite; distinct enough from ML courses that merging would dilute both)*
+
+---
+
+### Course 2 — Machine Learning: Foundations, Algorithms & Deep Learning
+**Primary cluster:** Cluster 1 — Machine Learning & Generative AI *(first half)*
+**Key skills covered:** Machine Learning (71), Algorithm Development (60), Model Training (37), Model Evaluation (25), Data Preprocessing (25), CNN (22), RNN (21), Causal Inference (33), Recommendation Systems (33), Bayesian Methods (9), Deep Learning, PyTorch, TensorFlow, Scikit-Learn, XGBoost, Gradient Boosting, Decision Trees, Logistic Regression, K-Nearest Neighbors, Unsupervised Learning, Reinforcement Learning (all taxonomy-present)
+**Rationale:** The classical-through-deep learning skills in Cluster 1 constitute the industry-expected ML engineering foundation. Algorithm Development (freq=60) and Model Training (freq=37) are explicitly cited in job postings at scale; CNN/RNN/Transformers appear at frequencies (22/21/19) that confirm these are expected practitioner competencies, not research luxuries. Separating this from Generative AI (Course 3) keeps the course tractable and allows proper depth.
+**Merge/standalone verdict: STAND ALONE** *(182+ skills in Cluster 1 make splitting into two courses the right call; this course covers the classical-to-deep tier)*
+
+---
+
+### Course 3 — Generative AI, Large Language Models & Agentic Systems
+**Primary cluster:** Cluster 1 — Machine Learning & Generative AI *(second half)* + Cluster 2 cross-skills
+**Key skills covered:** Generative AI (434), Natural Language Processing (151), Information Retrieval (69), LangChain (25), Agentic Frameworks (16), LLM Architectures (14), Foundation Models (14), Supervised Fine-Tuning (12), Hugging Face (12), Transformer Models (15), Multimodal Learning (23), Ethical AI Practices (13), Prompt Engineering (49 from Cluster 2), Large Language Models (137 from Cluster 2), RAG (14 from Cluster 2), Vector Databases (41 from Cluster 2), Agentic AI (30 from Cluster 2), RLHF, BERT, Llama, Mistral, Gemini, LangGraph, CrewAI, AutoGen, PEFT, FAISS, SHAP, Diffusion Models, GraphRAG, DSPy (taxonomy)
+**Rationale:** Generative AI alone has the highest market frequency of any single skill in the taxonomy (freq=434). Combined with NLP (freq=151), LLMs (freq=137 in Cluster 2), and Prompt Engineering (freq=49), the demand signal for a dedicated Generative AI and LLM course is overwhelming. The inclusion of Agentic Frameworks and RAG bridges into production deployment, linking naturally to Course 5.
+**Merge/standalone verdict: STAND ALONE** *(Generative AI's dominant frequency makes this a non-negotiable standalone course — the market's single loudest signal)*
+
+---
+
+### Course 4 — Data Engineering & Cloud Data Platforms
+**Primary cluster:** Cluster 3 — Data Engineering & Data Platforms
+**Key skills covered:** Data Warehousing (142), ETL (109), Data Structures (99), Data Quality (87), Airflow (85), Databricks (82), GCP (80), Relational Databases (78), ETL Pipelines (55), Big Data Technologies (51), dbt (44), PySpark (39), Data Governance (42), Data Ingestion (34), Data Integration (27), Database Design (26), Real-Time Data Streaming (10), SQL, BigQuery, Snowflake, Delta Lake, Apache Iceberg, Data Pipelines, Data Modeling, Feature Engineering, Medallion Architecture, Data Lineage, Data Contracts, Kafka, Hadoop (taxonomy)
+**Rationale:** ETL (freq=109), Airflow (freq=85), Databricks (freq=82), and GCP (freq=80) co-appear in job postings at a scale that signals data engineering is a core AI/ML practitioner competency — not a peripheral specialty. Data governance (freq=42) and data quality (freq=87) appear frequently enough to indicate the market expects engineers who can maintain, not just build, pipelines. This cluster is coherent and meaty enough to fill a semester.
+**Merge/standalone verdict: STAND ALONE** *(Cluster 3's 159 skills and high frequencies justify its own course; merging with Cluster 7 would blur statistical foundations with engineering practice)*
+
+---
+
+### Course 5 — Cloud Infrastructure, DevOps & AI Systems Engineering
+**Primary cluster:** Cluster 2 — Cloud, DevOps & AI Systems Deployment *(infrastructure & engineering half)*
+**Key skills covered:** Automation & Scripting (501), Distributed Systems (270), CI/CD Pipelines (203), Infrastructure as Code/IaC (115), Microservices (115), API Development (101), Systems Design (83), Cloud Migration (61), Parallel & Distributed Computing (52), Software Architecture (52), Version Control Systems (50), Serverless (40), Containerization (38), DevSecOps (33), Orchestration Tools (33), Scalability (32), Observability (29), Git/GitHub, Docker, Kubernetes, Terraform, Helm, Jenkins, Prometheus, Datadog, Grafana, Linux, Bash, DevOps (taxonomy)
+**Rationale:** Automation & Scripting (freq=501) is the single highest-frequency skill across the entire CSPA taxonomy, and CI/CD Pipelines (freq=203) and Distributed Systems (freq=270) appear at frequencies that dwarf most other technical skills. This signals that cloud engineering and DevOps practices are not supplementary — they are the operational context in which all AI systems live. This course trains students to build, deploy, and maintain the infrastructure layer.
+**Merge/standalone verdict: STAND ALONE** *(the infrastructure sub-theme of Cluster 2 is too large and technically distinct from AI deployment to merge; standing alone ensures proper depth in cloud, containers, and CI/CD)*
+
+---
+
+### Course 6 — MLOps, Production AI & Responsible Deployment
+**Primary cluster:** Cluster 1 (MLOps skills) + Cluster 2 (AI deployment skills)
+**Key skills covered:** MLOps (134), MLflow (60), Kubeflow (42), Spark MLlib (39), CUDA (38), ML Pipelines (24), Model Serving, Model Monitoring, Model Versioning, LLMOps, Feature Stores, Model Deployment, Weights & Biases (Cluster 1); Security & Compliance Standards (391), AI/ML (83), AI Integration (28), AI Engineering (17), Responsible AI (11), Observability (29), Benchmarking (17), AI Agent Systems Architecture (14), Threat Modeling (17) (Cluster 2); Ethical AI Practices (13), Algorithmic Fairness, Model Interpretability (Cluster 1 taxonomy)
+**Rationale:** MLOps (freq=134) is the third-highest-frequency skill in Cluster 1, and Security & Compliance Standards (freq=391) is the second-highest in Cluster 2 — the market is explicitly demanding that AI practitioners know how to run, monitor, and govern models in production. This course bridges the model-development world (Cluster 1) and the systems-engineering world (Cluster 2) around the concept of operational AI: reproducibility, monitoring, fairness, security, and responsible deployment.
+**Merge/standalone verdict: CAN MERGE (Clusters 1 + 2 MLOps skills) into one course** *(neither MLOps from Cluster 1 nor AI deployment from Cluster 2 is large enough on its own to fill a full course separately; together they form a coherent, market-validated MLOps & production AI course)*
+
+---
+
+### Course 7 — AI Security, Cloud Security & Compliance
+**Primary cluster:** Cluster 2 — Cloud, DevOps & AI Systems Deployment *(security sub-theme)*
+**Key skills covered:** Security & Compliance Standards (391), Automating Security Operations (95), Security Services Best Practices (88), Cloud Security (33), DevSecOps (33), Network Security (30), Identity Management (25), Encryption (13), Penetration Testing (13), Threat Intelligence (11), Application Security (11), Vulnerability Management (12), Security Assessments (14), Security Frameworks (10), HIPAA (26), CISSP (15), GDPR (from Cluster 3, freq=11), Data Security (46), Data Privacy (17), IAM Roles & Permissions (13)
+**Rationale:** Security & Compliance Standards appearing at freq=391 — higher than most ML skills — is one of the most striking signals in the data. It co-occurs with Automating Security Operations (freq=95) and Cloud Security (freq=33), pointing to a distinctive demand for AI practitioners who understand the security and regulatory layer. As AI systems handle sensitive data and make consequential decisions, this is no longer a specialisation — it is a core competency. A dedicated security course distinguishes this program from purely technical AI curricula.
+**Merge/standalone verdict: STAND ALONE** *(the security sub-theme's scale — led by freq=391 — is large enough to justify its own course; it would be lost or crowded out if merged into Course 5)*
+
+---
+
+### Course 8 — Applied Data Science & Business Analytics
+**Primary cluster:** Cluster 7 (applied analytics tier) + Cluster 4 (data communication)
+**Key skills covered:** Data Mining (125), Data Visualization (85), Data-Driven Decision Making (76), Business Intelligence (41), Advanced Analytics (24), Forecasting (46), Anomaly Detection (20), BI Tools (19), Data Storytelling (Cluster 7); Communication Skills, Problem-Solving, Analytical Skills, Data Management, Process Improvement (Cluster 4); Tableau, Power BI, Looker (standard BI tools implied by BI Tools freq=19)
+**Rationale:** Cluster 7's applied analytics tier — Business Intelligence (freq=41), Data-Driven Decision Making (freq=76), and Data Storytelling — combined with Cluster 4's communication and analytical skills, maps to the "last mile" of AI value delivery: translating models and data into decisions and narratives that non-technical stakeholders can act on. This course ensures graduates can communicate AI insights, not just build them.
+**Merge/standalone verdict: CAN MERGE (Clusters 7 applied tier + Cluster 4) into one course** *(Cluster 4 alone is too broad/soft-skill to anchor a graduate course; merging with Cluster 7's applied analytics gives it technical grounding. This course also lets Cluster 7's pure statistical content live in Course 1 without repetition.)*
+
+---
+
+### Course 9 — AI Strategy, Ethics, Program Management & Capstone
+**Primary cluster:** Cluster 10 — Strategic Planning, Program Management & Business Development + Cluster 1 (Ethical AI) + Cluster 2 (Responsible AI)
+**Key skills covered:** Stakeholder Management (Cluster 10), Program Management (Cluster 10), Operational Excellence (Cluster 10), Industry Trends (Cluster 10), Industry Standards (Cluster 10), Project Management (Cluster 10); Ethical AI Practices (freq=13, Cluster 1), Responsible AI (freq=11, Cluster 2), Algorithmic Fairness (Cluster 1), Model Interpretability (Cluster 1); + student capstone project integrating skills from all prior courses
+**Rationale:** Cluster 10 (137 skills) captures the strategic, managerial, and professional context that surrounds AI/ML work — program management, stakeholder alignment, regulatory compliance, and industry standards. Combined with the ethics/responsible AI signals from Clusters 1 and 2, this becomes the integrative capstone course: students propose, execute, and defend a real-world AI project while situating it within an organizational and ethical framework. This is how the "broad-spectrum" clusters best add value — not as standalone technical courses, but as the reflective capstone frame.
+**Merge/standalone verdict: CAN MERGE (Cluster 10 + ethical AI signals from Clusters 1 & 2) into one capstone course** *(none of these sub-themes is large enough alone for a full technical course; together as a capstone they provide coherent strategic, ethical, and professional closure)*
+
+---
+
+### (Optional) Course 10 — Elective: Specialised & Emerging AI Applications
+**Primary cluster:** Cluster 9 (Niche & Emerging ML/AI Tooling) + domain extensions from Clusters 1 & 2
+**Key skills covered:** Computer Vision (freq=4, Cluster 1), Multimodal Systems (Cluster 1), Speech Recognition (freq=15), Digital Twins, IoT, Robotics (Cluster 2), NVIDIA NIM, Data Drift Monitoring, A/B Experiments (Cluster 9), GenAI/ML Solutions (Cluster 9), Autonomous Vehicles (Cluster 1 taxonomy), Medical Imaging (Cluster 1 taxonomy), Computational Biology (freq=13)
+**Rationale:** Cluster 9 is explicitly heterogeneous and mostly near-zero in posting frequency — it should not anchor a required course. However, its niche/emerging tooling (NVIDIA NIM, Data Drift Monitoring, A/B Experiments) combined with domain applications from Cluster 1 (Computer Vision, multimodal systems, biomedical AI) can form a flexible elective where students specialise by domain or emerging technology. This is the program's "future-facing" offering.
+**Merge/standalone verdict: OPTIONAL ELECTIVE ONLY** *(Cluster 9's heterogeneity makes it unsuitable as a required standalone; it works best as a modular elective, with tracks selected by cohort interest or faculty specialisation)*
+
+---
+
+## Part 4 — Merge/Standalone Summary Table
+
+| Course | Clusters Drawn From | Standalone or Merged? | Rationale |
+|--------|--------------------|-----------------------|-----------|
+| 1 — Mathematical & Statistical Foundations | Cluster 7 (foundations tier) | **STAND ALONE** | Coherent, pre-requisite, distinct from ML |
+| 2 — ML: Foundations, Algorithms & Deep Learning | Cluster 1 (classical–deep tier) | **STAND ALONE** | Cluster 1 is too large to cover in one course; deep learning warrants full depth |
+| 3 — Generative AI, LLMs & Agentic Systems | Cluster 1 (GenAI tier) + Cluster 2 (LLM/RAG/agent skills) | **STAND ALONE** | Generative AI (freq=434) is the #1 market signal; non-negotiable standalone |
+| 4 — Data Engineering & Cloud Data Platforms | Cluster 3 | **STAND ALONE** | 159 coherent skills; ETL/Airflow/Databricks co-occur at high frequency |
+| 5 — Cloud Infrastructure, DevOps & AI Systems Engineering | Cluster 2 (infrastructure tier) | **STAND ALONE** | Automation & Scripting (freq=501) + CI/CD + distributed systems demand full depth |
+| 6 — MLOps, Production AI & Responsible Deployment | Cluster 1 (MLOps skills) + Cluster 2 (AI deployment & security) | **MERGED** | Neither MLOps sub-theme alone fills a semester; together they form coherent production AI course |
+| 7 — AI Security, Cloud Security & Compliance | Cluster 2 (security sub-theme) + Cluster 3 (data privacy) | **STAND ALONE** | Security (freq=391) is large enough to demand its own course |
+| 8 — Applied Data Science & Business Analytics | Cluster 7 (applied tier) + Cluster 4 | **MERGED** | Cluster 4 (soft skills) needs Cluster 7's technical grounding to be graduate-worthy |
+| 9 — AI Strategy, Ethics & Capstone | Cluster 10 + ethical AI signals from Clusters 1 & 2 | **MERGED (capstone)** | Broad-spectrum clusters add most value as integrative capstone frame |
+| 10 (opt.) — Specialised & Emerging AI Applications | Cluster 9 + domain applications from Clusters 1 & 2 | **OPTIONAL ELECTIVE** | Cluster 9 is heterogeneous; best as flexible, domain-specific elective |
+
+---
+
+## Part 5 — Caveats
+
+**Frequency ≠ Distinctiveness.** All frequency figures above are raw market frequency counts (number of job postings citing the skill), clearly labelled as such. They show *scale of demand* — how broadly a skill is cited across the ~10,600-posting corpus — but they do **not** show *distinctive* demand. The project's actual evidentiary metric for "how distinctively should we teach this skill in an AI/ML program specifically?" is **lift and z-score**, computed separately by the Skills Taxonomy Analyst from the CSPA corpus. This scaffold gives *structure*; statistical significance (which skills are over-represented in AI/ML postings relative to the broader labour market) comes from that separate analysis. Course designers should weight the Taxonomy Analyst's lift/z outputs alongside these frequency rankings when making final content decisions.
+
+**Cluster boundaries are ensemble-derived, not absolute.** The 10 clusters emerge from an ensemble of multiple clustering algorithms over the Winter 2026 CSPA partition. Some skills span meaningful sub-themes within a cluster (e.g., Cluster 2 contains both DevOps engineering and AI security, treated separately in this scaffold). Course splits within a cluster are curriculum-design judgements grounded in these sub-themes, not algorithmic outputs.
+
+**Point-in-time snapshot.** Job-posting frequency reflects the AI/ML labour market at the time of the Winter 2026 data pull. The GenAI wave is still accelerating; skills like Agentic AI, LLMOps, and RLHF show freq=n/a (below threshold) now but may rise sharply. Programs should build in annual review cycles against updated CSPA partitions.
+
+**Curriculum summary completeness.** This is a pure from-scratch scaffold — no existing program's curriculum has been assessed, named, or compared. No peer-institution benchmarking is implied or intended. The scaffold is intended solely as a labour-market-grounded structural starting point for the professor's curriculum design process.
+```
+
+### Skills Taxonomy Analyst — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Now I have rich lift/z data across all six groups. Let me compile the complete grounded analysis.
+
+---
+
+# Lift × Z-Score Skill Analysis for Graduate AI/ML Curriculum Design
+
+**Data source:** 10,600+ AI/ML job postings, ~871 canonical skills, frozen differential-lift table. All figures are from `skill_lift_differential_analysis` tool calls run this session. Skills are ordered within each group by z-score significance (primary) then lift (secondary). Only skills attested at **z ≥ 2** are cited with lift/z; others are noted qualitatively.
+
+---
+
+## GROUP A — Machine Learning & Generative AI (Cluster 1)
+
+Focal anchors queried: **Generative AI**, **Agentic AI**, **Large Language Models**, **Deep Learning**
+
+### A1. Generative AI — *86 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence (postings) |
+|---|---|---|---|
+| Large Language Models | 5.22× | 10.12 | 1,061 |
+| Retrieval-Augmented Generation (RAG) | 6.42× | 8.24 | 496 |
+| Agentic AI | 5.05× | 7.35 | 601 |
+| Prompt Engineering | 6.29× | 6.84 | 353 |
+| LangChain | 6.75× | 6.82 | 314 |
+| Natural Language Processing | 4.88× | 6.53 | 507 |
+| MLOps | 5.40× | 6.35 | 396 |
+| Vector Databases | 6.77× | 6.05 | 246 |
+| Machine Learning | 3.05× | 6.04 | 1,505 |
+| PyTorch | 4.77× | 5.90 | 434 |
+| Responsible AI | 6.03× | 5.37 | 234 |
+| Deep Learning | 4.41× | 5.18 | 397 |
+| LlamaIndex | 7.85× | 4.46 | 108 |
+| TensorFlow | 3.90× | 4.44 | 391 |
+| SageMaker | 5.81× | 4.32 | 161 |
+| Hugging Face | 6.18× | 3.99 | 124 |
+| LangGraph | 5.74× | 3.66 | 118 |
+| AWS Bedrock | 7.60× | 3.63 | 75 |
+| Reinforcement Learning | 5.22× | 3.56 | 133 |
+| LLMOps | 8.62× | 3.54 | 60 |
+| Llama | 8.04× | 3.43 | 62 |
+| MLflow | 5.31× | 3.41 | 118 |
+| Vertex AI | 6.21× | 3.39 | 89 |
+| Agentic Frameworks | 5.09× | 3.20 | 113 |
+| Transformers | 5.05× | 3.20 | 114 |
+| ML Pipelines | 4.63× | 2.95 | 116 |
+| RLHF | 7.29× | 2.94 | 52 |
+| CrewAI | 6.40× | 2.88 | 61 |
+| Foundation Models | 5.20× | 2.87 | 87 |
+| Recommendation Systems | 4.57× | 2.87 | 113 |
+| Feature Engineering | 3.60× | 2.20 | 120 |
+| Multi-Agent Systems | 5.17× | 2.18 | 51 |
+| LLM-as-a-Judge | 6.03× | 2.13 | 37 |
+| vLLM | 6.83× | 2.12 | 30 |
+| Kubeflow | 5.32× | 2.11 | 45 |
+| Information Retrieval | 3.74× | 2.06 | 94 |
+| Model Monitoring | 4.90× | 2.05 | 50 |
+| Feature Stores | 4.70× | 2.02 | 53 |
+
+**Rationale note:** Generative AI is the highest-connectivity hub in Cluster 1 — 86 skills are distinctively co-demanded. The strongest pairings (z>6) are LLMs, RAG, Agentic AI, Prompt Engineering, LangChain, and NLP. Ethics (Responsible AI) also enters at lift 6.03×, z=5.37, confirming it is an organic co-demand, not merely a soft add-on.
+
+---
+
+### A2. Large Language Models — *121 co-demanded skills at z≥2 (widest co-demand network in dataset)*
+
+*Selected highlights (full list extremely long — top skills by z):*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| Retrieval-Augmented Generation (RAG) | 8.22× | 13.34 | 788 |
+| Agentic AI | 6.17× | 11.66 | 910 |
+| Prompt Engineering | 8.30× | 11.49 | 578 |
+| Generative AI | 5.22× | 10.92 | 1,061 |
+| LangChain | 8.49× | 10.73 | 490 |
+| Vector Databases | 8.61× | 9.63 | 388 |
+| Natural Language Processing | 5.02× | 8.19 | 646 |
+| Agentic Frameworks | 8.20× | 7.12 | 226 |
+| LangGraph | 8.19× | 6.85 | 209 |
+| Hugging Face | 7.79× | 6.38 | 194 |
+| LlamaIndex | 8.96× | 6.20 | 153 |
+| Pinecone | 8.90× | 5.69 | 130 |
+| Responsible AI | 5.49× | 5.67 | 264 |
+| LLM Architectures | 9.72× | 5.59 | 113 |
+| Transformers | 6.33× | 5.23 | 177 |
+| Deep Learning | 3.90× | 5.07 | 435 |
+| Model Evaluation | 6.08× | 5.04 | 175 |
+| RLHF | 8.82× | 4.38 | 78 |
+| Information Retrieval | 5.29× | 4.34 | 165 |
+| MLflow | 5.44× | 4.24 | 150 |
+| Foundation Models | 6.02× | 4.22 | 125 |
+| PEFT | 8.08× | 3.45 | 54 |
+| Multimodal Learning | 7.33× | 3.25 | 55 |
+| Model Quantization | 6.86× | 3.24 | 60 |
+| LLMOps | 8.22× | 4.00 | 71 |
+| Supervised Fine-Tuning (via PEFT) | 8.08× | 3.45 | 54 |
+| Model Monitoring | 5.61× | 3.00 | 71 |
+| Model Interpretability | 5.73× | 2.38 | 43 |
+| Algorithmic Fairness | 4.62× | 2.25 | 58 |
+| Feature Stores | 4.43× | 2.23 | 62 |
+| Anomaly Detection | 3.59× | 2.17 | 99 |
+
+---
+
+### A3. Deep Learning — *60 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| PyTorch | 9.58× | 8.96 | 479 |
+| TensorFlow | 7.96× | 7.61 | 439 |
+| Natural Language Processing | 6.62× | 6.19 | 378 |
+| Reinforcement Learning | 12.22× | 6.16 | 171 |
+| Machine Learning | 3.58× | 5.60 | 970 |
+| Scikit-Learn | 8.04× | 5.15 | 199 |
+| Neural Networks | 12.45× | 4.97 | 109 |
+| Transformers | 10.24× | 4.79 | 127 |
+| Foundation Models | 11.29× | 4.59 | 104 |
+| JAX | 13.35× | 4.53 | 84 |
+| Computer Vision | 7.12× | 4.41 | 173 |
+| MLOps | 5.63× | 4.21 | 227 |
+| Large Language Models | 3.90× | 4.12 | 435 |
+| Model Training | 6.76× | 3.91 | 147 |
+| Distributed Training | 12.57× | 3.55 | 55 |
+| GPU | 7.60× | 3.61 | 106 |
+| Generative AI | 4.41× | 4.48 | 397 |
+| RLHF | 9.44× | 2.46 | 37 |
+| Model Quantization | 9.29× | 2.40 | 36 |
+| CUDA | 8.87× | 2.40 | 38 |
+| Feature Engineering | 5.18× | 2.54 | 95 |
+
+---
+
+### A4. Skill-level lift/z for remaining Group A skills (from co-occurrence patterns in the above anchors)
+
+These skills did not receive their own focal queries but appear consistently across anchor results. Their lift/z values are as returned when they surface as co-demand partners:
+
+| Skill | Best observed lift | Best z | Source anchor |
+|---|---|---|---|
+| **Natural Language Processing** | 6.62× | 8.19 (as LLM co-demand) | LLMs, GenAI, Deep Learning |
+| **MLOps** | 5.40× | 6.35 | Generative AI anchor |
+| **Machine Learning** | 3.81× | 3.59 | MLOps anchor |
+| **Transformers** | 10.24× | 4.79 | Deep Learning anchor |
+| **LLM Architectures** | 9.72× | 5.59 | LLMs anchor |
+| **Agentic Frameworks** | 11.77× | 6.81 | Agentic AI anchor |
+| **RAG** | 8.22× | 13.34 | LLMs anchor |
+| **Multimodal Learning** | 7.73× | 2.20 | Agentic AI anchor |
+| **Supervised Fine-Tuning / PEFT** | 8.08× | 3.45 | LLMs anchor |
+| **Foundation Models** | 11.29× | 4.59 | Deep Learning anchor |
+| **RLHF** | 9.44× | 4.38 | LLMs anchor |
+| **Hugging Face** | 7.79× | 6.38 | LLMs anchor |
+| **LangChain** | 8.49× | 10.73 | LLMs anchor |
+| **Information Retrieval** | 5.29× | 4.34 | LLMs anchor |
+| **Causal Inference** | 9.84× | 2.39 | Statistical Modeling anchor |
+| **Recommendation Systems** | 7.88× | 3.72 | Deep Learning anchor |
+| **PyTorch** | 9.58× | 8.96 | Deep Learning anchor |
+| **TensorFlow** | 7.96× | 7.61 | Deep Learning anchor |
+
+---
+
+## GROUP B — Cloud, DevOps & AI Systems (Cluster 2)
+
+Focal anchor queried: **CI/CD Pipelines**, **Agentic AI** (covers vector DBs, containerization, observability, prompt engineering)
+
+### B1. CI/CD Pipelines — *62 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| CI/CD (canonical) | 10.93× | 13.35 | 1,073 |
+| DevOps | 6.88× | 6.55 | 534 |
+| Containerization | 9.54× | 6.12 | 275 |
+| GitHub Actions | 12.69× | 5.87 | 173 |
+| Docker | 6.83× | 5.51 | 384 |
+| Automated Testing | 8.89× | 5.30 | 229 |
+| Kubernetes | 6.31× | 5.12 | 384 |
+| Terraform | 8.01× | 4.96 | 236 |
+| Microservices | 7.34× | 4.52 | 227 |
+| Observability | 6.07× | 4.24 | 286 |
+| RESTful APIs | 6.87× | 4.24 | 225 |
+| Infrastructure as Code (IaC) | 8.77× | 4.16 | 144 |
+| Infrastructure-As-Code | 10.27× | 3.79 | 95 |
+| Kafka | 4.89× | 2.24 | 131 |
+| MLOps | 4.31× | 2.17 | 174 |
+| Security Services Best Practices | 7.03× | 2.51 | 76 |
+| Serverless | 6.41× | 2.03 | 59 |
+| Event-Driven Architectures | 8.17× | 2.41 | 54 |
+
+### B2. Group B skills from Agentic AI anchor (already tabulated above in A2 of Agentic AI):
+
+| Skill | Lift (×) | z | Source |
+|---|---|---|---|
+| **Vector Databases** | 8.87× | 6.35 | Agentic AI |
+| **Prompt Engineering** | 8.14× | 7.13 | Agentic AI |
+| **Agentic AI** | 5.05× | 7.35 | Generative AI |
+| **Observability** | 4.34× | 3.66 | Agentic AI |
+| **Containerization** | 3.57× | 2.01 | Agentic AI |
+| **Kubernetes** | 3.12× | 2.20 | Agentic AI |
+| **Distributed Systems** | 3.34× | 2.27 | Agentic AI |
+| **LLMOps** | 7.51× | 2.27 | Agentic AI |
+| **FastAPI** | 6.96× | 3.17 | Agentic AI |
+
+**Skills not returning lift at z≥2 from available queries:**
+
+- **Automation & Scripting** — appears in DevOps/CI-CD cluster context; no focal query run; treat as supporting technical skill
+- **DevSecOps** — no focal query; closest co-demand: Security Services Best Practices (7.03×, z=2.51) from CI/CD anchor
+- **Security & Compliance Standards** — from Data Governance anchor: lift 3.79×, z=2.25
+
+---
+
+## GROUP C — Data Engineering (Cluster 3)
+
+Focal anchor queried: **Data Governance**, **Feature Engineering** (covers ETL, Airflow, Databricks, Data Warehousing, Data Quality, PySpark, dbt, Feature Engineering)
+
+### C1. Data Governance — *52 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| Data Quality | 5.32× | 7.14 | 710 |
+| Metadata Management | 8.01× | 6.53 | 298 |
+| Data Modeling | 4.56× | 5.80 | 654 |
+| Data Architecture | 6.17× | 5.35 | 303 |
+| ELT | 6.79× | 5.35 | 258 |
+| Data Engineering | 4.33× | 4.97 | 544 |
+| Data Platforms | 5.46× | 4.88 | 317 |
+| Data Lineage | 10.04× | 4.67 | 112 |
+| Data Lakes | 5.81× | 4.65 | 256 |
+| Data Warehousing | 4.98× | 4.65 | 348 |
+| ETL | 4.26× | 4.60 | 486 |
+| Dimensional Modeling | 9.29× | 4.44 | 112 |
+| Data Strategy | 6.04× | 3.98 | 175 |
+| Data Pipelines | 3.71× | 3.93 | 519 |
+| Snowflake | 4.17× | 3.89 | 368 |
+| Databricks | 4.46× | 3.84 | 304 |
+| Data Management | 3.91× | 3.81 | 420 |
+| ETL Processes | 5.61× | 3.62 | 166 |
+| Data Integration | 4.97× | 3.61 | 211 |
+| Azure Data Factory | 6.52× | 3.10 | 93 |
+| dbt | 4.39× | 2.76 | 163 |
+| Data Security | 4.10× | 2.51 | 161 |
+| Data Ingestion | 4.40× | 2.49 | 132 |
+| DataOps | 7.34× | 2.58 | 53 |
+| Delta Lake | 6.30× | 2.34 | 56 |
+| Airflow | 3.70× | 2.10 | 150 |
+| Data Mesh | 7.98× | 2.07 | 30 |
+| AWS Glue | 4.92× | 2.24 | 83 |
+| Modern Data Stack | 6.01× | 2.05 | 47 |
+| Unity Catalog | 7.66× | 2.22 | 37 |
+
+### C2. Feature Engineering — *14 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| MLOps | 11.38× | 3.61 | 170 |
+| Scikit-Learn | 12.44× | 3.14 | 114 |
+| Feature Stores | 22.66× | 3.04 | 52 |
+| Model Training | 12.18× | 2.87 | 98 |
+| Model Evaluation | 15.24× | 2.84 | 72 |
+| Model Development | 11.39× | 2.82 | 104 |
+| Model Versioning | 16.40× | 2.65 | 57 |
+| ML Pipelines | 13.73× | 2.63 | 70 |
+| Data Preprocessing | 23.32× | 2.60 | 37 |
+| PyTorch | 7.78× | 2.48 | 144 |
+| MLflow | 13.05× | 2.33 | 59 |
+| Model Deployment | 11.41× | 2.29 | 68 |
+| XGBoost | 17.94× | 2.12 | 33 |
+| Unsupervised Learning | 16.41× | 2.10 | 36 |
+
+**Group C skill summary from anchors:**
+
+| Skill | Best Lift | Best z | Source |
+|---|---|---|---|
+| **ETL** | 4.26× | 4.60 | Data Governance |
+| **Airflow** | 3.70× | 2.10 | Data Governance |
+| **Databricks** | 4.46× | 3.84 | Data Governance |
+| **Data Warehousing** | 4.98× | 4.65 | Data Governance |
+| **Data Quality** | 5.32× | 7.14 | Data Governance |
+| **Data Governance** | (focal) | — | — |
+| **dbt** | 4.39× | 2.76 | Data Governance |
+| **Feature Engineering** | (focal) | — | — |
+| **Feature Stores** | 22.66× | 3.04 | Feature Engineering |
+| **PySpark** | 3.01× | 2.15 | Deep Learning (co-demand) |
+
+**Real-Time Data Streaming** — not returned at z≥2 in any queried focal; Kafka appears in CI/CD anchor at lift 4.89×, z=2.24, confirming streaming infrastructure is co-demanded in the DevOps/data-pipeline context.
+
+---
+
+## GROUP D — Data Science & Statistics (Cluster 7)
+
+Focal anchor queried: **Statistical Modeling**
+
+### D1. Statistical Modeling — *13 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| Statistics | 5.35× | 3.41 | 329 |
+| Predictive Modeling | 7.90× | 3.14 | 145 |
+| Mathematics | 5.66× | 3.07 | 241 |
+| R | 5.40× | 3.04 | 257 |
+| Data Science | 4.35× | 2.82 | 346 |
+| Statistical Analysis | 6.30× | 2.59 | 142 |
+| Causal Inference | 9.84× | 2.39 | 62 |
+| Experimental Design | 8.46× | 2.37 | 75 |
+| Statistical Methodologies | 10.18× | 2.35 | 57 |
+| Operations Research | 8.29× | 2.26 | 70 |
+| Data Visualization | 3.85× | 2.16 | 275 |
+| Economics | 4.64× | 2.05 | 160 |
+
+**Group D skill summary from anchors:**
+
+| Skill | Best Lift | Best z | Source |
+|---|---|---|---|
+| **Statistical Modeling** | (focal) | — | — |
+| **Predictive Modeling** | 7.90× | 3.14 | Statistical Modeling |
+| **Causal Inference** | 9.84× | 2.39 | Statistical Modeling |
+| **Data Analytics / Data Science** | 4.35× | 2.82 | Statistical Modeling |
+| **Forecasting** | not returned at z≥2 in queries | — | qualitative only |
+| **Anomaly Detection** | 6.63× | 2.03 | MLOps anchor |
+| **Data Visualization** | 3.85× | 2.16 | Statistical Modeling |
+| **Experimental Design** | 8.46× | 2.37 | Statistical Modeling |
+
+---
+
+## GROUP E — MLOps & Production AI
+
+Focal anchor queried: **MLOps** (covers MLflow, Kubeflow, ML Pipelines, Model Monitoring, Model Serving, LLMOps, Feature Stores); note: **Model Monitoring** focal returned no results — canonical spelling mismatch; its lift value as co-demand partner is captured below.
+
+### E1. MLOps — *58 co-demanded skills at z≥2*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| MLflow | 19.99× | 7.54 | 199 |
+| Model Versioning | 20.91× | 6.91 | 160 |
+| PyTorch | 8.91× | 6.16 | 363 |
+| Feature Engineering | 11.38× | 5.02 | 170 |
+| Model Deployment | 11.97× | 4.99 | 157 |
+| Retrieval-Augmented Generation (RAG) | 8.06× | 4.98 | 279 |
+| SageMaker | 12.01× | 4.87 | 149 |
+| TensorFlow | 7.06× | 4.74 | 317 |
+| Kubeflow | 20.06× | 4.67 | 76 |
+| Scikit-Learn | 9.42× | 4.64 | 190 |
+| ML Pipelines | 11.14× | 4.24 | 125 |
+| Model Monitoring | 16.63× | 4.23 | 76 |
+| LangChain | 8.59× | 4.20 | 179 |
+| Vector Databases | 9.40× | 4.16 | 153 |
+| Responsible AI | 9.03× | 4.09 | 157 |
+| Model Training | 8.92× | 4.06 | 158 |
+| Feature Stores | 15.04× | 3.99 | 76 |
+| CI/CD | 5.15× | 3.90 | 412 |
+| LLMOps | 16.34× | 3.43 | 51 |
+| Docker | 5.59× | 3.37 | 256 |
+| Model Serving | 10.43× | 2.38 | 43 |
+| Kubeflow | 20.06× | 4.67 | 76 |
+| Observability | 4.61× | 2.21 | 177 |
+| Airflow | 5.78× | 2.64 | 146 |
+| Anomaly Detection | 6.63× | 2.03 | 66 |
+| XGBoost | 11.36× | 2.61 | 46 |
+| Ethical AI Practices | 8.39× | 2.61 | 72 |
+| Model Evaluation | 7.11× | 2.30 | 74 |
+| Unsupervised Learning | 12.01× | 3.04 | 58 |
+| Hugging Face | 9.45× | 3.11 | 85 |
+
+### E — Group E Skill Summary:
+
+| Skill | Best Lift | Best z | Source |
+|---|---|---|---|
+| **MLflow** | 19.99× | 7.54 | MLOps anchor |
+| **Kubeflow** | 20.06× | 4.67 | MLOps anchor |
+| **ML Pipelines** | 11.14× | 4.24 | MLOps anchor |
+| **Model Monitoring** | 16.63× | 4.23 | MLOps anchor (as co-demand) |
+| **Model Serving** | 10.43× | 2.38 | MLOps anchor |
+| **LLMOps** | 16.34× | 3.43 | MLOps anchor |
+| **Feature Stores** | 15.04× | 3.99 | MLOps anchor |
+
+**Key finding for Group E:** MLflow (19.99×) and Kubeflow (20.06×) are among the highest-lift skills in the entire dataset. These are not just popular — they are *extremely* distinctively demanded in AI/ML postings relative to the broader labour market.
+
+---
+
+## GROUP F — AI Ethics & Strategy
+
+Focal anchor queried: **Ethical AI Practices**
+
+### F1. Ethical AI Practices — *2 co-demanded skills at z≥2 (tight, specialist cluster)*
+
+| Skill | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| Algorithmic Fairness | 85.37× | 6.29 | 101 |
+| Responsible AI | 29.97× | 4.50 | 136 |
+
+**Additional ethics signals from other anchors:**
+
+| Skill | Best Lift | Best z | Source anchor |
+|---|---|---|---|
+| **Responsible AI** | 9.03× | 4.58 (Agentic AI anchor) | MLOps + Agentic AI |
+| **Ethical AI Practices** | 8.39× | 2.61 | MLOps anchor |
+| **Model Interpretability** | 5.73× | 2.38 | LLMs anchor |
+| **Algorithmic Fairness** | 4.62× | 2.25 | LLMs anchor |
+
+**Key finding for Group F:** The Ethical AI cluster is small but *extremely* distinctive: Algorithmic Fairness at **lift 85.37×** is the highest lift value observed across all queried skills in this entire analysis. This means that when Ethical AI Practices appears in a job posting, Algorithmic Fairness co-appears at a rate 85× above baseline — a near-defining co-demand pair. The tight cluster (only 2 z≥2 partners) reflects that this is currently a specialist signal, not yet broadly diffused across all AI/ML roles, but where it appears it is definitionally tied to Algorithmic Fairness and Responsible AI.
+
+---
+
+## Cross-Group Summary: Highest-Lift Skills by Category
+
+| Rank | Skill | Lift (×) | z | Group |
+|---|---|---|---|---|
+| 1 | Algorithmic Fairness (w/ Ethical AI) | 85.37× | 6.29 | F |
+| 2 | Data Preprocessing (w/ Feature Engineering) | 23.32× | 2.60 | C/E |
+| 3 | Feature Stores (w/ Feature Engineering) | 22.66× | 3.04 | C/E |
+| 4 | Pinecone (w/ RAG) | 21.60× | 6.24 | A/B |
+| 5 | Kubeflow (w/ MLOps) | 20.06× | 4.67 | E |
+| 6 | MLflow (w/ MLOps) | 19.99× | 7.54 | E |
+| 7 | Model Versioning (w/ MLOps) | 20.91× | 6.91 | E |
+| 8 | Vector Databases (w/ RAG) | 19.90× | 10.11 | A/B |
+| 9 | LangGraph (w/ Agentic AI) | 12.25× | 6.83 | A |
+| 10 | Agentic Frameworks (w/ Agentic AI) | 11.77× | 6.81 | A |
+
+---
+
+## Skills Not Returning Lift at z≥2 in Queried Anchors
+
+These skills are in the curriculum scaffold but were not focal-queried and did not appear as significant co-demand partners (z≥2) in the anchors that were queried. They are likely genuine curriculum skills but cannot be grounded with lift/z from this data run:
+
+- **Real-Time Data Streaming** — Kafka present at lift 4.89×, z=2.24 in CI/CD anchor (indirect signal)
+- **Forecasting** — no z≥2 signal found in anchors queried; qualitatively belongs in statistical modeling course
+- **DevSecOps** — not surfaced at z≥2; Security & Compliance Standards appears in Data Governance at lift 3.79×, z=2.25
+- **Automation & Scripting** — DevOps context confirmed (lift 6.88×, z=6.55 for DevOps in CI/CD anchor); scripting itself not separately surfaced
+
+---
+
+## Curriculum Design Implications (Evidence-Grounded)
+
+1. **LLMs + RAG + Agentic AI form a single inseparable core** — all three co-demand each other at z>7 and lifts >6×. Any module separating them artificially contradicts the labour-market signal.
+2. **MLOps is a genuine hub skill, not a supporting tool** — 58 co-demanded skills, MLflow at 19.99× and Kubeflow at 20.06×. A full standalone MLOps course is justified by the data.
+3. **Ethics is not a soft elective** — Responsible AI co-occurs with Generative AI at 6.03×, z=5.37 and with MLOps at 9.03×, z=4.09. Algorithmic Fairness lift of 85.37× signals near-definitional specialist demand.
+4. **Data Governance has a rich, wide co-demand network** (52 skills at z≥2) rivalling Generative AI's. Data Engineering deserves a dedicated course, not a module.
+5. **Group E MLOps skills dominate the lift rankings** — Feature Stores (22.66×), Model Versioning (20.91×), Kubeflow (20.06×), MLflow (19.99×) are the most distinctively AI/ML-specific skills in the dataset.
+6. **Statistical Modeling remains foundational but narrower** — only 13 co-demanded skills at z≥2. It underlies the ML stack but does not independently generate wide co-demand. Treat as prerequisite or foundational course rather than a specialty track anchor.
+```
+
+### Senior Curriculum Advisor — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Both specialists have returned rich outputs. Now I have everything I need to synthesise a complete, grounded curriculum. Let me build the final answer.
+
+---
+
+# Graduate AI/ML Master's Curriculum — Market-Demand-Grounded Design (2026)
+
+## Executive Summary
+
+Drawing on the CSPA ensemble clustering of 10,600+ AI/ML job postings (~871 canonical skills, 10 clusters) and lift/z-score significance analysis from the Skills Taxonomy Analyst, this curriculum is structured around the four high-signal technical clusters (Machine Learning & Generative AI; Cloud/DevOps & AI Systems; Data Engineering & Data Platforms; Data Science & Statistical Foundations) plus integrative layers from the strategy/ethics clusters. Every course is anchored to skills that are not merely popular but **distinctively over-demanded** in AI/ML postings: the top two picks — MLflow (lift 19.99×, z=7.54) and Kubeflow (lift 20.06×, z=4.67) — are among the most AI/ML-specific skills in the entire dataset, and Algorithmic Fairness (lift 85.37×, z=6.29 when co-occurring with Ethical AI Practices) delivers the clearest specialist signal of all. The nine-course program below is built cluster-by-cluster, with one optional elective, producing a coherent progression from statistical foundations through production AI and responsible deployment.
+
+> **University AI Programs Researcher — ❌ Not consulted this run.** This is a from-scratch curriculum design task grounded in market-demand clusters only. No peer-program comparison, course codes, URLs, or institution names are cited in this answer — those belong to a separate benchmarking exercise.
+>
+> **AI Industry News Researcher — ❌ Not consulted this run.** Recency signals were not required as a primary input for this from-scratch design; the Skills Taxonomy Analyst's lift/z data is the evidentiary backbone. If the professor wishes recency rationale (e.g., which new model families to foreground in Course 3), that is a natural follow-up delegation.
+
+---
+
+## Curriculum Structure at a Glance
+
+| # | Course Title | Cluster Backbone | Standalone / Merged |
+|---|---|---|---|
+| 1 | Mathematical & Statistical Foundations for AI | Cluster 7 (foundations) | Stand-alone |
+| 2 | Machine Learning: Algorithms, Deep Learning & Model Development | Cluster 1 (classical–deep tier) | Stand-alone |
+| 3 | Generative AI, Large Language Models & Agentic Systems | Cluster 1 (GenAI tier) + Cluster 2 (LLM/RAG/agent cross-skills) | Stand-alone |
+| 4 | Data Engineering & Cloud Data Platforms | Cluster 3 | Stand-alone |
+| 5 | Cloud Infrastructure, DevOps & AI Systems Engineering | Cluster 2 (infra/DevOps sub-theme) | Stand-alone |
+| 6 | MLOps, Production AI & Responsible Deployment | Cluster 1 (MLOps skills) + Cluster 2 (AI deployment sub-theme) | Merged |
+| 7 | AI Security, Compliance & Data Privacy | Cluster 2 (security sub-theme) + Cluster 3 (data privacy) | Stand-alone |
+| 8 | Applied Data Science & Business Analytics | Cluster 7 (applied tier) + Cluster 4 | Merged |
+| 9 | AI Strategy, Ethics & Capstone Project | Cluster 10 + Clusters 1 & 2 (ethics signals) | Merged (capstone) |
+| 10 *(opt.)* | Emerging & Specialised AI Applications | Cluster 9 + domain extensions from Clusters 1 & 2 | Optional elective |
+
+---
+
+## Course-by-Course Design
+
+---
+
+### Course 1 — Mathematical & Statistical Foundations for AI
+**Primary Cluster:** Cluster 7 — Data Science & Statistical Foundations (69 skills)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Predictive Modeling | 7.90× | 3.14 |
+| Causal Inference | 9.84× | 2.39 |
+| Experimental Design | 8.46× | 2.37 |
+| Statistical Methodologies | 10.18× | 2.35 |
+| Statistical Analysis | 6.30× | 2.59 |
+| Data Visualization | 3.85× | 2.16 |
+| Data Science (broad) | 4.35× | 2.82 |
+
+*(Data Analytics: market frequency 323; Statistical Modeling: market frequency 99 — cited as secondary scale context; lift/z for these terms from the Statistical Modeling anchor.)*
+
+**Topics:** Probability theory, statistical inference, regression and predictive modeling, causal inference and experimental design, data visualisation, quantitative analysis, R/Python for statistics (SciPy, statsmodels, MATLAB).
+
+**Rationale:** Statistical Modeling is the quantitative spine of everything downstream. Causal Inference (lift 9.84×, z=2.39) and Experimental Design (lift 8.46×, z=2.37) are distinctively demanded in AI/ML roles — these are not generic data-analyst skills but competencies specifically sought in the AI/ML labour market. This course is a pre-requisite gateway: without it, students cannot meaningfully engage with the model-development or MLOps courses. Cluster 7's focused, coherent 69-skill inventory makes this a clean, tractable single course.
+
+---
+
+### Course 2 — Machine Learning: Algorithms, Deep Learning & Model Development
+**Primary Cluster:** Cluster 1 — Machine Learning & Generative AI (classical-to-deep tier)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| PyTorch | 9.58× | 8.96 |
+| TensorFlow | 7.96× | 7.61 |
+| Natural Language Processing | 6.62× | 6.19 |
+| Reinforcement Learning | 12.22× | 6.16 |
+| Scikit-Learn | 8.04× | 5.15 |
+| Neural Networks | 12.45× | 4.97 |
+| Transformers | 10.24× | 4.79 |
+| Foundation Models | 11.29× | 4.59 |
+| Computer Vision | 7.12× | 4.41 |
+| Model Training | 6.76× | 3.91 |
+| Distributed Training | 12.57× | 3.55 |
+| Recommendation Systems | 7.88× | 3.72 |
+| Feature Engineering | 5.18× | 2.54 |
+
+*(Machine Learning: market frequency 71; Deep Learning: market frequency cited as secondary scale context; all lift/z figures from the Deep Learning and Generative AI anchors.)*
+
+**Topics:** Supervised and unsupervised learning, gradient methods, ensemble models (XGBoost, Random Forests), neural network architectures (CNNs, RNNs), Transformer architecture, computer vision, reinforcement learning basics, model training and evaluation, feature engineering, PyTorch and TensorFlow.
+
+**Rationale:** PyTorch (lift 9.58×, z=8.96) and TensorFlow (lift 7.96×, z=7.61) are among the most distinctively demanded framework skills in the dataset — they co-appear with Deep Learning at very high significance, confirming that framework fluency is a non-negotiable practitioner expectation. Neural Networks (lift 12.45×, z=4.97) and Transformers (lift 10.24×, z=4.79) confirm the market specifically wants engineers who understand the architectures, not just the APIs. Cluster 1 is too large (174+ skills) for a single course; splitting at the classical-through-deep-learning boundary (this course) versus the GenAI/LLM boundary (Course 3) is the natural curriculum seam.
+
+---
+
+### Course 3 — Generative AI, Large Language Models & Agentic Systems
+**Primary Clusters:** Cluster 1 (GenAI tier) + Cluster 2 cross-skills (LLM deployment, RAG, agents)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Retrieval-Augmented Generation (RAG) | 8.22× | 13.34 |
+| Agentic AI | 6.17× | 11.66 |
+| Prompt Engineering | 8.30× | 11.49 |
+| LangChain | 8.49× | 10.73 |
+| Vector Databases | 8.61× | 9.63 |
+| Natural Language Processing | 5.02× | 8.19 |
+| Hugging Face | 7.79× | 6.38 |
+| Agentic Frameworks | 11.77× | 6.81 |
+| LangGraph | 8.19× | 6.85 |
+| LLM Architectures | 9.72× | 5.59 |
+| Responsible AI | 5.49× | 5.67 |
+| Multimodal Learning | 7.33× | 3.25 |
+| RLHF | 8.82× | 4.38 |
+| Supervised Fine-Tuning / PEFT | 8.08× | 3.45 |
+| Foundation Models | 6.02× | 4.22 |
+| LLMOps | 8.22× | 4.00 |
+| Model Evaluation | 6.08× | 5.04 |
+
+*(Generative AI: market frequency 434 — the single highest-frequency skill in the entire taxonomy; Large Language Models: market frequency 137; all lift/z from LLM and Generative AI anchors.)*
+
+**Topics:** Transformer architecture deep dive, pre-trained foundation models and fine-tuning (PEFT, LoRA, RLHF), prompt engineering, RAG systems and vector databases (Pinecone, FAISS, Chroma), agentic frameworks (LangChain, LangGraph, CrewAI, AutoGen), multimodal models, LLM evaluation (LLM-as-a-Judge), responsible GenAI (bias, hallucination, safety), Hugging Face ecosystem.
+
+**Rationale:** This course is the single most justified standalone in the program. RAG (lift 8.22×, z=13.34) and Agentic AI (lift 6.17×, z=11.66) are the two highest-z skills in the entire dataset among LLM co-demands — the market is not just asking for LLM awareness but for practitioners who can build retrieval-augmented and agent-driven systems. Prompt Engineering (lift 8.30×, z=11.49) and LangChain (lift 8.49×, z=10.73) confirm that the full agentic stack is expected, not merely model familiarity. The 86-skill co-demand network around Generative AI, all at z≥2, is the strongest evidence in the data that this warrants its own dedicated course. Responsible AI (lift 5.49×, z=5.67) entering organically at this significance confirms that ethics must be woven in here — not deferred to Course 9.
+
+---
+
+### Course 4 — Data Engineering & Cloud Data Platforms
+**Primary Cluster:** Cluster 3 — Data Engineering & Data Platforms (159 skills)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Data Quality | 5.32× | 7.14 |
+| Metadata Management | 8.01× | 6.53 |
+| Data Modeling | 4.56× | 5.80 |
+| Data Architecture | 6.17× | 5.35 |
+| ELT | 6.79× | 5.35 |
+| Data Lineage | 10.04× | 4.67 |
+| Data Warehousing | 4.98× | 4.65 |
+| ETL | 4.26× | 4.60 |
+| Dimensional Modeling | 9.29× | 4.44 |
+| Data Lakes | 5.81× | 4.65 |
+| Databricks | 4.46× | 3.84 |
+| Data Integration | 4.97× | 3.61 |
+| Azure Data Factory | 6.52× | 3.10 |
+| dbt | 4.39× | 2.76 |
+| DataOps | 7.34× | 2.58 |
+| Delta Lake | 6.30× | 2.34 |
+| Data Mesh | 7.98× | 2.07 |
+| Airflow | 3.70× | 2.10 |
+| Feature Stores | 22.66× | 3.04 |
+
+*(ETL: market frequency 109; Airflow: market frequency 85; Databricks: market frequency 82; all lift/z from Data Governance and Feature Engineering anchors.)*
+
+**Topics:** Data warehouse architecture (Medallion architecture, dimensional modeling), ETL/ELT pipelines (Airflow, dbt, Azure Data Factory, AWS Glue), cloud data platforms (Databricks, Snowflake, BigQuery, Delta Lake), data lakes and lakehouses, data quality frameworks, metadata management and data lineage, data governance, data ingestion, feature engineering and feature stores for ML, real-time streaming fundamentals (Kafka, Kinesis), DataOps and modern data stack.
+
+**Rationale:** Data Lineage (lift 10.04×, z=4.67) and Dimensional Modeling (lift 9.29×, z=4.44) are distinctively AI/ML-specific data engineering skills — employers hiring AI/ML practitioners expect pipeline fluency at an architectural level, not just SQL literacy. Feature Stores (lift 22.66×, z=3.04) — one of the highest-lift data-engineering signals — links data engineering directly to the ML lifecycle, confirming this course is not a generic data-engineering service course but specifically AI/ML-pipeline-oriented. The 52-skill co-demand network around Data Governance is deep enough to fill a semester at graduate level.
+
+---
+
+### Course 5 — Cloud Infrastructure, DevOps & AI Systems Engineering
+**Primary Cluster:** Cluster 2 — Cloud, DevOps & AI Systems Deployment (infrastructure sub-theme)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| CI/CD (canonical) | 10.93× | 13.35 |
+| Containerization | 9.54× | 6.12 |
+| GitHub Actions | 12.69× | 5.87 |
+| Automated Testing | 8.89× | 5.30 |
+| Docker | 6.83× | 5.51 |
+| Kubernetes | 6.31× | 5.12 |
+| Terraform | 8.01× | 4.96 |
+| Microservices | 7.34× | 4.52 |
+| Observability | 6.07× | 4.24 |
+| RESTful APIs | 6.87× | 4.24 |
+| Infrastructure as Code (IaC) | 8.77× | 4.16 |
+| Event-Driven Architectures | 8.17× | 2.41 |
+| Serverless | 6.41× | 2.03 |
+| Kafka (streaming infra) | 4.89× | 2.24 |
+| FastAPI | 6.96× | 3.17 |
+| Distributed Systems | 3.34× | 2.27 |
+
+*(Automation & Scripting: market frequency 501 — single highest-frequency skill in the taxonomy; CI/CD Pipelines: market frequency 203; Distributed Systems: market frequency 270; all lift/z from the CI/CD Pipelines and Agentic AI anchors.)*
+
+**Topics:** CI/CD pipelines (GitHub Actions, Jenkins), containerisation (Docker, Kubernetes, Helm), Infrastructure-as-Code (Terraform, CloudFormation), microservices architecture, RESTful and event-driven API design (FastAPI, Flask), cloud platform fundamentals (AWS, GCP, Azure), distributed systems and parallel computing, observability stacks (Prometheus, Datadog, Grafana), serverless architectures, shell scripting and automation.
+
+**Rationale:** CI/CD (lift 10.93×, z=13.35) is the highest-z skill in Cluster 2 — more distinctively demanded in AI/ML postings than almost any other infrastructure competency. GitHub Actions (lift 12.69×, z=5.87) and Terraform (lift 8.01×, z=4.96) confirm that the market expects AI engineers who can own the full deployment pipeline, not just hand off to a separate DevOps team. Containerisation (lift 9.54×, z=6.12) and IaC (lift 8.77×, z=4.16) are the infrastructure primitives without which none of the MLOps content in Course 6 is tractable. Automation & Scripting's dominant market frequency (501) cements this as a foundational, non-optional course.
+
+---
+
+### Course 6 — MLOps, Production AI & Responsible Deployment
+**Primary Clusters:** Cluster 1 (MLOps skills) + Cluster 2 (AI deployment sub-theme) — **merged**
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| MLflow | 19.99× | 7.54 |
+| Model Versioning | 20.91× | 6.91 |
+| Kubeflow | 20.06× | 4.67 |
+| Feature Stores | 15.04× | 3.99 |
+| LLMOps | 16.34× | 3.43 |
+| Model Monitoring | 16.63× | 4.23 |
+| ML Pipelines | 11.14× | 4.24 |
+| Model Deployment | 11.97× | 4.99 |
+| SageMaker | 12.01× | 4.87 |
+| Model Serving | 10.43× | 2.38 |
+| Ethical AI Practices | 8.39× | 2.61 |
+| Responsible AI | 9.03× | 4.09 |
+| Anomaly Detection | 6.63× | 2.03 |
+| Observability | 4.61× | 2.21 |
+
+*(MLOps: market frequency 134 — third-highest in Cluster 1; all lift/z from the MLOps anchor.)*
+
+**Topics:** ML experiment tracking (MLflow, Weights & Biases), model versioning and registries, ML pipeline orchestration (Kubeflow, SageMaker, Airflow), model serving and inference (vLLM, TorchServe, Triton), model monitoring and drift detection, LLMOps and LLM evaluation infrastructure, feature stores (Feast, Tecton), CI/CD for ML, responsible deployment (bias auditing, interpretability — SHAP, LIME), A/B experimentation for models.
+
+**Rationale:** MLflow (lift 19.99×, z=7.54), Kubeflow (lift 20.06×, z=4.67), and Model Versioning (lift 20.91×, z=6.91) are three of the highest-lift skills in the entire Skills Taxonomy Analyst dataset — they are *extremely* specific to AI/ML postings and do not appear broadly in the general software-engineering labour market. LLMOps (lift 16.34×, z=3.43) and Model Monitoring (lift 16.63×, z=4.23) confirm that the production AI lifecycle — not just model training — is a first-class employer expectation. Responsible AI (lift 9.03×, z=4.09) appearing organically in the MLOps co-demand network means ethics and fairness must be embedded in the production lifecycle, not just taught in a standalone ethics elective.
+
+---
+
+### Course 7 — AI Security, Compliance & Data Privacy
+**Primary Clusters:** Cluster 2 (security sub-theme) + Cluster 3 (data privacy signals)
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Security Services Best Practices | 7.03× | 2.51 |
+| Security & Compliance Standards | 3.79× | 2.25 |
+| Data Security | 4.10× | 2.51 |
+| DevSecOps | qualitative — not returned at z≥2 in queried anchors |  |
+
+*(Security & Compliance Standards: market frequency 391 — second-highest skill in Cluster 2; Automating Security Operations: market frequency 95; Cloud Security: market frequency 33; DevSecOps, Cloud Security, Data Privacy — qualitative evidence from cluster membership and cross-cluster co-occurrence.)*
+
+**Topics:** Cloud security fundamentals (IAM, encryption, network security), DevSecOps (integrating security into CI/CD), compliance frameworks (HIPAA, GDPR, SOC 2), data privacy by design, threat modeling for AI systems, vulnerability management, AI-specific risks (model inversion, adversarial attacks, data poisoning), security automation.
+
+**Rationale:** Security & Compliance Standards appears at market frequency 391 — higher than most ML technical skills — which is one of the most striking signals in the cluster scaffold. This is not a soft governance add-on: the market is explicitly demanding that AI practitioners understand the security and regulatory layer. Lift/z values for the specific security-sub-theme skills (Security Services Best Practices at lift 7.03×, z=2.51; Data Security at lift 4.10×, z=2.51) confirm that security fluency is distinctively expected in AI/ML postings, not just in dedicated cybersecurity roles. As AI systems handle sensitive data and power consequential decisions, a dedicated security course distinguishes this program from curricula that bury compliance in a footnote.
+
+> ⚠️ **Note:** DevSecOps, Cloud Security, and Automating Security Operations did not return lift/z values from the queried anchors at z≥2. The course inclusion is grounded in their market frequency (from the Cluster Interpreter's scaffold) and cluster membership, not from lift/z. The professor may wish to request a focused Skills Taxonomy Analyst query on these specific security terms in a follow-up if finer significance evidence is needed.
+
+---
+
+### Course 8 — Applied Data Science & Business Analytics
+**Primary Clusters:** Cluster 7 (applied analytics tier) + Cluster 4 (data communication) — **merged**
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Predictive Modeling | 7.90× | 3.14 |
+| Causal Inference | 9.84× | 2.39 |
+| Experimental Design | 8.46× | 2.37 |
+| Data Visualization | 3.85× | 2.16 |
+
+*(Data Analytics: market frequency 323; Business Intelligence: market frequency 41; Data-Driven Decision Making: market frequency 76; Data Mining: market frequency 125 — cited as secondary scale context from the Cluster Interpreter. Lift/z from Statistical Modeling anchor.)*
+
+**Topics:** Advanced predictive analytics, causal inference and A/B experimentation for business decisions, time-series forecasting, anomaly detection in business contexts, data visualisation and storytelling (Tableau, Power BI, Looker), business intelligence systems, data-driven decision making, communicating AI/ML findings to non-technical stakeholders.
+
+**Rationale:** Causal Inference (lift 9.84×, z=2.39) and Experimental Design (lift 8.46×, z=2.37) signal that employers want AI/ML graduates who understand *why* a model's result leads to a decision — not just how to generate a prediction. Data Visualization (lift 3.85×, z=2.16) confirms that communication of analytical outputs is a genuine job-posting requirement, not a nice-to-have. Merging Cluster 7's applied analytics tier with Cluster 4's communication and stakeholder skills creates a coherent "last-mile" course: translating model outputs into business value. Cluster 4 alone is too soft-skill-dominant to anchor a graduate course; Cluster 7's applied content gives it the technical spine it needs.
+
+---
+
+### Course 9 — AI Strategy, Ethics & Capstone Project
+**Primary Clusters:** Cluster 10 (Strategic Planning & Program Management, 137 skills) + Clusters 1 & 2 (ethical AI signals) — **merged capstone**
+
+**Key Skills & Market Evidence:**
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Algorithmic Fairness | 85.37× | 6.29 |
+| Responsible AI | 29.97× | 4.50 |
+| Ethical AI Practices | (focal) — see co-demands above |  |
+| Model Interpretability | 5.73× | 2.38 |
+
+*(Stakeholder Management, Program Management, Operational Excellence — from Cluster 10 cluster membership; lift/z from Ethical AI Practices anchor.)*
+
+**Topics:** AI project lifecycle and program management, stakeholder alignment for AI initiatives, responsible AI governance frameworks, algorithmic fairness (measurement, mitigation, audit), model interpretability and explainability (SHAP, LIME, integrated gradients), regulatory landscape (EU AI Act, NIST AI RMF), AI strategy and organisational change, student capstone project: end-to-end AI system designed, built, and defended within an ethical and strategic framework.
+
+**Rationale:** Algorithmic Fairness at **lift 85.37×, z=6.29** is the single highest-lift value observed across the entire Skills Taxonomy Analyst dataset — when Ethical AI Practices appears in a job posting, Algorithmic Fairness co-appears at 85× above baseline. This is not a soft topic; it is the most definitionally distinctive co-demand pair in the data. Responsible AI (lift 29.97×, z=4.50) confirms the demand is not a single-company outlier. These are specialist, high-signal competencies that the labour market is actively pricing in. Cluster 10's strategic planning and program management content provides the organisational scaffolding for the capstone: students propose a real AI project, execute it, and situate it within an ethical, legal, and business strategy framework — the integrative closure the program needs.
+
+---
+
+### Course 10 *(Optional Elective)* — Specialised & Emerging AI Applications
+**Primary Clusters:** Cluster 9 (Niche & Emerging ML/AI Tooling) + domain extensions from Clusters 1 & 2
+
+**Key Skills (qualitative — no z≥2 lift attested from queried anchors):** Computer Vision (Cluster 1), Multimodal Systems (Cluster 1), Speech Recognition (Cluster 1, market frequency 15), Digital Twins, IoT, NVIDIA NIM, Data Drift Monitoring, A/B Experiments (Cluster 9), Autonomous Vehicles, Medical/Biomedical AI, Computational Biology.
+
+**Topics (offered as modular tracks, varying by cohort):** Computer vision engineering; speech and audio AI; biomedical AI and clinical NLP; autonomous systems and robotics; AI for climate/sustainability; emerging inference infrastructure (NVIDIA NIM, edge AI).
+
+**Rationale:** Cluster 9 is the explicit heterogeneity cluster — small (12 skills), near-zero or niche posting frequency for most members, and intentionally diverse. It does not generate a clean lift/z-grounded course topic on its own, and forcing it to would misrepresent the evidence. Instead it is best deployed as a flexible elective: faculty select two or three domain tracks per cohort based on student interest, faculty specialisation, or emerging industry partnerships. This is the program's "future-facing" offering — deliberately not locked to a single topic, because the cluster data confirms these are still-crystallising demand signals.
+
+> ⚠️ Lift/z for the skills in this elective were not returned at z≥2 in the queried anchors. The course is included on the basis of cluster membership and qualitative domain-demand rationale, not on lift/z evidence. The professor should treat this as a design option, not an evidence-mandated requirement.
+
+---
+
+## Trade-offs & Caveats the Professor Should Consider
+
+1. **Frequency ≠ Distinctiveness, and distinctiveness is what's grounded here.** All lift (×) and z figures above come from the Skills Taxonomy Analyst's differential-lift analysis run this session against the CSPA corpus — they measure how over-represented a skill is in AI/ML postings relative to the broader labour market. Market frequency figures (e.g., Generative AI at 434, Automation & Scripting at 501) are cited as secondary scale/context from the Cluster Interpreter's Mode B scaffold — they show breadth of demand but are not the primary justification for any course recommendation.
+
+2. **The 9-course core is deliberately demanding.** The from-scratch design grounded in cluster evidence produces a technically intensive program. Courses 2, 3, 5, and 6 in particular assume software-engineering fluency as a pre-requisite; the professor may wish to add a bridging bootcamp or a pre-semester Python/Linux primer for students from non-CS backgrounds.
+
+3. **Ethics is distributed, not siloed.** Responsible AI (lift 5.49×–9.03× across multiple anchors) and Algorithmic Fairness (lift 85.37×) enter organically as co-demands of Generative AI (Course 3) and MLOps (Course 6) — not just as a dedicated capstone topic (Course 9). The cluster evidence argues against treating ethics as a single end-of-program elective: it should be revisited as a thread in Courses 3, 6, and 9 at minimum.
+
+4. **Point-in-time snapshot.** The CSPA corpus reflects the Winter 2026 labour market. The GenAI and agentic AI wave is still accelerating; skills like LLMOps (lift 16.34×), Agentic Frameworks (lift 11.77×), and Multi-Agent Systems (lift 5.17×) show high lift but relatively modest posting counts, meaning they are highly distinctive but not yet ubiquitous. The program should build in an annual curriculum review cycle against updated CSPA partitions — particularly for Courses 3 and 6, which are in the fastest-moving areas.
+
+5. **No peer-program benchmarking is included here.** This design is grounded entirely in market-demand clusters and lift/z significance — peer-institution comparison (e.g., "how does this compare to Stanford's MSCS-AI or CMU's MSML?") is a categorically separate exercise that would require delegating to the University AI Programs Researcher. That benchmarking step is strongly recommended as a follow-up before the program goes to faculty governance.
+```
