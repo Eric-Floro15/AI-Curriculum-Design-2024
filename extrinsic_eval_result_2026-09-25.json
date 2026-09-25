@@ -1,0 +1,262 @@
+{
+  "chatbot": {
+    "n_skills_extracted": 68,
+    "grounded_skills": [
+      "agentic frameworks",
+      "ai agent systems architecture",
+      "ai engineering",
+      "ai frameworks",
+      "ai ml",
+      "ai ml solutions",
+      "anthropic",
+      "autogen",
+      "aws bedrock",
+      "azure ai",
+      "claude anthropic",
+      "containerization",
+      "conversational ai",
+      "crewai",
+      "distributed systems",
+      "faiss",
+      "gemini",
+      "generative ai",
+      "knowledge graphs",
+      "langchain",
+      "langgraph",
+      "large language models",
+      "llamaindex",
+      "llm architectures",
+      "llmops",
+      "mlops",
+      "model versioning",
+      "multi agent systems",
+      "multimodal learning",
+      "observability",
+      "openai",
+      "orchestration tools",
+      "peft",
+      "pinecone",
+      "prompt engineering",
+      "reinforcement learning",
+      "responsible ai",
+      "retrieval augmented generation rag",
+      "semantic search",
+      "transformers",
+      "vector databases",
+      "vertex ai",
+      "weaviate",
+      "workflow automation"
+    ],
+    "ungrounded_skills": [
+      "agentic ai",
+      "ai governance",
+      "aws",
+      "azure",
+      "business intelligence",
+      "data visualization",
+      "debugging",
+      "decision making",
+      "gap analysis",
+      "looker",
+      "machine learning",
+      "neural networks",
+      "open source frameworks",
+      "optimization",
+      "php",
+      "power bi",
+      "python",
+      "quicksight",
+      "react",
+      "salesforce",
+      "software development",
+      "sql",
+      "tableau",
+      "tool calling"
+    ],
+    "grounding_pct": 0.6470588235294118,
+    "overlap": {
+      "A_berkeley_cs294": {
+        "name": "UC Berkeley CS294/194-196 \u2014 Large Language Model Agents",
+        "type": "academic technical",
+        "strict_matched": [
+          "autogen",
+          "llamaindex",
+          "multi agent systems",
+          "react",
+          "retrieval augmented generation rag"
+        ],
+        "fuzzy_matched": [
+          "responsible ai"
+        ],
+        "strict_overlap_pct": 0.07352941176470588,
+        "total_overlap_pct": 0.08823529411764706
+      },
+      "B_deeplearning_ai": {
+        "name": "DeepLearning.AI / Coursera \u2014 Agentic AI with LangGraph, CrewAI, AutoGen & BeeAI",
+        "type": "industry technical",
+        "strict_matched": [
+          "agentic frameworks",
+          "autogen",
+          "crewai",
+          "langgraph",
+          "multi agent systems",
+          "orchestration tools",
+          "tool calling"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.10294117647058823,
+        "total_overlap_pct": 0.10294117647058823
+      },
+      "C_harvard_hdsr": {
+        "name": "Harvard Data Science Review \u2014 Agentic AI Intensive",
+        "type": "executive / strategic",
+        "strict_matched": [
+          "ai governance"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.014705882352941176,
+        "total_overlap_pct": 0.014705882352941176
+      },
+      "D_queens_mmai": {
+        "name": "Queen's University \u2014 Master of Management in Artificial Intelligence (MMAI)",
+        "type": "general master's program (not agentic-specific)",
+        "strict_matched": [
+          "agentic ai",
+          "large language models",
+          "machine learning",
+          "multimodal learning",
+          "neural networks",
+          "optimization",
+          "prompt engineering",
+          "python",
+          "reinforcement learning",
+          "responsible ai"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.14705882352941177,
+        "total_overlap_pct": 0.14705882352941177
+      }
+    }
+  },
+  "base": {
+    "n_skills_extracted": 54,
+    "grounded_skills": [
+      "agent evaluation",
+      "anthropic",
+      "autogen",
+      "crewai",
+      "distributed systems",
+      "experimentation",
+      "generative ai",
+      "langchain",
+      "langgraph",
+      "large language models",
+      "llamaindex",
+      "multi agent systems",
+      "observability",
+      "openai",
+      "orchestration tools",
+      "pinecone",
+      "retrieval augmented generation rag",
+      "weaviate"
+    ],
+    "ungrounded_skills": [
+      "a b testing",
+      "agentic ai",
+      "ai governance",
+      "application security",
+      "business intelligence",
+      "capstone project",
+      "chain of thought prompting",
+      "data analysis",
+      "data engineering",
+      "data warehousing",
+      "databricks",
+      "dbt",
+      "debugging",
+      "etl",
+      "etl pipelines",
+      "excel",
+      "feature engineering",
+      "helm",
+      "looker",
+      "machine learning",
+      "networking",
+      "optimization",
+      "power bi",
+      "python",
+      "react",
+      "rest",
+      "salesforce",
+      "sql",
+      "statistical modeling",
+      "statistics",
+      "systems engineering",
+      "tableau",
+      "tcp ip",
+      "tool calling",
+      "unstructured data",
+      "warehousing"
+    ],
+    "grounding_pct": 0.3333333333333333,
+    "overlap": {
+      "A_berkeley_cs294": {
+        "name": "UC Berkeley CS294/194-196 \u2014 Large Language Model Agents",
+        "type": "academic technical",
+        "strict_matched": [
+          "agent evaluation",
+          "autogen",
+          "chain of thought prompting",
+          "llamaindex",
+          "multi agent systems",
+          "react",
+          "retrieval augmented generation rag"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.12962962962962962,
+        "total_overlap_pct": 0.12962962962962962
+      },
+      "B_deeplearning_ai": {
+        "name": "DeepLearning.AI / Coursera \u2014 Agentic AI with LangGraph, CrewAI, AutoGen & BeeAI",
+        "type": "industry technical",
+        "strict_matched": [
+          "autogen",
+          "crewai",
+          "langgraph",
+          "multi agent systems",
+          "orchestration tools",
+          "tool calling"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.1111111111111111,
+        "total_overlap_pct": 0.1111111111111111
+      },
+      "C_harvard_hdsr": {
+        "name": "Harvard Data Science Review \u2014 Agentic AI Intensive",
+        "type": "executive / strategic",
+        "strict_matched": [
+          "ai governance"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.018518518518518517,
+        "total_overlap_pct": 0.018518518518518517
+      },
+      "D_queens_mmai": {
+        "name": "Queen's University \u2014 Master of Management in Artificial Intelligence (MMAI)",
+        "type": "general master's program (not agentic-specific)",
+        "strict_matched": [
+          "agentic ai",
+          "capstone project",
+          "large language models",
+          "machine learning",
+          "optimization",
+          "python",
+          "statistics"
+        ],
+        "fuzzy_matched": [],
+        "strict_overlap_pct": 0.12962962962962962,
+        "total_overlap_pct": 0.12962962962962962
+      }
+    }
+  }
+}
