@@ -1,0 +1,138 @@
+{
+  "_provenance": {
+    "purpose": "Reference data for the extrinsic evaluation harness (eval_grounding_overlap.py), decision #49 in memory/decisions.md. Rebuilt 2026-09-25 (Claude Code) after the original extrinsic_eval_harness_2026-08-31.zip was found to have never been committed to this repo -- reconstructed strictly from decision #49's spec plus the coded source material in FOR_CASSIE_AUGUST_2026_V4-TAXONOMY/03_SECTION_4.6_PRODUCTION_EVAL/external_reference_curricula.md and chatbot/data/program_and_curriculum/queens-university-mmai.txt.",
+    "no_llm_judge": "Every skill list below was coded by hand from the cited source material -- no LLM was used to generate, summarize, or judge these lists, consistent with the harness's core design goal (answers the paper's own §7 circularity concern).",
+    "focal_skill": "Agentic Ai",
+    "z_min": 2.0,
+    "attested_set_size_note": "73 associated skills clear z>=2 for focal skill 'Agentic Ai' in chatbot/data/skill_lift_table.csv as of 2026-09-25 -- confirmed via `awk -F',' 'tolower($1)==\"agentic ai\" && $7+0>=2' chatbot/data/skill_lift_table.csv | wc -l`. This is the GROUNDING reference set; it is computed live by eval_grounding_overlap.py from --lift, not hardcoded here.",
+    "open_todo_flagged_not_decided": "external_reference_curricula.md's 'Target: the paper's lift-derived agentic curriculum' section lists 'model providers / serving' and 'agent evaluation' as skills the chatbot's curriculum SHOULD cover -- neither is literally an attested (z>=2) Agentic Ai association in skill_lift_table.csv (closest real attested neighbours: 'Model Deployment' z=2.13, 'Model Evaluation' z=2.28, 'LLMOps' z=2.27, 'Ai Engineering' z=4.33 -- none is an exact or obvious-alias match). Preserved verbatim below as `target_skills_for_context` for narrative/paper-writing reference ONLY -- eval_grounding_overlap.py does NOT read or score against this field; grounding is computed solely from the live z>=2 attested set. Claude Code's recommendation (Eric to confirm, not silently decided): keep both OUT of anything the scorer treats as 'attested' -- the whole point of the z>=2 bar is strict quantitative rigor, and 'Model Providers/Serving' and 'Agent Evaluation' are genuinely close-but-not-identical to real attested neighbours, so folding them in would quietly loosen the bar. They remain legitimate to mention qualitatively in the paper's prose/caveats (the same 'no lift/z available, included on frequency/qualitative grounds' honesty pattern already used elsewhere in this project's chatbot output), just not counted toward a quantitative grounding percentage."
+  },
+  "target_skills_for_context": [
+    "Large Language Models", "Retrieval-Augmented Generation (RAG)", "LangChain", "LangGraph",
+    "CrewAI", "AutoGen", "LlamaIndex", "Multi-Agent Systems",
+    "Agentic Frameworks", "Vector Databases", "Prompt Engineering", "Orchestration Tools",
+    "Generative AI", "Model Providers / Serving", "Agent Evaluation"
+  ],
+  "courses": {
+    "A_berkeley_cs294": {
+      "name": "UC Berkeley CS294/194-196 — Large Language Model Agents",
+      "type": "academic technical",
+      "role": "primary 1-to-1 comparator",
+      "source": [
+        "https://llmagents-learning.org/f24",
+        "https://rdi.berkeley.edu/llm-agents-mooc/"
+      ],
+      "coded_from": "FOR_CASSIE_AUGUST_2026_V4-TAXONOMY/03_SECTION_4.6_PRODUCTION_EVAL/external_reference_curricula.md, Reference A",
+      "skills": [
+        "LLM Reasoning",
+        "Chain-of-Thought Prompting",
+        "Agent Foundations",
+        "ReAct",
+        "AutoGen",
+        "LlamaIndex",
+        "Retrieval-Augmented Generation (RAG)",
+        "Long-Context Evaluation",
+        "DSPy",
+        "Compound AI Systems",
+        "Multi-Agent Systems",
+        "SWE-Agent",
+        "Enterprise Agent Workflows",
+        "Neuro-Symbolic AI",
+        "Embodied AI",
+        "Robotics Agents",
+        "Foundation Model Evaluation",
+        "Agent Evaluation",
+        "Responsible Scaling",
+        "AI Safety",
+        "AI Policy"
+      ]
+    },
+    "B_deeplearning_ai": {
+      "name": "DeepLearning.AI / Coursera — Agentic AI with LangGraph, CrewAI, AutoGen & BeeAI",
+      "type": "industry technical",
+      "role": "tightest tool-for-tool comparator",
+      "source": [
+        "https://www.coursera.org/learn/agentic-ai-with-langgraph-crewai-autogen-and-beeai",
+        "https://www.deeplearning.ai/courses/ai-agents-in-langgraph"
+      ],
+      "coded_from": "FOR_CASSIE_AUGUST_2026_V4-TAXONOMY/03_SECTION_4.6_PRODUCTION_EVAL/external_reference_curricula.md, Reference B",
+      "skills": [
+        "LangGraph",
+        "CrewAI",
+        "BeeAI",
+        "AutoGen",
+        "Multi-Agent Systems",
+        "Memory Management",
+        "Tool Calling",
+        "Orchestration Tools",
+        "Structured Output",
+        "Agentic Frameworks"
+      ]
+    },
+    "C_harvard_hdsr": {
+      "name": "Harvard Data Science Review — Agentic AI Intensive",
+      "type": "executive / strategic",
+      "role": "contrast pole (expected ~zero technical overlap by design)",
+      "source": [
+        "https://live.hdsrcourses.org/agentic-ai-intensive",
+        "https://dainstudios.com/insights/inside-the-harvard-course-where-leaders-learn-agentic-ai-in-practice/"
+      ],
+      "coded_from": "FOR_CASSIE_AUGUST_2026_V4-TAXONOMY/03_SECTION_4.6_PRODUCTION_EVAL/external_reference_curricula.md, Reference C",
+      "skills": [
+        "AI Governance",
+        "Workflow Redesign",
+        "Change Management",
+        "Human-Agent Role Definition",
+        "KPI Design",
+        "Build vs Buy Strategy",
+        "AI Ethics",
+        "AI Regulation",
+        "Agentic AI Strategy",
+        "Use Case Canvas Design"
+      ]
+    },
+    "D_queens_mmai": {
+      "name": "Queen's University — Master of Management in Artificial Intelligence (MMAI)",
+      "type": "general master's program (not agentic-specific)",
+      "role": "whole-program anchor, existing Appendix G.3 benchmark",
+      "source": [
+        "https://smith.queensu.ca/grad_studies/mmai/program/index.php"
+      ],
+      "coded_from": "chatbot/data/program_and_curriculum/queens-university-mmai.txt (Last Verified 2026-06-16) -- the SAME source behind Appendix G.3, per STEP 1 of PROMPT_for_ClaudeCode_BaseModel_ExtrinsicEval.md. This REPLACES the original harness's provisional coding.",
+      "skills": [
+        "Business Strategy",
+        "Marketing",
+        "Operations Management",
+        "Finance",
+        "Team Leadership",
+        "Communication Skills",
+        "Conflict Management",
+        "Statistics",
+        "Mathematical Foundations",
+        "Machine Learning",
+        "Unsupervised Learning",
+        "Model Evaluation",
+        "Python",
+        "R",
+        "Optimization",
+        "Simulation",
+        "Decision Analysis",
+        "Large Language Models",
+        "Multimodal Learning",
+        "Agentic AI",
+        "Prompt Engineering",
+        "Responsible AI",
+        "Deep Learning",
+        "Neural Networks",
+        "Big Data Technologies",
+        "Agile Project Management",
+        "AI Ethics",
+        "AI Policy",
+        "Entrepreneurship",
+        "Change Management",
+        "Reinforcement Learning",
+        "Capstone Project"
+      ]
+    }
+  }
+}
