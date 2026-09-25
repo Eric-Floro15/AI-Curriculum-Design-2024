@@ -40,7 +40,14 @@ except ImportError:
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
-LIFT_TABLE_FILE = os.path.join(_CHATBOT_DIR, "data", "skill_lift_table.csv")
+_W2026_LIFT_TABLE_FILE = os.path.join(_CHATBOT_DIR, "data", "skill_lift_table.csv")
+
+# 2026-09-25 (§5.1 F2022 curriculum): REVERSIBLE env-var override, same
+# pattern/rationale as cluster_tool.py's CLUSTER_RESULTS_FILE_OVERRIDE —
+# points the Analyst's lift tool at a different wave's lift table for one
+# run only, without touching .env or the W2026 file. Unset (the default)
+# -> unchanged production behaviour.
+LIFT_TABLE_FILE = os.environ.get("LIFT_TABLE_FILE_OVERRIDE") or _W2026_LIFT_TABLE_FILE
 
 # |z| >= 2 ≈ significant — the same attestation threshold the paper's extrinsic
 # evaluation uses. Kept as a module constant so evals can record what was used.

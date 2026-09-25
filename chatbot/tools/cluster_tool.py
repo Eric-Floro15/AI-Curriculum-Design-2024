@@ -72,16 +72,33 @@ if _CHATBOT_DIR not in sys.path:
 # re-cluster, see CLAUDE.md decisions #46). Supersedes both the old
 # clust_ensembled_results.csv (766 skills, V1 clustering) and the pre-clean
 # cluster_assignments_w2026.csv this file used before the V4 repoint.
-CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "clust_ensembled_results_W2026_clean.csv")
+_W2026_CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "clust_ensembled_results_W2026_clean.csv")
 
 # V4 taxonomy xlsx — source of truth for skill frequencies (V2 JSONL retired
 # with the V4 repoint, see build_index.py module docstring).
-V4_TAXONOMY_XLSX = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx")
+_W2026_V4_TAXONOMY_XLSX = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx")
+
+# 2026-09-25 (§5.1 F2022 curriculum, PROMPT_for_ClaudeCode_S51_F2022_curriculum.md
+# STEP 1): REVERSIBLE env-var override — points the cluster tool at a different
+# wave's data for one run only, without touching .env or any destructive edit to
+# the W2026 files above. Unset (the default) -> byte-for-byte identical W2026
+# production behaviour. Set (process-local only, same pattern this project uses
+# for STRICT_DELEGATION) -> reads the override paths instead. When an override
+# is active, CLUSTER_THEMES falls back to numeric-only labels (see _theme_for()
+# below) rather than reusing W2026's theme text on a different wave's cluster
+# contents — an alternate wave's clusters hold different skills at the same
+# numeric id, so a W2026 label would misdescribe them (exactly the mistake the
+# 2026-09-24 relabel fixed for the old pre-clean partition).
+CLUSTER_RESULTS_FILE = os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE") or _W2026_CLUSTER_RESULTS_FILE
+V4_TAXONOMY_XLSX = os.environ.get("FREQ_XLSX_OVERRIDE") or _W2026_V4_TAXONOMY_XLSX
+_ALT_WAVE_MODE = bool(os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE"))
 
 # Cluster themes for the clean Winter 2026 CSPA ensemble partition.
 # FINAL labels (2026-09-24) — Eric + Cowork approved; these match the
 # paper's Appendix G.1 verbatim, so code == paper. Do not edit without a
-# corresponding Appendix G.1 change (and vice versa).
+# corresponding Appendix G.1 change (and vice versa). Only used when
+# _ALT_WAVE_MODE is False (see _theme_for() below) — an override run never
+# reads this dict.
 CLUSTER_THEMES = {
     1:  "Machine Learning & Generative AI",
     2:  "Cloud, DevOps & AI Systems Deployment",
@@ -95,6 +112,91 @@ CLUSTER_THEMES = {
     10: "Strategic Planning, Program Management & Business Development",
 }
 
+
+# 2026-09-25 (§5.1 F2022 PUSHTHROUGH, Part B): optional VETTED label
+# override for an alt-wave run — a JSON object {"1": "label", ...} of
+# reviewed theme labels for the active override's cluster ids, e.g. the
+# Cowork-reviewed F2022 labels. Takes priority over the numeric-only
+# fallback below when present, so a reviewed alt-wave run gets real
+# labels instead of "Cluster N (numeric only...)". Still falls back to
+# numeric-only for any cluster id NOT covered by the override JSON, so a
+# partial/malformed override degrades safely rather than crashing.
+_cluster_themes_override_raw = os.environ.get("CLUSTER_THEMES_OVERRIDE_JSON")
+_CLUSTER_THEMES_OVERRIDE: dict[int, str] = {}
+if _cluster_themes_override_raw:
+    import json as _json
+    try:
+        _CLUSTER_THEMES_OVERRIDE = {
+            int(k): v for k, v in _json.loads(_cluster_themes_override_raw).items()
+        }
+    except (ValueError, TypeError):
+        _CLUSTER_THEMES_OVERRIDE = {}
+
+# 2026-09-25 (§5.1 F2022 PUSHTHROUGH, Part A1): human-readable label for the
+# active override's data wave, e.g. "Fall 2022 (F2022)" — used only to build
+# data_wave_override_notice() below, and only when _ALT_WAVE_MODE is active.
+# Generic/wave-parameterized by design (not F2022-hardcoded), so the same
+# mechanism serves any future off-wave run (F2023, W2024, ...).
+DATA_WAVE_LABEL = os.environ.get("DATA_WAVE_LABEL", "a non-default data wave")
+
+
+def _theme_for(cluster_id: int) -> str:
+    """Theme label for a cluster id — the W2026 CLUSTER_THEMES dict when
+    running on the default W2026 data; the vetted CLUSTER_THEMES_OVERRIDE_JSON
+    label when an alt-wave override is active AND that cluster id is covered
+    by it; otherwise a numeric-only placeholder (an alt-wave run with no
+    reviewed labels yet, or a cluster id the override JSON doesn't cover) —
+    reusing the W2026 label on a different wave's cluster N would misdescribe
+    it, since a different wave's cluster N holds different skills. See the
+    2026-09-25 override comments above."""
+    if _ALT_WAVE_MODE:
+        if cluster_id in _CLUSTER_THEMES_OVERRIDE:
+            return _CLUSTER_THEMES_OVERRIDE[cluster_id]
+        return f"Cluster {cluster_id} (numeric only — no theme assigned for this data wave)"
+    return CLUSTER_THEMES.get(cluster_id, "Unknown")
+
+
+def data_wave_override_notice() -> str | None:
+    """A per-run notice block for injection into the Orchestrator's task
+    text (2026-09-25, §5.1 F2022 PUSHTHROUGH Part A1) — None when no
+    override is active (the default; callers must not inject anything in
+    that case), or a marker-delimited block when CLUSTER_RESULTS_FILE_OVERRIDE
+    is set, instructing every agent that reads it to trust the LIVE tool
+    output over their own static backstory text for this run.
+
+    Fixes the real failure found on a live F2022 dev-lane run
+    (run_20260925T164511Z): the Cluster Interpreter followed its backstory's
+    static W2026 CLUSTER REFERENCE table (hardcoded cluster-number -> label/
+    focused-star text) instead of this run's actual tool output, and its own
+    narration mislabelled F2022 data as "Winter 2026" throughout — both
+    because nothing told it its backstory's default-wave assumptions no
+    longer held for this run. This block closes that gap the same way the
+    "ATTACHED UPLOADED CURRICULUM DOCUMENT" marker block already does for a
+    different purpose (see agents/orchestrator.py's HANDLING AN ATTACHED
+    UPLOADED CURRICULUM DOCUMENT rule) — plain-text instructions injected
+    into the task description, not a permanent, run-independent backstory
+    edit, and generic/wave-parameterized so it serves any future off-wave
+    validation run without further code changes.
+    """
+    if not _ALT_WAVE_MODE:
+        return None
+    return (
+        "===== DATA WAVE OVERRIDE NOTICE =====\n"
+        "For THIS run, the live cluster_tool output (from All Clusters "
+        "Overview / Cluster Detail) is the SOLE source of truth for cluster "
+        "sizes, membership, labels, the focused set, and the labour-market "
+        "wave/time period this data was collected in. Disregard any cluster "
+        "reference table, theme label, focused-set marker, or wave/date "
+        "framing (e.g. a specific year) written in your own static "
+        "backstory wherever it disagrees with what the tool actually "
+        f"returns this run. The data grounding this run is the "
+        f"{DATA_WAVE_LABEL} wave — describe it as such in your own "
+        "reasoning and final synthesis; do not assume or state your "
+        "backstory's default wave/time period instead.\n"
+        "===== END DATA WAVE OVERRIDE NOTICE ====="
+    )
+
+
 # Clusters worth highlighting in gap analysis (focused, high-signal technical
 # areas). Selection criterion (2026-09-24 relabel, Eric + Cowork approved):
 # coherent, discriminative, TECHNICAL clusters only — 1 (Machine Learning &
@@ -105,7 +207,16 @@ CLUSTER_THEMES = {
 # office/admin, strategy/sales/PM) which are less discriminative for
 # targeted curriculum-gap recommendations, mirroring the same
 # broad-cluster-exclusion logic the old (stale) partition used.
-FOCUSED_CLUSTERS = {1, 2, 3, 7}
+#
+# 2026-09-25: overridable via FOCUSED_CLUSTERS_OVERRIDE (comma-separated
+# cluster ids), for the same alternate-wave-run reason as CLUSTER_RESULTS_FILE
+# above — a different wave's cluster N is not the same skills as W2026's
+# cluster N, so which numbers are "coherent/technical" can differ by wave.
+_focused_override = os.environ.get("FOCUSED_CLUSTERS_OVERRIDE")
+if _focused_override:
+    FOCUSED_CLUSTERS = {int(x) for x in _focused_override.split(",") if x.strip()}
+else:
+    FOCUSED_CLUSTERS = {1, 2, 3, 7}
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -168,7 +279,7 @@ def all_clusters() -> list[dict]:
         top = [s["skill"] for s in enriched[:8]]
         result.append({
             "cluster_id": int(cid),
-            "theme": CLUSTER_THEMES.get(cid, "Unknown"),
+            "theme": _theme_for(int(cid)),
             "skill_count": len(skills),
             "focused": cid in FOCUSED_CLUSTERS,
             "top_skills_by_frequency": top,
@@ -191,7 +302,7 @@ def cluster_detail(cluster_id: int) -> dict:
     enriched = _enrich_with_freq(skills)
     return {
         "cluster_id": cluster_id,
-        "theme": CLUSTER_THEMES.get(cluster_id, "Unknown"),
+        "theme": _theme_for(cluster_id),
         "focused": cluster_id in FOCUSED_CLUSTERS,
         "skill_count": len(skills),
         "skills": enriched,
@@ -213,11 +324,15 @@ try:
         doing gap analysis. Each cluster represents a group of skills that
         co-occur in AI/ML job postings.
 
-        Focused clusters (most discriminative for gap analysis): 1, 2, 3, 7.
-        Clusters 4, 5, and 10 are large, broad-spectrum soft-skill/business
-        groups — less useful for targeted gap-analysis recommendations.
-        Clusters 6, 8, and 9 are small/incoherent catch-alls — disclose,
-        don't theme.
+        On the default W2026 data: focused clusters (most discriminative for
+        gap analysis) are 1, 2, 3, 7. Clusters 4, 5, and 10 are large,
+        broad-spectrum soft-skill/business groups — less useful for targeted
+        gap-analysis recommendations. Clusters 6, 8, and 9 are small/
+        incoherent catch-alls — disclose, don't theme. TRUST THE ⭐ MARKERS
+        AND THEMES IN THIS TOOL'S ACTUAL RETURNED TEXT over this note — on a
+        different data wave the same cluster NUMBER can hold different
+        skills, so the returned data (not this static description) is
+        authoritative for which clusters are focused and what they mean.
         """
         clusters = all_clusters()
         lines = ["CSPA Ensemble Skill Clusters (10 total)\n"]

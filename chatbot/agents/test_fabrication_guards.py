@@ -45,6 +45,8 @@ from agents.orchestrator import (  # noqa: E402
     _write_run_record,
     _format_cost_section,
     _estimate_cost_usd,
+    _extract_market_numbers,
+    _normalize_market_num,
     RequiredSpecialistMissingError,
 )
 
@@ -1819,6 +1821,244 @@ _check(
     any("6.17" in f or "9.56" in f for f in _fab_scaffold_flags),
     f"got: {_fab_scaffold_flags}",
 )
+
+
+# =====================================================================
+# §5.1 F2022 PUSHTHROUGH (2026-09-25), Part A2/A3: real gaps found on a
+# live F2022 dev-lane run (run_20260925T164511Z) — gpt-oss:120b formatted
+# its own grounding text with U+202F narrow no-break spaces as thousands
+# separators (corrupting extraction of real, correctly-cited numbers), and
+# a genuine fabrication used "frequency ≈ N" (not "=") which the old guard
+# never even extracted, let alone checked.
+# =====================================================================
+print("\n=== §5.1 F2022 PUSHTHROUGH A2/A3: Unicode-space + approx-separator fixes ===")
+
+# A2 — extraction from grounded text with U+202F thousands separators now
+# recovers the REAL value, not a truncated one.
+_a2_grounded_text = "TensorFlow (freq = 2 387), Deep Learning (freq = 2 373)"
+_a2_extracted = _extract_market_numbers(_a2_grounded_text)
+_check(
+    "A2: U+202F-formatted 'freq\\u202f=\\u202f2\\u202f387' extracts as "
+    "2387.0, not truncated to 2.0",
+    any(val == 2387.0 for _raw, val, kind, _s, _e in _a2_extracted),
+    f"got: {_a2_extracted}",
+)
+_check(
+    "A2: a SECOND U+202F-formatted number in the same text ('2\\u202f373') "
+    "also extracts correctly — not just the first occurrence",
+    any(val == 2373.0 for _raw, val, kind, _s, _e in _a2_extracted),
+    f"got: {_a2_extracted}",
+)
+_check(
+    "A2: _normalize_market_num handles U+00A0 (no-break space) and "
+    "U+2009 (thin space) thousands separators too, not just U+202F",
+    _normalize_market_num("15 171") == 15171.0
+    and _normalize_market_num("2 769") == 2769.0,
+)
+_check(
+    "A2: ordinary-comma formatting (the common case) is completely "
+    "unaffected by the widened character class",
+    _normalize_market_num("1,435") == 1435.0 and _normalize_market_num("56k") == 56000.0,
+)
+
+# A2 end-to-end: the exact real F2022 run scenario — a correctly-cited,
+# genuinely-grounded number in the Advisor's answer no longer flags once
+# the grounding-side extraction can actually see the real value.
+_a2_answer = "TensorFlow (2,387 postings) anchors this course."
+_a2_flags = _detect_numeric_fabrication_flags(
+    _a2_answer, _steps(("Skills Taxonomy Analyst", _a2_grounded_text)), ["Skills Taxonomy Analyst"]
+)
+_check(
+    "A2 end-to-end: 'TensorFlow (2,387 postings)' no longer flags once "
+    "the grounded text's own U+202F-formatted '2\\u202f387' is correctly "
+    "parsed as 2387 (was a real false positive on run_20260925T164511Z)",
+    _a2_flags == [],
+    f"got: {_a2_flags}",
+)
+
+# A3 — "frequency ≈ N" is now extracted and checked (previously invisible
+# to the guard entirely).
+_a3_extracted = _extract_market_numbers("Distributed Data Processing (frequency ≈ 800)")
+_check(
+    "A3: 'frequency ≈ 800' (approx symbol, not '=') is now extracted "
+    "as a frequency claim",
+    any(val == 800.0 for _raw, val, kind, _s, _e in _a3_extracted),
+    f"got: {_a3_extracted}",
+)
+_a3_tilde = _extract_market_numbers("Some Skill (freq ~ 250)")
+_check(
+    "A3: 'freq ~ 250' (tilde) is also recognised",
+    any(val == 250.0 for _raw, val, kind, _s, _e in _a3_tilde),
+    f"got: {_a3_tilde}",
+)
+
+# A3 end-to-end: THE exact real fabrication from run_20260925T164511Z —
+# invented content with NO backing in either specialist's actual output —
+# must now be flagged, not silently pass.
+_a3_fab_answer = (
+    "| **4** | **Data Engineering & Cloud Platforms** | Server Systems "
+    "(frequency = 46), Distributed Data Processing (frequency ≈ 800) |"
+)
+_a3_grounding = _steps(
+    ("Cluster Interpreter", "Server Systems (freq=46), technical Problem Solving (freq=34)."),
+)
+_a3_flags = _detect_numeric_fabrication_flags(_a3_fab_answer, _a3_grounding, ["Cluster Interpreter"])
+_check(
+    "A3 end-to-end: the exact real fabrication ('Distributed Data "
+    "Processing (frequency ≈ 800)', invented, absent from every "
+    "specialist's real output) is now FLAGGED — was silently missed "
+    "entirely on run_20260925T164511Z",
+    any("800" in f for f in _a3_flags),
+    f"got: {_a3_flags}",
+)
+_check(
+    "A3 still-catches: the genuinely-grounded 'Server Systems "
+    "(frequency = 46)' in the SAME answer does NOT also flag — only the "
+    "fabricated skill does",
+    not any("'46'" in f for f in _a3_flags),
+    f"got: {_a3_flags}",
+)
+_check(
+    "A3 still-catches: an ordinary '=' -formatted fabrication (no approx "
+    "symbol involved at all) still flags exactly as before — the widened "
+    "separator class didn't loosen the baseline check. (Non-empty "
+    "step_log required — _detect_numeric_fabrication_flags short-circuits "
+    "to [] on an empty step_log by design, a pre-existing behaviour "
+    "unrelated to A2/A3, not something to trip over here.)",
+    any(
+        "99999" in f
+        for f in _detect_numeric_fabrication_flags(
+            "Fake Skill (frequency = 99999)",
+            _steps(("Skills Taxonomy Analyst", "Real Skill (frequency = 12345)")),
+            ["Skills Taxonomy Analyst"],
+        )
+    ),
+)
+
+
+# =====================================================================
+# §5.1 F2022 PUSHTHROUGH, Part A1: per-run data-wave override notice.
+# Still-catches: the W2026 gap-analysis path (no override active) is
+# completely unaffected — data_wave_override_notice() returns None and
+# run_query() prepends nothing, byte-identical to pre-A1 behaviour.
+# =====================================================================
+print("\n=== §5.1 F2022 PUSHTHROUGH A1: data-wave override notice ===")
+
+import importlib as _importlib
+import tools.cluster_tool as _cluster_tool_mod
+
+_check(
+    "A1: with no CLUSTER_RESULTS_FILE_OVERRIDE set (the default, W2026 "
+    "production state), data_wave_override_notice() returns None",
+    _cluster_tool_mod.data_wave_override_notice() is None,
+)
+
+_prev_override = os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE")
+_prev_wave_label = os.environ.get("DATA_WAVE_LABEL")
+try:
+    os.environ["CLUSTER_RESULTS_FILE_OVERRIDE"] = "/tmp/fake_f2022_clusters.csv"
+    os.environ["DATA_WAVE_LABEL"] = "Fall 2022 (F2022)"
+    _importlib.reload(_cluster_tool_mod)
+    _notice = _cluster_tool_mod.data_wave_override_notice()
+    _check(
+        "A1: with the override active, data_wave_override_notice() "
+        "returns a non-empty marker block",
+        bool(_notice) and "DATA WAVE OVERRIDE NOTICE" in _notice,
+        f"got: {_notice!r}",
+    )
+    _check(
+        "A1: the notice names the active wave label (generic/"
+        "parameterized, not hardcoded 'F2022' in the code)",
+        "Fall 2022 (F2022)" in (_notice or ""),
+    )
+    _check(
+        "A1: the notice tells the reader to trust the live tool output "
+        "over their own backstory",
+        "SOLE source of truth" in (_notice or ""),
+    )
+finally:
+    if _prev_override is None:
+        os.environ.pop("CLUSTER_RESULTS_FILE_OVERRIDE", None)
+    else:
+        os.environ["CLUSTER_RESULTS_FILE_OVERRIDE"] = _prev_override
+    if _prev_wave_label is None:
+        os.environ.pop("DATA_WAVE_LABEL", None)
+    else:
+        os.environ["DATA_WAVE_LABEL"] = _prev_wave_label
+    _importlib.reload(_cluster_tool_mod)
+    _check(
+        "A1 still-catches (G.3-style path unaffected): after restoring "
+        "the environment to its default (no override), "
+        "data_wave_override_notice() is None again — the W2026 "
+        "gap-analysis path never sees an injected notice",
+        _cluster_tool_mod.data_wave_override_notice() is None,
+    )
+
+
+# =====================================================================
+# §5.1 F2022 PUSHTHROUGH, Part B: vetted F2022 label override
+# (CLUSTER_THEMES_OVERRIDE_JSON) takes priority over the numeric-only
+# fallback, and FOCUSED_CLUSTERS_OVERRIDE = {1,2,4,5} per Cowork's review.
+# =====================================================================
+print("\n=== §5.1 F2022 PUSHTHROUGH Part B: vetted label override ===")
+
+_prev_themes_json = os.environ.get("CLUSTER_THEMES_OVERRIDE_JSON")
+_prev_focused = os.environ.get("FOCUSED_CLUSTERS_OVERRIDE")
+try:
+    os.environ["CLUSTER_RESULTS_FILE_OVERRIDE"] = "/tmp/fake_f2022_clusters.csv"
+    os.environ["CLUSTER_THEMES_OVERRIDE_JSON"] = (
+        '{"1": "Machine Learning & Deep Learning", '
+        '"2": "Data Science, Statistics & Classical ML", '
+        '"4": "Data Engineering & Cloud Data Platforms"}'
+    )
+    os.environ["FOCUSED_CLUSTERS_OVERRIDE"] = "1,2,4,5"
+    _importlib.reload(_cluster_tool_mod)
+    _check(
+        "Part B: cluster 1's theme is the vetted override label, not the "
+        "numeric-only placeholder",
+        _cluster_tool_mod._theme_for(1) == "Machine Learning & Deep Learning",
+        f"got: {_cluster_tool_mod._theme_for(1)!r}",
+    )
+    _check(
+        "Part B: cluster 4's theme is the vetted override label",
+        _cluster_tool_mod._theme_for(4) == "Data Engineering & Cloud Data Platforms",
+        f"got: {_cluster_tool_mod._theme_for(4)!r}",
+    )
+    _check(
+        "Part B: a cluster id NOT covered by the override JSON (e.g. "
+        "cluster 3) falls back to the numeric-only placeholder, not a "
+        "crash or a stale W2026 label",
+        "numeric only" in _cluster_tool_mod._theme_for(3),
+        f"got: {_cluster_tool_mod._theme_for(3)!r}",
+    )
+    _check(
+        "Part B: FOCUSED_CLUSTERS_OVERRIDE = '1,2,4,5' parses to exactly "
+        "{1, 2, 4, 5} — cluster 9 (the AI's earlier provisional guess) is "
+        "correctly NOT in the vetted set",
+        _cluster_tool_mod.FOCUSED_CLUSTERS == {1, 2, 4, 5},
+        f"got: {sorted(_cluster_tool_mod.FOCUSED_CLUSTERS)}",
+    )
+finally:
+    for _var in ("CLUSTER_RESULTS_FILE_OVERRIDE", "CLUSTER_THEMES_OVERRIDE_JSON", "FOCUSED_CLUSTERS_OVERRIDE"):
+        os.environ.pop(_var, None)
+    if _prev_themes_json is not None:
+        os.environ["CLUSTER_THEMES_OVERRIDE_JSON"] = _prev_themes_json
+    if _prev_focused is not None:
+        os.environ["FOCUSED_CLUSTERS_OVERRIDE"] = _prev_focused
+    _importlib.reload(_cluster_tool_mod)
+    _check(
+        "Part B still-catches (W2026 default unaffected): after "
+        "restoring the environment, cluster 1's theme is back to the "
+        "W2026 production label",
+        _cluster_tool_mod._theme_for(1) == "Machine Learning & Generative AI",
+        f"got: {_cluster_tool_mod._theme_for(1)!r}",
+    )
+    _check(
+        "Part B still-catches: FOCUSED_CLUSTERS is back to the W2026 "
+        "production set {1, 2, 3, 7}",
+        _cluster_tool_mod.FOCUSED_CLUSTERS == {1, 2, 3, 7},
+        f"got: {sorted(_cluster_tool_mod.FOCUSED_CLUSTERS)}",
+    )
 
 
 # =====================================================================

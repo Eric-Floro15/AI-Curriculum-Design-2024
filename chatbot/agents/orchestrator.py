@@ -160,6 +160,30 @@ HANDLING AN ATTACHED UPLOADED CURRICULUM DOCUMENT (added 2026-06-23):
 - If no such block is present in your task description, there is nothing
   uploaded this turn — proceed normally.
 
+HANDLING A DATA WAVE OVERRIDE NOTICE (added 2026-09-25): Your own task
+description may begin with a block delimited by the literal marker line
+"===== DATA WAVE OVERRIDE NOTICE =====" and ending with "===== END DATA
+WAVE OVERRIDE NOTICE =====". This means the underlying market data for
+this run has been switched to a labour-market wave OTHER than your
+backstory's default — the notice will name which one.
+- If that block is present, you MUST relay it VERBATIM inside the
+  "context" field whenever you delegate to Cluster Interpreter AND
+  whenever you delegate to Skills Taxonomy Analyst this run (both read
+  wave-specific data), in addition to your normal context for that
+  delegation — do not summarise, paraphrase, or drop it. It still counts
+  as your ONE delegation to each specialist under the hard budget below.
+- The notice explicitly tells you to trust the LIVE tool output (cluster
+  themes, focused-cluster markers, sizes, lift/z figures) over anything
+  your own backstory says by default, including any specific wave/year
+  your backstory names — a different wave's data can disagree with your
+  backstory's usual description, and the live tool output is correct for
+  THIS run, your backstory's default framing is not. Your own final
+  synthesis must also describe the wave correctly (as the notice names
+  it), not default to whatever wave your backstory normally assumes.
+- If no such block is present in your task description, there is no
+  override this turn — proceed normally, using your backstory's default
+  framing exactly as before.
+
 CRITICAL TOOL-USE RULES (read carefully — small models break here):
 - To consult a specialist, INVOKE the `delegate_work_to_coworker` or
   `ask_question_to_coworker` tool. Actually call the tool — wait for
@@ -780,11 +804,48 @@ _LIFT_NUM_RE = re.compile(r"(\d[\d,]*\.?\d*)\s?[×x](?!\w)", re.IGNORECASE)
 # before the z (so it won't match mid-word, e.g. the "z" in "size"),
 # which is what keeps this safe to make the separator optional.
 _Z_NUM_RE = re.compile(r"\bz\s*[=:]?\s*(-?\d[\d,]*\.?\d*)", re.IGNORECASE)
+# 2026-09-25 (§5.1 F2022 PUSHTHROUGH, Part A2/A3): two real gaps found on a
+# live gpt-oss:120b F2022 dev-lane run (run_20260925T164511Z):
+#
+# A2 — the model formatted its OWN specialist-trace frequency numbers with
+# U+202F (narrow no-break space) as the thousands separator AND as the
+# spacer around "=" — e.g. "freq = 2 387" for "freq = 2,387".
+# The old digit class [\d,]* only recognises ASCII comma as a separator, so
+# extraction from the GROUNDED side truncated at the first space ("2" instead
+# of "2387"), corrupting the grounding pool and producing 8 false positives
+# on genuinely-real, correctly-cited numbers (2,387 / 15,171 / 2,769 / 46 x2
+# / 34 / the 1,600-7,500 range endpoints). Same precedent as _DASH_CHARS'
+# Unicode-hyphen handling for course codes — a real, observed model habit,
+# not a hypothetical. _THOUSANDS_SEP_CHARS below adds U+202F (narrow no-break
+# space), U+00A0 (no-break space), U+2009 (thin space), and the ordinary
+# ASCII space to the character class recognised INSIDE a digit run.
+#
+# A3 — the same run also produced a genuine, undetected fabrication:
+# "Distributed Data Processing (frequency ≈ 800)" — invented, appears in
+# neither specialist's real output — evaded this guard entirely because the
+# old pattern only recognised "=" or ":" as the freq-value separator, not
+# "≈" (approximately) or "~". Widened the separator class below to
+# [=:≈~] so this exact shape is now extracted and checked like any other
+# frequency claim. Deliberately NOT adding a bare, unanchored "≈N"/"~N"
+# branch (no "freq"/"frequency" word required at all) — that would match any
+# qualitative approximation in prose ("roughly 3 electives", "~10 weeks") far
+# beyond frequency claims, a much larger false-positive surface than the
+# "postings"-anchored branch already needs. The "postings"-anchored
+# alternative below already catches "≈800 postings"-shaped claims
+# unconditionally (it never cared what symbol preceded the digit run), so the
+# only real gap was the freq(?:uency)-prefixed, no-"postings" shape — now
+# closed without widening scope beyond the observed failure.
+#
+# Built from explicit \uXXXX escapes (not raw pasted characters) so the
+# intent is unambiguous in source — same discipline as _DASH_CHARS above.
+# ASCII comma, U+202F (narrow no-break space, the actual character gpt-oss
+# used), U+00A0 (no-break space), U+2009 (thin space), ordinary ASCII space.
+_THOUSANDS_SEP_CHARS = ',    '
 # "k" (thousands) suffix must be INSIDE the capture group — it needs to
 # reach _normalize_market_num() so "56 k" -> 56000.0, not 56.0.
 _FREQ_NUM_RE = re.compile(
-    r"(?:freq(?:uency)?\s*[=:]\s*(\d[\d,]*\.?\d*\s*k?))"
-    r"|(?:(\d[\d,]*\.?\d*\s*k?)\s*(?:postings?|job[- ]postings?))",
+    r"(?:freq(?:uency)?\s*[=:≈~]\s*(\d[\d" + _THOUSANDS_SEP_CHARS + r"]*\.?\d*\s*k?))"
+    r"|(?:(\d[\d" + _THOUSANDS_SEP_CHARS + r"]*\.?\d*\s*k?)\s*(?:postings?|job[- ]postings?))",
     re.IGNORECASE,
 )
 # Grounding-pool-only fallback: a markdown table cell containing NOTHING
@@ -871,9 +932,11 @@ def _range_endpoint_grounded(val: float, pool: list[float]) -> bool:
 
 
 def _normalize_market_num(raw: str) -> float:
-    """'1,435' / '56k' / '6.30' -> float, tolerant of commas and a 'k'
-    (thousands) suffix. Deliberately float-parse-and-compare rather than
-    reusing eval/run_orchestrator_eval.py's _substring_match() (a plain
+    """'1,435' / '2 387' / '56k' / '6.30' -> float, tolerant of ASCII
+    comma, the Unicode thousands-separator whitespace variants in
+    _THOUSANDS_SEP_CHARS (2026-09-25, A2), and a 'k' (thousands) suffix.
+    Deliberately float-parse-and-compare rather than reusing
+    eval/run_orchestrator_eval.py's _substring_match() (a plain
     comma-stripped substring check) — substring matching risks a short
     number wrongly matching inside a longer one (e.g. "1.5" as a
     substring of "21.5" or "1.56"); parsing to float and comparing
@@ -884,7 +947,9 @@ def _normalize_market_num(raw: str) -> float:
     is_k = raw.lower().endswith("k")
     if is_k:
         raw = raw[:-1]
-    val = float(raw.replace(",", ""))
+    for sep in _THOUSANDS_SEP_CHARS:
+        raw = raw.replace(sep, "")
+    val = float(raw)
     return val * 1000 if is_k else val
 
 
@@ -1961,6 +2026,22 @@ def run_query(query: str) -> str:
     # google-genai import for callers running LLM_PROVIDER=ollama/anthropic.
     from gemini_retry import GeminiDailyQuotaExhaustedError
     from google.genai.errors import APIError
+
+    # 2026-09-25 (§5.1 F2022 PUSHTHROUGH, Part A1): when an alt-wave data
+    # override is active (tools/cluster_tool.py's CLUSTER_RESULTS_FILE_OVERRIDE
+    # env var), prepend the data-wave override notice to the query — the
+    # SAME injection point as the "ATTACHED UPLOADED CURRICULUM DOCUMENT"
+    # marker block (see ORCHESTRATOR_BACKSTORY's handling rule for that
+    # feature), just for a different purpose. None (the default, no
+    # override active) leaves `query` byte-for-byte unchanged. Centralised
+    # here in run_query() itself — the single shared entry point every
+    # caller (test scripts, eval harness, the Chainlit app) goes through —
+    # so the override is honoured automatically without each caller having
+    # to remember to add it.
+    from tools.cluster_tool import data_wave_override_notice
+    _wave_notice = data_wave_override_notice()
+    if _wave_notice:
+        query = f"{_wave_notice}\n\n{query}"
 
     analyst = make_analyst()
     univ_programs = make_university_programs_agent()
