@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-20  
 **Model:** claude-sonnet-4-6 (anthropic)  
-**Commit:** *(filled below after git commit)*  
+**Commit:** `b532b45` (branch: v4-integration)  
 **Caps:** $2.00/run · $9.00 cumulative  
 **Total cost:** $2.552 USD ✓ (all caps clear)
 
@@ -151,7 +151,7 @@ Delegation order inferred from tool-call sequence: specialist tools appear befor
 ## Commit Details
 
 ```
-Commit: (fill from git log after commit)
+Commit: b532b45
 Branch: v4-integration
 Files:
   chatbot/tools/tool_capture.py
