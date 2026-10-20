@@ -4,7 +4,11 @@ cluster_tool.py — Tools for the Cluster Interpreter agent.
 Repointed 2026-09-03 from the pre-clean W2026 partition to the CLEAN W2026
 CSPA ensemble (see chatbot_integration_prep/build_index_V4_repoint.md Step 2).
 Reads chatbot/data/clust_ensembled_results_W2026_clean.csv and derives
-frequency data from the V4 taxonomy xlsx (V2 JSONL is retired, see build_index.py).
+market frequency from chatbot/data/skill_frequency_by_semester.csv (true per-wave
+mention-share, percent of postings). 2026-10-13: this replaced the V4 taxonomy
+xlsx's per-variant integer Frequency, which mis-scaled and mis-ranked demand
+(e.g. Python surfaced as freq 10 though it appears in ~38% of W2026 postings) and
+returned 0 for canonically-grouped skills. See memory/CURRENT_STATE.md 2026-09-24.
 
 The co-occurrence CSVs in final_implementation/ are not used here because
 the row index was not preserved during export, making skill-to-skill lookup
@@ -74,9 +78,15 @@ if _CHATBOT_DIR not in sys.path:
 # cluster_assignments_w2026.csv this file used before the V4 repoint.
 _W2026_CLUSTER_RESULTS_FILE = os.path.join(_CHATBOT_DIR, "data", "clust_ensembled_results_W2026_clean.csv")
 
-# V4 taxonomy xlsx — source of truth for skill frequencies (V2 JSONL retired
-# with the V4 repoint, see build_index.py module docstring).
-_W2026_V4_TAXONOMY_XLSX = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx")
+# Skill frequency source — TRUE per-wave market frequency (percent of postings
+# that mention the skill), canonical-level, from skill_frequency_by_semester.csv.
+# 2026-10-13: replaces the V4 taxonomy xlsx's integer `Frequency`, which was a
+# per-variant count that mis-scaled and mis-ranked demand (e.g. Python surfaced as
+# 10 though it appears in ~38% of W2026 postings) and returned 0 for
+# canonically-grouped skills. This CSV is keyed by canonical skill name and covers
+# 943/962 (98%) of the clustered skills; the rest report as unavailable. See
+# memory/CURRENT_STATE.md (2026-09-24) + the freq_lookup_fix memo.
+_W2026_SKILL_FREQ_CSV = os.path.join(_CHATBOT_DIR, "data", "skill_frequency_by_semester.csv")
 
 # 2026-09-25 (§5.1 F2022 curriculum, PROMPT_for_ClaudeCode_S51_F2022_curriculum.md
 # STEP 1): REVERSIBLE env-var override — points the cluster tool at a different
@@ -90,8 +100,16 @@ _W2026_V4_TAXONOMY_XLSX = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Cat
 # numeric id, so a W2026 label would misdescribe them (exactly the mistake the
 # 2026-09-24 relabel fixed for the old pre-clean partition).
 CLUSTER_RESULTS_FILE = os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE") or _W2026_CLUSTER_RESULTS_FILE
-V4_TAXONOMY_XLSX = os.environ.get("FREQ_XLSX_OVERRIDE") or _W2026_V4_TAXONOMY_XLSX
+SKILL_FREQ_CSV = os.environ.get("SKILL_FREQ_CSV_OVERRIDE") or _W2026_SKILL_FREQ_CSV
 _ALT_WAVE_MODE = bool(os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE"))
+
+# Which wave column of skill_frequency_by_semester.csv to read for market
+# frequency. Default W2026 (production). An alternate-wave run
+# (CLUSTER_RESULTS_FILE_OVERRIDE set) must name that wave's column via
+# FREQ_WAVE_OVERRIDE (e.g. "F2022"); if it does not, frequencies report as
+# unavailable rather than labelling another wave's clusters with W2026 demand —
+# the same safe-fallback principle the themes use under an alternate wave.
+FREQ_WAVE = os.environ.get("FREQ_WAVE_OVERRIDE") or ("" if _ALT_WAVE_MODE else "W2026")
 
 # Cluster themes for the clean Winter 2026 CSPA ensemble partition.
 # FINAL labels (2026-09-24) — Eric + Cowork approved; these match the
@@ -231,20 +249,33 @@ def _load_clusters() -> pd.DataFrame:
 
 
 @lru_cache(maxsize=1)
-def _load_frequencies() -> dict[str, int]:
-    """Build skill-name → frequency lookup from the V4 taxonomy xlsx.
+def _load_frequencies() -> dict[str, float]:
+    """Build skill-name → Winter-2026 market frequency (percent of postings that
+    mention the skill) from skill_frequency_by_semester.csv.
 
-    Keyed by raw Skills.lower() (not canonical_key) to match the cluster
-    CSV's raw skill names, same lookup convention _enrich_with_freq() already
-    uses. Per build_index_V4_repoint.md Step 2b.
+    Keyed by the file's canonical skill name lower-cased, which matches the
+    cluster CSV's canonical skill names (943/962 = 98% covered; the remaining
+    very-recent/niche skills report as unavailable). This is the true per-wave
+    mention-share used in the paper's longitudinal analysis. It replaces the V4
+    taxonomy's per-variant integer `Frequency` (used until 2026-10-13), which
+    understated and mis-ranked demand — e.g. Python surfaced as 10 though it
+    appears in ~38% of W2026 postings — and returned 0 for canonically-grouped
+    skills. See memory/CURRENT_STATE.md (2026-09-24) + the freq_lookup_fix memo.
     """
+    if not FREQ_WAVE:
+        return {}  # alternate-wave run with no FREQ_WAVE_OVERRIDE → demand unavailable
     try:
-        lookup: dict[str, int] = {}
-        df = pd.read_excel(V4_TAXONOMY_XLSX)
+        df = pd.read_csv(SKILL_FREQ_CSV)
+        if FREQ_WAVE not in df.columns:
+            return {}
+        lookup: dict[str, float] = {}
         for _, r in df.iterrows():
-            name = str(r.get("Skills", "")).strip().lower()
+            name = str(r.get("skill", "")).strip().lower()
             if name and name not in lookup:
-                lookup[name] = int(r.get("Frequency", 0) or 0)
+                try:
+                    lookup[name] = round(float(r.get(FREQ_WAVE, 0) or 0), 1)
+                except (TypeError, ValueError):
+                    lookup[name] = 0.0
         return lookup
     except Exception:
         return {}
@@ -362,8 +393,9 @@ try:
         Argument:
           cluster_id   integer 1–10. Use the cluster IDs from all_clusters_tool().
 
-        Returns each skill with its frequency from the job-postings taxonomy,
-        so you can prioritise which missing skills matter most.
+        Returns each skill with the share of job postings that mention it
+        (Winter 2026 market frequency), so you can prioritise which missing
+        skills matter most.
         """
         detail = cluster_detail(cluster_id)
         if "error" in detail:
@@ -375,7 +407,7 @@ try:
             "",
         ]
         for s in detail["skills"]:
-            freq_str = f"freq={s['frequency']}" if s["frequency"] > 0 else "freq=n/a"
+            freq_str = f"{s['frequency']:.1f}% of postings" if s["frequency"] > 0 else "freq=n/a"
             lines.append(f"  - {s['skill']} ({freq_str})")
         return "\n".join(lines)
 
@@ -394,9 +426,9 @@ if __name__ == "__main__":
     print("\n=== Cluster 1 detail (Machine Learning & Generative AI) ===")
     d = cluster_detail(1)
     for s in d["skills"][:10]:
-        print(f"  {s['skill']:40s} freq={s['frequency']}")
+        print(f"  {s['skill']:40s} {s['frequency']:.1f}% of postings")
 
     print("\n=== Cluster 3 detail (Data Engineering & Data Platforms) ===")
     d = cluster_detail(3)
     for s in d["skills"][:10]:
-        print(f"  {s['skill']:40s} freq={s['frequency']}")
+        print(f"  {s['skill']:40s} {s['frequency']:.1f}% of postings")

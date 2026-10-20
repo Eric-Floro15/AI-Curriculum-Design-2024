@@ -465,7 +465,7 @@ def write_snapshot(cases, results, grades) -> str:
             f"uploaded_curriculum_smoketest_{today}_{llm_slug}"
             f"_{_safe_slug(case['id'])}.log"
         )
-        with open(os.path.join(_HERE, log_filename), "w") as lf:
+        with open(os.path.join(_HERE, log_filename), "w", encoding="utf-8") as lf:
             lf.write(full_log)
 
         preview = full_log[:_LOG_PREVIEW_CHARS]
@@ -496,7 +496,7 @@ def write_snapshot(cases, results, grades) -> str:
             "",
         ]
 
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(body))
     return path
 
