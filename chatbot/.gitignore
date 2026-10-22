@@ -1,5 +1,6 @@
 .env
 faiss_index/
+faiss_index_preChunkFix_*/
 faiss_news_index/
 faiss_program_index/
 __pycache__/

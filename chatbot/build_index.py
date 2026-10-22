@@ -64,9 +64,15 @@ EXPECTED_COLUMNS = {
 }
 
 # Chunk-size hoisted so the eval script can record which config a baseline ran
-# against. Wider than the longest skill doc (p99 ≈ 1.1k chars, max ≈ 1.9k) so
-# each canonical-skill document fits in one chunk.
-CHUNK_SIZE = 2000
+# against. Must stay wider than the longest skill doc so each canonical-skill
+# document fits in one chunk. 2026-10-22: raised 2000 -> 5000. After the V4
+# taxonomy revisions two docs outgrew 2000 chars (Cloud Computing ~4.2k,
+# Communication Skills ~2.4k, mostly long alternate-spelling lists), so the
+# 962 skill docs were being split into 968 chunks and one search could return
+# the same skill twice (Cloud Computing x2 on the cloud-infra eval query).
+# The pre-fix index is archived at faiss_index_preChunkFix_2026-09-03/ (the
+# paper's end-to-end, closed-loop, ablation and grounding runs used it).
+CHUNK_SIZE = 5000
 CHUNK_OVERLAP = 0
 
 
@@ -238,8 +244,9 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
 def chunk_documents(raw_docs: list[dict]) -> tuple[list[str], list[dict]]:
     """Split documents that exceed chunk_size; return parallel lists of texts and metadatas.
 
-    chunk_size is set wider than the longest skill doc (p99 ≈ 1.1k chars,
-    max ≈ 1.9k) so each canonical-skill document stays in one chunk. Splitting
+    chunk_size is set wider than the longest skill doc (max ≈ 4.2k chars after
+    the V4 revisions; see CHUNK_SIZE) so each canonical-skill document stays in
+    one chunk. Splitting
     these short docs was previously stripping the "Skill: X" header off from
     the description.
     """
