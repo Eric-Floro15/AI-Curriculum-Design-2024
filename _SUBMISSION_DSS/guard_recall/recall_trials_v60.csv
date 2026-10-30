@@ -1,0 +1,1022 @@
+run,plant_type,family,planted,detected,by_guard,other_new_flags
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered lift value,in-scope,6.48->9.64,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered lift value,in-scope,7.79->12.20,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered lift value,in-scope,8.14->13.38,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered z value,in-scope,5.01->6.98,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered z value,in-scope,2.20->5.17,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered z value,in-scope,5.01->7.58,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered posting count,in-scope,"1,615 ->2580",1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered posting count,in-scope,768 ->970,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,altered posting count,in-scope,57 ->70,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented lift + z (inserted),in-scope,"20.95x, z=7.7",1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented lift + z (inserted),in-scope,"16.06x, z=8.6",1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented lift + z (inserted),in-scope,"9.39x, z=7.3",1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented course code,in-scope,STAT 7243,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented course code,in-scope,DSCI 9926,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented course code,in-scope,DSCI 9006,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/llm-systems-2025,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/agentic-ai-2027,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/ethics-2027,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented institution,in-scope,Western University,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented institution,in-scope,University of Alberta,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,grounded lift moved to wrong skill,boundary,6.48->12.25,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,grounded lift moved to wrong skill,boundary,6.63->12.25,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,grounded lift moved to wrong skill,boundary,12.60->11.07,1,numeric,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,unanchored percentage,boundary,58.1%,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,unanchored percentage,boundary,63.7%,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,unanchored percentage,boundary,40.1%,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260910T212751Z_sonnet-run1-agentic-curriculum_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260911T180715Z_success_full.md,altered lift value,in-scope,2.11->4.11,1,numeric,0
+run_20260911T180715Z_success_full.md,altered lift value,in-scope,8.14->13.45,1,numeric,0
+run_20260911T180715Z_success_full.md,altered lift value,in-scope,5.19->8.11,1,numeric,0
+run_20260911T180715Z_success_full.md,altered z value,in-scope,4.33->6.95,1,numeric,0
+run_20260911T180715Z_success_full.md,altered z value,in-scope,5.08->7.19,1,numeric,0
+run_20260911T180715Z_success_full.md,altered z value,in-scope,2.27->3.54,1,numeric,0
+run_20260911T180715Z_success_full.md,invented lift + z (inserted),in-scope,"15.62x, z=12.7",1,numeric,0
+run_20260911T180715Z_success_full.md,invented lift + z (inserted),in-scope,"24.80x, z=14.8",1,numeric,0
+run_20260911T180715Z_success_full.md,invented lift + z (inserted),in-scope,"12.02x, z=14.7",1,numeric,0
+run_20260911T180715Z_success_full.md,invented course code,in-scope,AIML 1530,1,content,0
+run_20260911T180715Z_success_full.md,invented course code,in-scope,MIE 9865,1,content,0
+run_20260911T180715Z_success_full.md,invented course code,in-scope,MMAI 3018,1,content,0
+run_20260911T180715Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/mlops-2026,1,content,0
+run_20260911T180715Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/ethics-2027,1,content,0
+run_20260911T180715Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/agentic-ai-2026,1,content,0
+run_20260911T180715Z_success_full.md,invented institution,in-scope,Western University,1,content,0
+run_20260911T180715Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260911T180715Z_success_full.md,invented institution,in-scope,Concordia University,1,content,0
+run_20260911T180715Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T180715Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T180715Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T180715Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T180715Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260911T180715Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260911T180715Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260911T180715Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260911T180715Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260911T180715Z_success_full.md,grounded lift moved to wrong skill,boundary,6.63->3.18,1,numeric,0
+run_20260911T180715Z_success_full.md,grounded lift moved to wrong skill,boundary,10.0->71.0,1,numeric,0
+run_20260911T180715Z_success_full.md,grounded lift moved to wrong skill,boundary,1.07->7.92,1,numeric,0
+run_20260911T180715Z_success_full.md,unanchored percentage,boundary,30.4%,0,,0
+run_20260911T180715Z_success_full.md,unanchored percentage,boundary,29.8%,0,,0
+run_20260911T180715Z_success_full.md,unanchored percentage,boundary,65.9%,0,,0
+run_20260911T180715Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260911T180715Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260911T180715Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260911T181913Z_success_full.md,altered lift value,in-scope,7.22->10.97,1,numeric,0
+run_20260911T181913Z_success_full.md,altered lift value,in-scope,7.51->10.84,1,numeric,0
+run_20260911T181913Z_success_full.md,altered lift value,in-scope,5.16->9.06,1,numeric,0
+run_20260911T181913Z_success_full.md,altered z value,in-scope,3.92->6.09,1,numeric,0
+run_20260911T181913Z_success_full.md,altered z value,in-scope,2.27->5.15,1,numeric,0
+run_20260911T181913Z_success_full.md,altered z value,in-scope,2.45->4.95,1,numeric,0
+run_20260911T181913Z_success_full.md,invented lift + z (inserted),in-scope,"5.93x, z=5.2",1,numeric,0
+run_20260911T181913Z_success_full.md,invented lift + z (inserted),in-scope,"11.76x, z=7.4",1,numeric,0
+run_20260911T181913Z_success_full.md,invented lift + z (inserted),in-scope,"13.17x, z=6.4",1,numeric,0
+run_20260911T181913Z_success_full.md,invented course code,in-scope,AIML 1273,1,content,0
+run_20260911T181913Z_success_full.md,invented course code,in-scope,CSC 6950,1,content,0
+run_20260911T181913Z_success_full.md,invented course code,in-scope,STAT 4731,1,content,0
+run_20260911T181913Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/ethics-2026,1,content,0
+run_20260911T181913Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/llm-systems-2026,1,content,0
+run_20260911T181913Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/llm-systems-2027,1,content,0
+run_20260911T181913Z_success_full.md,invented institution,in-scope,Western University,1,content,0
+run_20260911T181913Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260911T181913Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260911T181913Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T181913Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T181913Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T181913Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T181913Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260911T181913Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260911T181913Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260911T181913Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260911T181913Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260911T181913Z_success_full.md,grounded lift moved to wrong skill,boundary,5.39->8.29,0,,0
+run_20260911T181913Z_success_full.md,grounded lift moved to wrong skill,boundary,12.25->6.43,1,numeric,0
+run_20260911T181913Z_success_full.md,grounded lift moved to wrong skill,boundary,6.63->15.76,0,,0
+run_20260911T181913Z_success_full.md,unanchored percentage,boundary,54.1%,0,,0
+run_20260911T181913Z_success_full.md,unanchored percentage,boundary,60.9%,0,,0
+run_20260911T181913Z_success_full.md,unanchored percentage,boundary,35.2%,0,,0
+run_20260911T181913Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260911T181913Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260911T181913Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260911T234935Z_success_full.md,altered lift value,in-scope,11.07->15.14,1,numeric,0
+run_20260911T234935Z_success_full.md,altered lift value,in-scope,11.77->15.42,1,numeric,0
+run_20260911T234935Z_success_full.md,altered lift value,in-scope,4.41->8.40,1,numeric,0
+run_20260911T234935Z_success_full.md,altered z value,in-scope,4.33->7.24,1,numeric,0
+run_20260911T234935Z_success_full.md,altered z value,in-scope,2.20->4.07,1,numeric,0
+run_20260911T234935Z_success_full.md,altered z value,in-scope,9.56->12.73,1,numeric,0
+run_20260911T234935Z_success_full.md,invented lift + z (inserted),in-scope,"21.74x, z=4.6",1,numeric,0
+run_20260911T234935Z_success_full.md,invented lift + z (inserted),in-scope,"8.65x, z=10.4",1,numeric,0
+run_20260911T234935Z_success_full.md,invented lift + z (inserted),in-scope,"27.39x, z=8.2",1,numeric,0
+run_20260911T234935Z_success_full.md,invented course code,in-scope,CSC 2494,1,content,0
+run_20260911T234935Z_success_full.md,invented course code,in-scope,DSCI 7071,1,content,0
+run_20260911T234935Z_success_full.md,invented course code,in-scope,CSC 5273,1,content,0
+run_20260911T234935Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/mlops-2026,1,content,0
+run_20260911T234935Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/mlops-2026,1,content,0
+run_20260911T234935Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/mlops-2027,1,content,0
+run_20260911T234935Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20260911T234935Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260911T234935Z_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260911T234935Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T234935Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T234935Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T234935Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260911T234935Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260911T234935Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260911T234935Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260911T234935Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260911T234935Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260911T234935Z_success_full.md,grounded lift moved to wrong skill,boundary,4.67->82.00,1,numeric,0
+run_20260911T234935Z_success_full.md,grounded lift moved to wrong skill,boundary,7.92->9.01,1,numeric,0
+run_20260911T234935Z_success_full.md,grounded lift moved to wrong skill,boundary,4.41->245.00,1,numeric,0
+run_20260911T234935Z_success_full.md,unanchored percentage,boundary,78.7%,0,,0
+run_20260911T234935Z_success_full.md,unanchored percentage,boundary,50.8%,0,,0
+run_20260911T234935Z_success_full.md,unanchored percentage,boundary,57.7%,0,,0
+run_20260911T234935Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260911T234935Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260911T234935Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260912T013020Z_success_full.md,altered lift value,in-scope,10.05->17.56,1,numeric,0
+run_20260912T013020Z_success_full.md,altered lift value,in-scope,8.66->13.55,1,numeric,0
+run_20260912T013020Z_success_full.md,altered z value,in-scope,2.61->4.87,1,numeric,0
+run_20260912T013020Z_success_full.md,altered z value,in-scope,9.56->13.95,1,numeric,0
+run_20260912T013020Z_success_full.md,altered z value,in-scope,3.14->5.13,1,numeric,0
+run_20260912T013020Z_success_full.md,altered posting count,in-scope,92 ->123,1,numeric,0
+run_20260912T013020Z_success_full.md,altered posting count,in-scope,83 ->120,1,numeric,0
+run_20260912T013020Z_success_full.md,altered posting count,in-scope,34 ->52,0,,0
+run_20260912T013020Z_success_full.md,invented lift + z (inserted),in-scope,"24.43x, z=12.6",1,numeric,0
+run_20260912T013020Z_success_full.md,invented lift + z (inserted),in-scope,"25.50x, z=8.7",1,numeric,0
+run_20260912T013020Z_success_full.md,invented lift + z (inserted),in-scope,"5.86x, z=6.6",1,numeric,0
+run_20260912T013020Z_success_full.md,invented course code,in-scope,MMAI 2834,1,content,0
+run_20260912T013020Z_success_full.md,invented course code,in-scope,CSC 6079,1,content,0
+run_20260912T013020Z_success_full.md,invented course code,in-scope,CS 558,1,content,0
+run_20260912T013020Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/agentic-ai-2027,1,content,0
+run_20260912T013020Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/agentic-ai-2025,1,content,0
+run_20260912T013020Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/mlops-2026,1,content,0
+run_20260912T013020Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20260912T013020Z_success_full.md,invented institution,in-scope,Western University,1,content,0
+run_20260912T013020Z_success_full.md,invented institution,in-scope,York University,1,content,0
+run_20260912T013020Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260912T013020Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260912T013020Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260912T013020Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260912T013020Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260912T013020Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260912T013020Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260912T013020Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260912T013020Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260912T013020Z_success_full.md,grounded lift moved to wrong skill,boundary,9.54->910.00,0,,0
+run_20260912T013020Z_success_full.md,grounded lift moved to wrong skill,boundary,12.25->71.00,0,,0
+run_20260912T013020Z_success_full.md,grounded lift moved to wrong skill,boundary,7.22->8.03,0,,0
+run_20260912T013020Z_success_full.md,unanchored percentage,boundary,26.3%,0,,0
+run_20260912T013020Z_success_full.md,unanchored percentage,boundary,28.4%,0,,0
+run_20260912T013020Z_success_full.md,unanchored percentage,boundary,73.3%,0,,0
+run_20260912T013020Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260912T013020Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260912T013020Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T034032Z_success_full.md,altered lift value,in-scope,8.05->11.84,1,numeric,0
+run_20260917T034032Z_success_full.md,altered lift value,in-scope,7.74->13.69,1,numeric,0
+run_20260917T034032Z_success_full.md,altered lift value,in-scope,5.31->9.46,1,numeric,0
+run_20260917T034032Z_success_full.md,altered z value,in-scope,2.03->4.28,1,numeric,0
+run_20260917T034032Z_success_full.md,altered z value,in-scope,3.33->6.33,1,numeric,0
+run_20260917T034032Z_success_full.md,altered z value,in-scope,6.19->8.56,1,numeric,0
+run_20260917T034032Z_success_full.md,altered posting count,in-scope,60->96,0,,0
+run_20260917T034032Z_success_full.md,altered posting count,in-scope,42->68,0,,0
+run_20260917T034032Z_success_full.md,invented lift + z (inserted),in-scope,"14.09x, z=11.1",1,numeric,0
+run_20260917T034032Z_success_full.md,invented lift + z (inserted),in-scope,"21.94x, z=10.5",1,numeric,0
+run_20260917T034032Z_success_full.md,invented lift + z (inserted),in-scope,"5.30x, z=10.9",1,numeric,0
+run_20260917T034032Z_success_full.md,invented course code,in-scope,STAT 5672,1,content,0
+run_20260917T034032Z_success_full.md,invented course code,in-scope,CS 974,1,content,0
+run_20260917T034032Z_success_full.md,invented course code,in-scope,CSC 1976,0,,0
+run_20260917T034032Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/agentic-ai-2025,1,content,0
+run_20260917T034032Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/agentic-ai-2025,1,content,0
+run_20260917T034032Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/ethics-2025,1,content,0
+run_20260917T034032Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260917T034032Z_success_full.md,invented institution,in-scope,York University,1,content,0
+run_20260917T034032Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T034032Z_success_full.md,grounded lift moved to wrong skill,boundary,4.88->7.74,0,,0
+run_20260917T034032Z_success_full.md,grounded lift moved to wrong skill,boundary,6.53->5.98,0,,0
+run_20260917T034032Z_success_full.md,grounded lift moved to wrong skill,boundary,8.69->28.00,0,,0
+run_20260917T034032Z_success_full.md,unanchored percentage,boundary,31.8%,0,,0
+run_20260917T034032Z_success_full.md,unanchored percentage,boundary,75.1%,0,,0
+run_20260917T034032Z_success_full.md,unanchored percentage,boundary,61.1%,0,,0
+run_20260917T034032Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T034032Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T034032Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T053755Z_success_full.md,altered posting count,in-scope,924 ->1298,1,numeric,0
+run_20260917T053755Z_success_full.md,altered posting count,in-scope,534 ->680,0,,0
+run_20260917T053755Z_success_full.md,altered posting count,in-scope,396 ->571,0,,0
+run_20260917T053755Z_success_full.md,invented lift + z (inserted),in-scope,"4.11x, z=6.8",1,numeric,0
+run_20260917T053755Z_success_full.md,invented lift + z (inserted),in-scope,"28.22x, z=7.8",1,numeric,0
+run_20260917T053755Z_success_full.md,invented lift + z (inserted),in-scope,"28.77x, z=12.7",1,numeric,0
+run_20260917T053755Z_success_full.md,invented course code,in-scope,MIE 2742,1,content,0
+run_20260917T053755Z_success_full.md,invented course code,in-scope,COMP 5439,1,content,0
+run_20260917T053755Z_success_full.md,invented course code,in-scope,CSC 7042,1,content,0
+run_20260917T053755Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/ethics-2027,1,content,0
+run_20260917T053755Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/agentic-ai-2027,1,content,0
+run_20260917T053755Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/llm-systems-2025,1,content,0
+run_20260917T053755Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T053755Z_success_full.md,invented institution,in-scope,University of Victoria,1,content,0
+run_20260917T053755Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053755Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T053755Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T053755Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T053755Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T053755Z_success_full.md,unanchored percentage,boundary,72.5%,0,,0
+run_20260917T053755Z_success_full.md,unanchored percentage,boundary,60.6%,0,,0
+run_20260917T053755Z_success_full.md,unanchored percentage,boundary,29.3%,0,,0
+run_20260917T053755Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T053755Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T053755Z_success_full.md,"institution without ""University"" pattern",boundary,ETH Zurich,0,,0
+run_20260917T053944Z_success_full.md,invented lift + z (inserted),in-scope,"14.21x, z=10.6",1,numeric,0
+run_20260917T053944Z_success_full.md,invented lift + z (inserted),in-scope,"24.75x, z=11.7",1,numeric,0
+run_20260917T053944Z_success_full.md,invented lift + z (inserted),in-scope,"10.33x, z=7.2",1,numeric,0
+run_20260917T053944Z_success_full.md,invented course code,in-scope,COMP 5267,1,content,0
+run_20260917T053944Z_success_full.md,invented course code,in-scope,MMAI 7177,1,content,0
+run_20260917T053944Z_success_full.md,invented course code,in-scope,CS 1459,1,content,0
+run_20260917T053944Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2025,1,content,0
+run_20260917T053944Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/mlops-2027,1,content,0
+run_20260917T053944Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/ethics-2025,1,content,0
+run_20260917T053944Z_success_full.md,invented institution,in-scope,Western University,1,content,0
+run_20260917T053944Z_success_full.md,invented institution,in-scope,University of Victoria,1,content,0
+run_20260917T053944Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Skills Taxonomy Analyst,1,attribution+delegation_claim,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053944Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T053944Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T053944Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T053944Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T053944Z_success_full.md,unanchored percentage,boundary,54.9%,0,,0
+run_20260917T053944Z_success_full.md,unanchored percentage,boundary,42.4%,0,,0
+run_20260917T053944Z_success_full.md,unanchored percentage,boundary,71.1%,0,,0
+run_20260917T053944Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T053944Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T053944Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T054301Z_success_full.md,altered lift value,in-scope,4.75->8.68,1,numeric,0
+run_20260917T054301Z_success_full.md,altered lift value,in-scope,13->20,1,numeric,0
+run_20260917T054301Z_success_full.md,altered lift value,in-scope,8.09->10.22,1,numeric,0
+run_20260917T054301Z_success_full.md,altered z value,in-scope,2.28->4.47,1,numeric,0
+run_20260917T054301Z_success_full.md,altered z value,in-scope,8.03->12.73,1,numeric,0
+run_20260917T054301Z_success_full.md,altered z value,in-scope,2.27->3.33,1,numeric,0
+run_20260917T054301Z_success_full.md,altered posting count,in-scope,83 ->121,0,,0
+run_20260917T054301Z_success_full.md,altered posting count,in-scope,66 ->106,0,,0
+run_20260917T054301Z_success_full.md,altered posting count,in-scope,251 ->336,0,,0
+run_20260917T054301Z_success_full.md,invented lift + z (inserted),in-scope,"27.44x, z=9.8",1,numeric,0
+run_20260917T054301Z_success_full.md,invented lift + z (inserted),in-scope,"21.85x, z=6.6",1,numeric,0
+run_20260917T054301Z_success_full.md,invented lift + z (inserted),in-scope,"26.75x, z=11.1",1,numeric,0
+run_20260917T054301Z_success_full.md,invented course code,in-scope,CSC 7331,1,content,0
+run_20260917T054301Z_success_full.md,invented course code,in-scope,CS 5643,1,content,0
+run_20260917T054301Z_success_full.md,invented course code,in-scope,CSC 9830,1,content,0
+run_20260917T054301Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/llm-systems-2027,1,content,0
+run_20260917T054301Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/llm-systems-2026,1,content,0
+run_20260917T054301Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/agentic-ai-2026,1,content,0
+run_20260917T054301Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260917T054301Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T054301Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054301Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T054301Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T054301Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054301Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054301Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T054301Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T054301Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T054301Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T054301Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T054301Z_success_full.md,grounded lift moved to wrong skill,boundary,13.11->11.66,0,,0
+run_20260917T054301Z_success_full.md,grounded lift moved to wrong skill,boundary,4.75->6.03,1,numeric,0
+run_20260917T054301Z_success_full.md,grounded lift moved to wrong skill,boundary,11.07->8.75,1,numeric,0
+run_20260917T054301Z_success_full.md,unanchored percentage,boundary,74.2%,0,,0
+run_20260917T054301Z_success_full.md,unanchored percentage,boundary,75.4%,0,,0
+run_20260917T054301Z_success_full.md,unanchored percentage,boundary,33.7%,0,,0
+run_20260917T054301Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T054301Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260917T054301Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T054837Z_success_full.md,altered lift value,in-scope,3.07->5.13,1,numeric,0
+run_20260917T054837Z_success_full.md,altered lift value,in-scope,5.96->8.76,1,numeric,0
+run_20260917T054837Z_success_full.md,altered lift value,in-scope,3.41->5.79,1,numeric,0
+run_20260917T054837Z_success_full.md,altered z value,in-scope,5.36->8.95,1,numeric,0
+run_20260917T054837Z_success_full.md,altered z value,in-scope,2.79->5.78,1,numeric,0
+run_20260917T054837Z_success_full.md,altered z value,in-scope,2.63->5.06,1,numeric,0
+run_20260917T054837Z_success_full.md,altered posting count,in-scope,72 ->93,0,,0
+run_20260917T054837Z_success_full.md,altered posting count,in-scope,"2,013 ->3109",1,numeric,0
+run_20260917T054837Z_success_full.md,invented lift + z (inserted),in-scope,"16.24x, z=13.7",1,numeric,0
+run_20260917T054837Z_success_full.md,invented lift + z (inserted),in-scope,"12.84x, z=5.3",1,numeric,0
+run_20260917T054837Z_success_full.md,invented lift + z (inserted),in-scope,"12.02x, z=5.7",1,numeric,0
+run_20260917T054837Z_success_full.md,invented course code,in-scope,COMP 3914,1,content,0
+run_20260917T054837Z_success_full.md,invented course code,in-scope,DSCI 2574,1,content,0
+run_20260917T054837Z_success_full.md,invented course code,in-scope,MIE 7782,1,content,0
+run_20260917T054837Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/llm-systems-2025,1,content,0
+run_20260917T054837Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/ethics-2026,1,content,0
+run_20260917T054837Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/llm-systems-2027,1,content,0
+run_20260917T054837Z_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260917T054837Z_success_full.md,invented institution,in-scope,Concordia University,1,content,0
+run_20260917T054837Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T054837Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T054837Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T054837Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054837Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T054837Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T054837Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T054837Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T054837Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T054837Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T054837Z_success_full.md,grounded lift moved to wrong skill,boundary,3.41->6.63,0,,0
+run_20260917T054837Z_success_full.md,grounded lift moved to wrong skill,boundary,3.17->5.19,0,,0
+run_20260917T054837Z_success_full.md,grounded lift moved to wrong skill,boundary,6.63->3.33,0,,0
+run_20260917T054837Z_success_full.md,unanchored percentage,boundary,27.6%,0,,0
+run_20260917T054837Z_success_full.md,unanchored percentage,boundary,50.4%,0,,0
+run_20260917T054837Z_success_full.md,unanchored percentage,boundary,52.8%,0,,0
+run_20260917T054837Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T054837Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260917T054837Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T055234Z_success_full.md,altered lift value,in-scope,8.06->14.00,1,numeric,0
+run_20260917T055234Z_success_full.md,altered lift value,in-scope,8.06->12.18,1,content+numeric,0
+run_20260917T055234Z_success_full.md,altered lift value,in-scope,11.97->16.67,1,numeric,0
+run_20260917T055234Z_success_full.md,altered z value,in-scope,3.05->5.31,1,numeric,0
+run_20260917T055234Z_success_full.md,altered z value,in-scope,3.43->6.14,1,numeric,0
+run_20260917T055234Z_success_full.md,altered z value,in-scope,4.23->7.06,1,numeric,0
+run_20260917T055234Z_success_full.md,altered posting count,in-scope,524 ->675,1,numeric,0
+run_20260917T055234Z_success_full.md,altered posting count,in-scope,279 ->427,0,,0
+run_20260917T055234Z_success_full.md,altered posting count,in-scope,66 ->91,0,,0
+run_20260917T055234Z_success_full.md,invented lift + z (inserted),in-scope,"22.47x, z=10.4",1,numeric,0
+run_20260917T055234Z_success_full.md,invented lift + z (inserted),in-scope,"24.80x, z=6.5",1,numeric,0
+run_20260917T055234Z_success_full.md,invented lift + z (inserted),in-scope,"17.98x, z=14.8",1,numeric,0
+run_20260917T055234Z_success_full.md,invented course code,in-scope,AIML 8562,1,content,0
+run_20260917T055234Z_success_full.md,invented course code,in-scope,MMAI 3960,1,content,0
+run_20260917T055234Z_success_full.md,invented course code,in-scope,MIE 4746,1,content,0
+run_20260917T055234Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/llm-systems-2027,1,content,0
+run_20260917T055234Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/agentic-ai-2027,1,content,0
+run_20260917T055234Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/agentic-ai-2026,1,content,0
+run_20260917T055234Z_success_full.md,invented institution,in-scope,University of Victoria,1,content,0
+run_20260917T055234Z_success_full.md,invented institution,in-scope,Concordia University,1,content,0
+run_20260917T055234Z_success_full.md,invented institution,in-scope,University of Alberta,1,content,0
+run_20260917T055234Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055234Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055234Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055234Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055234Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T055234Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T055234Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T055234Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T055234Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T055234Z_success_full.md,grounded lift moved to wrong skill,boundary,15.04->11.14,0,,0
+run_20260917T055234Z_success_full.md,grounded lift moved to wrong skill,boundary,10.43->4.61,0,,0
+run_20260917T055234Z_success_full.md,grounded lift moved to wrong skill,boundary,9.03->20.06,0,,0
+run_20260917T055234Z_success_full.md,unanchored percentage,boundary,44.4%,0,,0
+run_20260917T055234Z_success_full.md,unanchored percentage,boundary,42.1%,0,,0
+run_20260917T055234Z_success_full.md,unanchored percentage,boundary,53.6%,0,,0
+run_20260917T055234Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260917T055234Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T055234Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T055616Z_success_full.md,altered lift value,in-scope,3.87->5.28,1,numeric,0
+run_20260917T055616Z_success_full.md,altered lift value,in-scope,16.63->20.92,1,numeric,0
+run_20260917T055616Z_success_full.md,altered lift value,in-scope,3.41->6.89,1,numeric,0
+run_20260917T055616Z_success_full.md,altered z value,in-scope,5.29->8.49,1,numeric,0
+run_20260917T055616Z_success_full.md,altered z value,in-scope,3.83->6.66,1,numeric,0
+run_20260917T055616Z_success_full.md,altered z value,in-scope,7.54->11.76,1,numeric,0
+run_20260917T055616Z_success_full.md,altered posting count,in-scope,"3,124 ->4282",1,numeric,0
+run_20260917T055616Z_success_full.md,invented lift + z (inserted),in-scope,"23.60x, z=13.7",1,numeric,0
+run_20260917T055616Z_success_full.md,invented lift + z (inserted),in-scope,"22.26x, z=10.6",1,numeric,0
+run_20260917T055616Z_success_full.md,invented lift + z (inserted),in-scope,"11.78x, z=6.3",1,numeric,0
+run_20260917T055616Z_success_full.md,invented course code,in-scope,COMP 3846,1,content,0
+run_20260917T055616Z_success_full.md,invented course code,in-scope,DSCI 802,1,content,0
+run_20260917T055616Z_success_full.md,invented course code,in-scope,STAT 982,1,content,0
+run_20260917T055616Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/llm-systems-2027,1,content,0
+run_20260917T055616Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/llm-systems-2027,1,content,0
+run_20260917T055616Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/ethics-2027,1,content,0
+run_20260917T055616Z_success_full.md,invented institution,in-scope,Simon Fraser University,1,content,0
+run_20260917T055616Z_success_full.md,invented institution,in-scope,University of Alberta,1,content,0
+run_20260917T055616Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260917T055616Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055616Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055616Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055616Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T055616Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T055616Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T055616Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T055616Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T055616Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T055616Z_success_full.md,grounded lift moved to wrong skill,boundary,11.80->15.90,0,,0
+run_20260917T055616Z_success_full.md,grounded lift moved to wrong skill,boundary,3.29->125.00,1,numeric,0
+run_20260917T055616Z_success_full.md,grounded lift moved to wrong skill,boundary,12.01->339.00,1,numeric,0
+run_20260917T055616Z_success_full.md,unanchored percentage,boundary,26.9%,0,,0
+run_20260917T055616Z_success_full.md,unanchored percentage,boundary,39.9%,0,,0
+run_20260917T055616Z_success_full.md,unanchored percentage,boundary,53.4%,0,,0
+run_20260917T055616Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T055616Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T055616Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T060001Z_success_full.md,altered lift value,in-scope,9.65->12.63,1,numeric,0
+run_20260917T060001Z_success_full.md,altered lift value,in-scope,13.11->22.02,1,numeric,0
+run_20260917T060001Z_success_full.md,altered lift value,in-scope,7.51->13.96,1,numeric,0
+run_20260917T060001Z_success_full.md,altered z value,in-scope,2.40->4.45,1,numeric,0
+run_20260917T060001Z_success_full.md,altered z value,in-scope,7.13->9.91,1,numeric,0
+run_20260917T060001Z_success_full.md,altered z value,in-scope,2.88->4.76,1,numeric,0
+run_20260917T060001Z_success_full.md,invented lift + z (inserted),in-scope,"16.75x, z=8.5",1,numeric,0
+run_20260917T060001Z_success_full.md,invented lift + z (inserted),in-scope,"19.90x, z=9.8",1,numeric,0
+run_20260917T060001Z_success_full.md,invented lift + z (inserted),in-scope,"12.98x, z=9.9",1,numeric,0
+run_20260917T060001Z_success_full.md,invented course code,in-scope,MMAI 1204,1,content,0
+run_20260917T060001Z_success_full.md,invented course code,in-scope,AIML 1391,1,content,0
+run_20260917T060001Z_success_full.md,invented course code,in-scope,MMAI 1650,1,content,0
+run_20260917T060001Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/agentic-ai-2026,1,content,0
+run_20260917T060001Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/ethics-2025,1,content,0
+run_20260917T060001Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/llm-systems-2026,1,content,0
+run_20260917T060001Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260917T060001Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20260917T060001Z_success_full.md,invented institution,in-scope,University of Victoria,1,content,0
+run_20260917T060001Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060001Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060001Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060001Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060001Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060001Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060001Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T060001Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060001Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060001Z_success_full.md,grounded lift moved to wrong skill,boundary,12.60->4.34,0,,0
+run_20260917T060001Z_success_full.md,grounded lift moved to wrong skill,boundary,5.96->7.72,0,,0
+run_20260917T060001Z_success_full.md,grounded lift moved to wrong skill,boundary,7.51->4.34,0,,0
+run_20260917T060001Z_success_full.md,unanchored percentage,boundary,54.4%,0,,0
+run_20260917T060001Z_success_full.md,unanchored percentage,boundary,43.9%,0,,0
+run_20260917T060001Z_success_full.md,unanchored percentage,boundary,59.4%,0,,0
+run_20260917T060001Z_success_full.md,"institution without ""University"" pattern",boundary,ETH Zurich,0,,0
+run_20260917T060001Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T060001Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T060114Z_success_full.md,altered lift value,in-scope,3.17->5.73,1,numeric,0
+run_20260917T060114Z_success_full.md,altered lift value,in-scope,3.25->5.72,1,numeric,0
+run_20260917T060114Z_success_full.md,altered lift value,in-scope,3.17->4.52,1,numeric,0
+run_20260917T060114Z_success_full.md,altered z value,in-scope,2.02->4.80,1,numeric,0
+run_20260917T060114Z_success_full.md,altered z value,in-scope,2.22->3.51,1,numeric,0
+run_20260917T060114Z_success_full.md,altered z value,in-scope,3.88->5.12,1,numeric,0
+run_20260917T060114Z_success_full.md,invented lift + z (inserted),in-scope,"15.49x, z=12.2",1,numeric,0
+run_20260917T060114Z_success_full.md,invented lift + z (inserted),in-scope,"10.85x, z=5.4",1,numeric,0
+run_20260917T060114Z_success_full.md,invented lift + z (inserted),in-scope,"11.81x, z=11.4",1,numeric,0
+run_20260917T060114Z_success_full.md,invented course code,in-scope,CS 9462,1,content,0
+run_20260917T060114Z_success_full.md,invented course code,in-scope,COMP 7010,1,content,0
+run_20260917T060114Z_success_full.md,invented course code,in-scope,MIE 8037,1,content,0
+run_20260917T060114Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/ethics-2025,1,content,0
+run_20260917T060114Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/llm-systems-2027,1,content,0
+run_20260917T060114Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/ethics-2025,1,content,0
+run_20260917T060114Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260917T060114Z_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260917T060114Z_success_full.md,invented institution,in-scope,Western University,1,content,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060114Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060114Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T060114Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060114Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060114Z_success_full.md,unanchored percentage,boundary,62.7%,0,,0
+run_20260917T060114Z_success_full.md,unanchored percentage,boundary,68.1%,0,,0
+run_20260917T060114Z_success_full.md,unanchored percentage,boundary,23.8%,0,,0
+run_20260917T060114Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T060114Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T060114Z_success_full.md,"institution without ""University"" pattern",boundary,ETH Zurich,0,,0
+run_20260917T060336Z_success_full.md,altered lift value,in-scope,48.55->70.15,1,numeric,0
+run_20260917T060336Z_success_full.md,altered lift value,in-scope,48.55->75.92,1,numeric,0
+run_20260917T060336Z_success_full.md,altered lift value,in-scope,20.14->31.13,1,numeric,0
+run_20260917T060336Z_success_full.md,altered z value,in-scope,2.07->4.69,1,numeric,0
+run_20260917T060336Z_success_full.md,altered z value,in-scope,2.85->5.14,1,numeric,0
+run_20260917T060336Z_success_full.md,altered z value,in-scope,2.85->4.28,1,numeric,0
+run_20260917T060336Z_success_full.md,altered posting count,in-scope,19 ->31,1,numeric,0
+run_20260917T060336Z_success_full.md,altered posting count,in-scope,19 ->31,1,numeric,0
+run_20260917T060336Z_success_full.md,altered posting count,in-scope,559 ->866,1,numeric,0
+run_20260917T060336Z_success_full.md,invented lift + z (inserted),in-scope,"21.88x, z=13.5",1,numeric,0
+run_20260917T060336Z_success_full.md,invented lift + z (inserted),in-scope,"30.76x, z=9.3",1,numeric,0
+run_20260917T060336Z_success_full.md,invented lift + z (inserted),in-scope,"27.34x, z=12.7",1,numeric,0
+run_20260917T060336Z_success_full.md,invented course code,in-scope,CSC 7063,1,content,0
+run_20260917T060336Z_success_full.md,invented course code,in-scope,STAT 4959,1,content,0
+run_20260917T060336Z_success_full.md,invented course code,in-scope,STAT 9613,1,content,0
+run_20260917T060336Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/ethics-2027,1,content,0
+run_20260917T060336Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/mlops-2025,1,content,0
+run_20260917T060336Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/llm-systems-2025,1,content,0
+run_20260917T060336Z_success_full.md,invented institution,in-scope,Simon Fraser University,1,content,0
+run_20260917T060336Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260917T060336Z_success_full.md,invented institution,in-scope,University of Alberta,1,content,0
+run_20260917T060336Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060336Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060336Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060336Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060336Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060336Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060336Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T060336Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060336Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060336Z_success_full.md,grounded lift moved to wrong skill,boundary,48.55->20.14,0,,0
+run_20260917T060336Z_success_full.md,grounded lift moved to wrong skill,boundary,20.14->48.55,0,,0
+run_20260917T060336Z_success_full.md,grounded lift moved to wrong skill,boundary,48.55->20.14,0,,0
+run_20260917T060336Z_success_full.md,unanchored percentage,boundary,72.9%,0,,0
+run_20260917T060336Z_success_full.md,unanchored percentage,boundary,38.6%,0,,0
+run_20260917T060336Z_success_full.md,unanchored percentage,boundary,69.4%,0,,0
+run_20260917T060336Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T060336Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T060336Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T060442Z_success_full.md,invented lift + z (inserted),in-scope,"24.19x, z=11.6",1,numeric,0
+run_20260917T060442Z_success_full.md,invented lift + z (inserted),in-scope,"25.57x, z=9.9",1,numeric,0
+run_20260917T060442Z_success_full.md,invented lift + z (inserted),in-scope,"18.21x, z=12.2",1,numeric,0
+run_20260917T060442Z_success_full.md,invented course code,in-scope,MIE 2536,1,content,0
+run_20260917T060442Z_success_full.md,invented course code,in-scope,STAT 7832,1,content,0
+run_20260917T060442Z_success_full.md,invented course code,in-scope,AIML 8278,1,content,0
+run_20260917T060442Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2026,1,content,0
+run_20260917T060442Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2025,1,content,0
+run_20260917T060442Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2026,1,content,0
+run_20260917T060442Z_success_full.md,invented institution,in-scope,University of Victoria,1,content,0
+run_20260917T060442Z_success_full.md,invented institution,in-scope,York University,1,content,0
+run_20260917T060442Z_success_full.md,invented institution,in-scope,Concordia University,1,content,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Skills Taxonomy Analyst,1,attribution+delegation_claim,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060442Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T060442Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T060442Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060442Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T060442Z_success_full.md,unanchored percentage,boundary,39.3%,0,,0
+run_20260917T060442Z_success_full.md,unanchored percentage,boundary,39.8%,0,,0
+run_20260917T060442Z_success_full.md,unanchored percentage,boundary,64.7%,0,,0
+run_20260917T060442Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T060442Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T060442Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T061729Z_success_full.md,altered posting count,in-scope,11->18,0,,0
+run_20260917T061729Z_success_full.md,invented lift + z (inserted),in-scope,"10.80x, z=4.2",1,numeric,0
+run_20260917T061729Z_success_full.md,invented lift + z (inserted),in-scope,"8.41x, z=10.8",1,numeric,0
+run_20260917T061729Z_success_full.md,invented lift + z (inserted),in-scope,"25.96x, z=12.9",1,numeric,0
+run_20260917T061729Z_success_full.md,invented course code,in-scope,STAT 5775,1,content,0
+run_20260917T061729Z_success_full.md,invented course code,in-scope,STAT 4456,1,content,0
+run_20260917T061729Z_success_full.md,invented course code,in-scope,COMP 5947,1,content,0
+run_20260917T061729Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2027,1,content,0
+run_20260917T061729Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/agentic-ai-2025,1,content,0
+run_20260917T061729Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/llm-systems-2025,1,content,0
+run_20260917T061729Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T061729Z_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260917T061729Z_success_full.md,invented institution,in-scope,Simon Fraser University,1,content,0
+run_20260917T061729Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T061729Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T061729Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T061729Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T061729Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T061729Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T061729Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Skills Taxonomy Analyst,1,attribution+delegation_claim,0
+run_20260917T061729Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T061729Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T061729Z_success_full.md,grounded lift moved to wrong skill,boundary,3->33,0,,0
+run_20260917T061729Z_success_full.md,unanchored percentage,boundary,76.6%,0,,0
+run_20260917T061729Z_success_full.md,unanchored percentage,boundary,68.5%,0,,0
+run_20260917T061729Z_success_full.md,unanchored percentage,boundary,54.3%,0,,0
+run_20260917T061729Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T061729Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T061729Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T150140Z_success_full.md,altered posting count,in-scope,323 ->469,0,,0
+run_20260917T150140Z_success_full.md,altered posting count,in-scope,24 ->40,0,,0
+run_20260917T150140Z_success_full.md,altered posting count,in-scope,12 ->18,0,,0
+run_20260917T150140Z_success_full.md,invented lift + z (inserted),in-scope,"5.58x, z=5.8",1,numeric,0
+run_20260917T150140Z_success_full.md,invented lift + z (inserted),in-scope,"16.80x, z=7.9",1,numeric,0
+run_20260917T150140Z_success_full.md,invented lift + z (inserted),in-scope,"21.62x, z=12.1",1,numeric,0
+run_20260917T150140Z_success_full.md,invented course code,in-scope,CSC 1002,1,content,0
+run_20260917T150140Z_success_full.md,invented course code,in-scope,AIML 1197,1,content,0
+run_20260917T150140Z_success_full.md,invented course code,in-scope,CS 4582,1,content,0
+run_20260917T150140Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/mlops-2027,1,content,0
+run_20260917T150140Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/mlops-2026,1,content,0
+run_20260917T150140Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/llm-systems-2026,1,content,0
+run_20260917T150140Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T150140Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260917T150140Z_success_full.md,invented institution,in-scope,York University,1,content,0
+run_20260917T150140Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T150140Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T150140Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T150140Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T150140Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T150140Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T150140Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Skills Taxonomy Analyst,1,attribution+delegation_claim,0
+run_20260917T150140Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T150140Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T150140Z_success_full.md,grounded lift moved to wrong skill,boundary,3->8,0,,0
+run_20260917T150140Z_success_full.md,unanchored percentage,boundary,30.6%,0,,0
+run_20260917T150140Z_success_full.md,unanchored percentage,boundary,44.4%,0,,0
+run_20260917T150140Z_success_full.md,unanchored percentage,boundary,75.7%,0,,0
+run_20260917T150140Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260917T150140Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T150140Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T150638Z_success_full.md,altered lift value,in-scope,9.54->13.74,1,numeric,0
+run_20260917T150638Z_success_full.md,altered lift value,in-scope,8.14->12.16,1,numeric,0
+run_20260917T150638Z_success_full.md,altered lift value,in-scope,5.19->7.36,1,numeric,0
+run_20260917T150638Z_success_full.md,altered z value,in-scope,2.61->4.68,1,numeric,0
+run_20260917T150638Z_success_full.md,altered z value,in-scope,6.31->9.25,1,numeric,0
+run_20260917T150638Z_success_full.md,altered z value,in-scope,2.27->3.72,1,numeric,0
+run_20260917T150638Z_success_full.md,altered posting count,in-scope,190 ->222,0,,0
+run_20260917T150638Z_success_full.md,invented lift + z (inserted),in-scope,"19.05x, z=11.1",1,numeric,0
+run_20260917T150638Z_success_full.md,invented lift + z (inserted),in-scope,"16.59x, z=6.5",1,numeric,0
+run_20260917T150638Z_success_full.md,invented lift + z (inserted),in-scope,"10.36x, z=11.5",1,numeric,0
+run_20260917T150638Z_success_full.md,invented course code,in-scope,MMAI 2505,1,content,0
+run_20260917T150638Z_success_full.md,invented course code,in-scope,MMAI 1491,1,content,0
+run_20260917T150638Z_success_full.md,invented course code,in-scope,COMP 7375,1,content,0
+run_20260917T150638Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/mlops-2026,1,content,0
+run_20260917T150638Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/ethics-2026,1,content,0
+run_20260917T150638Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/mlops-2025,1,content,0
+run_20260917T150638Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T150638Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260917T150638Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20260917T150638Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T150638Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T150638Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T150638Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T150638Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T150638Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T150638Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T150638Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T150638Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T150638Z_success_full.md,grounded lift moved to wrong skill,boundary,7.44->3.94,1,numeric,0
+run_20260917T150638Z_success_full.md,grounded lift moved to wrong skill,boundary,13.11->2.15,1,numeric,0
+run_20260917T150638Z_success_full.md,grounded lift moved to wrong skill,boundary,6.63->2.79,0,,0
+run_20260917T150638Z_success_full.md,unanchored percentage,boundary,31.8%,0,,0
+run_20260917T150638Z_success_full.md,unanchored percentage,boundary,24.4%,0,,0
+run_20260917T150638Z_success_full.md,unanchored percentage,boundary,50.1%,0,,0
+run_20260917T150638Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T150638Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260917T150638Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T224824Z_success_full.md,altered lift value,in-scope,13.14->18.60,1,numeric,0
+run_20260917T224824Z_success_full.md,altered lift value,in-scope,9.77->15.01,1,numeric,0
+run_20260917T224824Z_success_full.md,altered lift value,in-scope,9.77->16.62,1,numeric,0
+run_20260917T224824Z_success_full.md,altered z value,in-scope,2.87->4.54,1,numeric,0
+run_20260917T224824Z_success_full.md,altered z value,in-scope,2.15->4.30,1,numeric,0
+run_20260917T224824Z_success_full.md,altered z value,in-scope,4.48->6.64,1,numeric,0
+run_20260917T224824Z_success_full.md,invented lift + z (inserted),in-scope,"10.57x, z=5.7",1,numeric,0
+run_20260917T224824Z_success_full.md,invented lift + z (inserted),in-scope,"15.93x, z=5.4",1,numeric,0
+run_20260917T224824Z_success_full.md,invented lift + z (inserted),in-scope,"7.06x, z=5.1",1,numeric,0
+run_20260917T224824Z_success_full.md,invented course code,in-scope,MMAI 7738,1,content,0
+run_20260917T224824Z_success_full.md,invented course code,in-scope,DSCI 4725,1,content,0
+run_20260917T224824Z_success_full.md,invented course code,in-scope,DSCI 6108,1,content,0
+run_20260917T224824Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/ethics-2027,1,content,0
+run_20260917T224824Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/ethics-2025,1,content,0
+run_20260917T224824Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/mlops-2026,1,content,0
+run_20260917T224824Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T224824Z_success_full.md,invented institution,in-scope,York University,1,content,0
+run_20260917T224824Z_success_full.md,invented institution,in-scope,Simon Fraser University,1,content,0
+run_20260917T224824Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T224824Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T224824Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T224824Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T224824Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T224824Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T224824Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T224824Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T224824Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T224824Z_success_full.md,grounded lift moved to wrong skill,boundary,12.25->9.37,1,numeric,0
+run_20260917T224824Z_success_full.md,grounded lift moved to wrong skill,boundary,13.11->8.09,0,,0
+run_20260917T224824Z_success_full.md,grounded lift moved to wrong skill,boundary,13.14->6.48,0,,0
+run_20260917T224824Z_success_full.md,unanchored percentage,boundary,73.1%,0,,0
+run_20260917T224824Z_success_full.md,unanchored percentage,boundary,76.1%,0,,0
+run_20260917T224824Z_success_full.md,unanchored percentage,boundary,74.6%,0,,0
+run_20260917T224824Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260917T224824Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260917T224824Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T225459Z_success_full.md,altered posting count,in-scope,24->31,0,,0
+run_20260917T225459Z_success_full.md,altered posting count,in-scope,16. ->19.7,0,,0
+run_20260917T225459Z_success_full.md,altered posting count,in-scope,78->116,0,,0
+run_20260917T225459Z_success_full.md,invented lift + z (inserted),in-scope,"13.63x, z=12.8",1,numeric,0
+run_20260917T225459Z_success_full.md,invented lift + z (inserted),in-scope,"16.19x, z=10.7",1,numeric,0
+run_20260917T225459Z_success_full.md,invented lift + z (inserted),in-scope,"11.88x, z=5.4",1,numeric,0
+run_20260917T225459Z_success_full.md,invented course code,in-scope,MIE 1563,1,content,0
+run_20260917T225459Z_success_full.md,invented course code,in-scope,CS 998,1,content,0
+run_20260917T225459Z_success_full.md,invented course code,in-scope,MMAI 5556,1,content,0
+run_20260917T225459Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/ethics-2027,1,content,0
+run_20260917T225459Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/llm-systems-2026,1,content,0
+run_20260917T225459Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2026,1,content,0
+run_20260917T225459Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260917T225459Z_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260917T225459Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20260917T225459Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T225459Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T225459Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T225459Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20260917T225459Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T225459Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20260917T225459Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Skills Taxonomy Analyst,1,attribution+delegation_claim,0
+run_20260917T225459Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T225459Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T225459Z_success_full.md,unanchored percentage,boundary,73.7%,0,,0
+run_20260917T225459Z_success_full.md,unanchored percentage,boundary,23.2%,0,,0
+run_20260917T225459Z_success_full.md,unanchored percentage,boundary,68.6%,0,,0
+run_20260917T225459Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260917T225459Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T225459Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260917T230153Z_success_full.md,altered lift value,in-scope,4.75->8.67,1,numeric,0
+run_20260917T230153Z_success_full.md,altered lift value,in-scope,9.65->16.55,1,numeric,0
+run_20260917T230153Z_success_full.md,altered lift value,in-scope,8.14->11.99,1,numeric,0
+run_20260917T230153Z_success_full.md,altered z value,in-scope,2.28->5.54,1,numeric,0
+run_20260917T230153Z_success_full.md,altered z value,in-scope,6.31->10.42,1,numeric,0
+run_20260917T230153Z_success_full.md,altered z value,in-scope,2.87->4.80,1,numeric,0
+run_20260917T230153Z_success_full.md,invented lift + z (inserted),in-scope,"17.95x, z=11.5",1,numeric,0
+run_20260917T230153Z_success_full.md,invented lift + z (inserted),in-scope,"26.27x, z=5.2",1,numeric,0
+run_20260917T230153Z_success_full.md,invented lift + z (inserted),in-scope,"20.56x, z=12.3",1,numeric,0
+run_20260917T230153Z_success_full.md,invented course code,in-scope,CS 8645,1,content,0
+run_20260917T230153Z_success_full.md,invented course code,in-scope,AIML 3929,1,content,0
+run_20260917T230153Z_success_full.md,invented course code,in-scope,COMP 2707,1,content,0
+run_20260917T230153Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/ethics-2025,1,content,0
+run_20260917T230153Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/ethics-2027,1,content,0
+run_20260917T230153Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/mlops-2027,1,content,0
+run_20260917T230153Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260917T230153Z_success_full.md,invented institution,in-scope,Concordia University,1,content,0
+run_20260917T230153Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260917T230153Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T230153Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T230153Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T230153Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260917T230153Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T230153Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260917T230153Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260917T230153Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T230153Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260917T230153Z_success_full.md,grounded lift moved to wrong skill,boundary,7.20->374.00,0,,0
+run_20260917T230153Z_success_full.md,grounded lift moved to wrong skill,boundary,13.11->2.28,0,,0
+run_20260917T230153Z_success_full.md,grounded lift moved to wrong skill,boundary,4.37->5.05,0,,0
+run_20260917T230153Z_success_full.md,unanchored percentage,boundary,40.5%,0,,0
+run_20260917T230153Z_success_full.md,unanchored percentage,boundary,56.5%,0,,0
+run_20260917T230153Z_success_full.md,unanchored percentage,boundary,43.4%,0,,0
+run_20260917T230153Z_success_full.md,"institution without ""University"" pattern",boundary,ETH Zurich,0,,0
+run_20260917T230153Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260917T230153Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260924T163704Z_success_full.md,altered lift value,in-scope,7.92->12.57,1,numeric,0
+run_20260924T163704Z_success_full.md,altered lift value,in-scope,9.48->15.51,1,numeric,0
+run_20260924T163704Z_success_full.md,altered lift value,in-scope,3.80->7.09,1,numeric,0
+run_20260924T163704Z_success_full.md,altered z value,in-scope,7.05->11.41,1,numeric,0
+run_20260924T163704Z_success_full.md,altered z value,in-scope,6.63->11.12,1,numeric,0
+run_20260924T163704Z_success_full.md,altered z value,in-scope,6.83->10.33,1,numeric,0
+run_20260924T163704Z_success_full.md,invented lift + z (inserted),in-scope,"11.16x, z=6.5",1,numeric,0
+run_20260924T163704Z_success_full.md,invented lift + z (inserted),in-scope,"14.33x, z=11.5",1,numeric,0
+run_20260924T163704Z_success_full.md,invented lift + z (inserted),in-scope,"25.89x, z=10.9",1,numeric,0
+run_20260924T163704Z_success_full.md,invented course code,in-scope,CS 5734,1,content,0
+run_20260924T163704Z_success_full.md,invented course code,in-scope,DSCI 4968,1,content,0
+run_20260924T163704Z_success_full.md,invented course code,in-scope,CS 1231,1,content,0
+run_20260924T163704Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2025,1,content,0
+run_20260924T163704Z_success_full.md,invented URL,in-scope,https://www.cmu.edu/mlops/program/llm-systems-2027,1,content,0
+run_20260924T163704Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2025,1,content,0
+run_20260924T163704Z_success_full.md,invented institution,in-scope,University of Waterloo,1,content,0
+run_20260924T163704Z_success_full.md,invented institution,in-scope,York University,1,content,0
+run_20260924T163704Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260924T163704Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Cluster Interpreter,1,attribution,0
+run_20260924T163704Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Cluster Interpreter,1,attribution,0
+run_20260924T163704Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Cluster Interpreter,1,attribution,0
+run_20260924T163704Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Cluster Interpreter,1,attribution,0
+run_20260924T163704Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260924T163704Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Cluster Interpreter,1,delegation_claim,0
+run_20260924T163704Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Cluster Interpreter,1,attribution+delegation_claim,0
+run_20260924T163704Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260924T163704Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260924T163704Z_success_full.md,grounded lift moved to wrong skill,boundary,19.99->4.25,0,,0
+run_20260924T163704Z_success_full.md,grounded lift moved to wrong skill,boundary,14.27->16.63,0,,0
+run_20260924T163704Z_success_full.md,grounded lift moved to wrong skill,boundary,19.99->3.63,0,,0
+run_20260924T163704Z_success_full.md,unanchored percentage,boundary,74.8%,0,,0
+run_20260924T163704Z_success_full.md,unanchored percentage,boundary,76.4%,0,,0
+run_20260924T163704Z_success_full.md,unanchored percentage,boundary,56.8%,0,,0
+run_20260924T163704Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260924T163704Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260924T163704Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260924T213621Z_success_full.md,altered lift value,in-scope,11.97->15.40,1,numeric,0
+run_20260924T213621Z_success_full.md,altered lift value,in-scope,7.90->11.88,1,numeric,0
+run_20260924T213621Z_success_full.md,altered lift value,in-scope,10.04->15.22,1,numeric,0
+run_20260924T213621Z_success_full.md,altered z value,in-scope,13.35->18.73,1,numeric,0
+run_20260924T213621Z_success_full.md,altered z value,in-scope,5.67->9.97,1,numeric,0
+run_20260924T213621Z_success_full.md,altered z value,in-scope,2.37->4.75,1,numeric,0
+run_20260924T213621Z_success_full.md,invented lift + z (inserted),in-scope,"22.14x, z=5.2",1,numeric,0
+run_20260924T213621Z_success_full.md,invented lift + z (inserted),in-scope,"18.85x, z=3.7",1,numeric,0
+run_20260924T213621Z_success_full.md,invented lift + z (inserted),in-scope,"22.02x, z=11.6",1,numeric,0
+run_20260924T213621Z_success_full.md,invented course code,in-scope,STAT 9831,1,content,0
+run_20260924T213621Z_success_full.md,invented course code,in-scope,CS 2779,1,content,0
+run_20260924T213621Z_success_full.md,invented course code,in-scope,CSC 1125,1,content,0
+run_20260924T213621Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/ethics-2026,1,content,0
+run_20260924T213621Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/mlops-2027,1,content,0
+run_20260924T213621Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/mlops-2025,1,content,0
+run_20260924T213621Z_success_full.md,invented institution,in-scope,University of Calgary,1,content,0
+run_20260924T213621Z_success_full.md,invented institution,in-scope,University of Victoria,1,content,0
+run_20260924T213621Z_success_full.md,invented institution,in-scope,University of Alberta,1,content,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260924T213621Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260924T213621Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260924T213621Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260924T213621Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260924T213621Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20260924T213621Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260924T213621Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260924T213621Z_success_full.md,grounded lift moved to wrong skill,boundary,7.90->173.00,1,numeric,0
+run_20260924T213621Z_success_full.md,grounded lift moved to wrong skill,boundary,7.88->24.00,0,,0
+run_20260924T213621Z_success_full.md,grounded lift moved to wrong skill,boundary,6.30->490.00,1,numeric,0
+run_20260924T213621Z_success_full.md,unanchored percentage,boundary,33.4%,0,,0
+run_20260924T213621Z_success_full.md,unanchored percentage,boundary,42.2%,0,,0
+run_20260924T213621Z_success_full.md,unanchored percentage,boundary,49.8%,0,,0
+run_20260924T213621Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20260924T213621Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20260924T213621Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20260925T180700Z_success_full.md,altered lift value,in-scope,3.87->5.38,1,numeric,0
+run_20260925T180700Z_success_full.md,altered lift value,in-scope,5.17->9.47,1,numeric,0
+run_20260925T180700Z_success_full.md,altered lift value,in-scope,31.13->40.89,1,numeric,0
+run_20260925T180700Z_success_full.md,altered z value,in-scope,3.71->5.21,1,numeric,0
+run_20260925T180700Z_success_full.md,altered z value,in-scope,2.44->5.06,1,numeric,0
+run_20260925T180700Z_success_full.md,altered z value,in-scope,5.01->6.84,1,numeric,0
+run_20260925T180700Z_success_full.md,altered posting count,in-scope,"13,971 ->18109",1,numeric,0
+run_20260925T180700Z_success_full.md,invented lift + z (inserted),in-scope,"10.30x, z=5.9",1,numeric,0
+run_20260925T180700Z_success_full.md,invented lift + z (inserted),in-scope,"20.33x, z=8.6",1,numeric,0
+run_20260925T180700Z_success_full.md,invented lift + z (inserted),in-scope,"14.16x, z=11.2",1,numeric,0
+run_20260925T180700Z_success_full.md,invented course code,in-scope,CSC 8921,1,content,0
+run_20260925T180700Z_success_full.md,invented course code,in-scope,MIE 1961,0,,0
+run_20260925T180700Z_success_full.md,invented course code,in-scope,CSC 4204,1,content,0
+run_20260925T180700Z_success_full.md,invented URL,in-scope,https://www.queensu.ca/mmai/curriculum/llm-systems-2027,1,content,0
+run_20260925T180700Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/ethics-2026,1,content,0
+run_20260925T180700Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/mlops-2026,1,content,0
+run_20260925T180700Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20260925T180700Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20260925T180700Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260925T180700Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20260925T180700Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20260925T180700Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260925T180700Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20260925T180700Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20260925T180700Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20260925T180700Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20260925T180700Z_success_full.md,grounded lift moved to wrong skill,boundary,28.07->13.01,0,,0
+run_20260925T180700Z_success_full.md,grounded lift moved to wrong skill,boundary,81.29->866.00,0,,0
+run_20260925T180700Z_success_full.md,grounded lift moved to wrong skill,boundary,3.85->3.26,0,,0
+run_20260925T180700Z_success_full.md,unanchored percentage,boundary,28.5%,0,,0
+run_20260925T180700Z_success_full.md,unanchored percentage,boundary,61.1%,0,,0
+run_20260925T180700Z_success_full.md,unanchored percentage,boundary,36.4%,0,,0
+run_20260925T180700Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20260925T180700Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20260925T180700Z_success_full.md,"institution without ""University"" pattern",boundary,Mila,0,,0
+run_20261020T191818Z_success_full.md,altered lift value,in-scope,6.64->9.83,1,numeric,0
+run_20261020T191818Z_success_full.md,altered lift value,in-scope,3.83->7.26,1,numeric,0
+run_20261020T191818Z_success_full.md,altered lift value,in-scope,15.04->25.58,1,numeric,0
+run_20261020T191818Z_success_full.md,altered z value,in-scope,2.11->4.94,1,numeric,0
+run_20261020T191818Z_success_full.md,altered z value,in-scope,7.12->11.17,1,numeric,0
+run_20261020T191818Z_success_full.md,altered z value,in-scope,11.32->16.54,1,numeric,0
+run_20261020T191818Z_success_full.md,invented lift + z (inserted),in-scope,"11.02x, z=11.2",1,numeric,0
+run_20261020T191818Z_success_full.md,invented lift + z (inserted),in-scope,"24.05x, z=13.5",1,numeric,0
+run_20261020T191818Z_success_full.md,invented lift + z (inserted),in-scope,"18.33x, z=7.3",1,numeric,0
+run_20261020T191818Z_success_full.md,invented course code,in-scope,CS 523,1,content,0
+run_20261020T191818Z_success_full.md,invented course code,in-scope,CS 621,1,content,0
+run_20261020T191818Z_success_full.md,invented course code,in-scope,DSCI 5800,1,content,0
+run_20261020T191818Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/mlops-2025,1,content,0
+run_20261020T191818Z_success_full.md,invented URL,in-scope,https://www.cs.toronto.edu/msc-ai/courses/mlops-2026,1,content,0
+run_20261020T191818Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/mlops-2025,1,content,0
+run_20261020T191818Z_success_full.md,invented institution,in-scope,University of Manitoba,1,content,0
+run_20261020T191818Z_success_full.md,invented institution,in-scope,Simon Fraser University,1,content,0
+run_20261020T191818Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,University AI Programs Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,University AI Programs Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,University AI Programs Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,University AI Programs Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20261020T191818Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,University AI Programs Researcher,1,delegation_claim,0
+run_20261020T191818Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,University AI Programs Researcher,1,attribution+delegation_claim,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,AI Industry News Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,AI Industry News Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,AI Industry News Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,AI Industry News Researcher,1,attribution,0
+run_20261020T191818Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20261020T191818Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,AI Industry News Researcher,1,delegation_claim,0
+run_20261020T191818Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,AI Industry News Researcher,1,attribution+delegation_claim,0
+run_20261020T191818Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20261020T191818Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20261020T191818Z_success_full.md,grounded lift moved to wrong skill,boundary,3.70->5.55,1,numeric,0
+run_20261020T191818Z_success_full.md,grounded lift moved to wrong skill,boundary,9.48->3.35,1,numeric,0
+run_20261020T191818Z_success_full.md,grounded lift moved to wrong skill,boundary,20.91->6.37,1,numeric,0
+run_20261020T191818Z_success_full.md,unanchored percentage,boundary,38.7%,0,,0
+run_20261020T191818Z_success_full.md,unanchored percentage,boundary,34.8%,0,,0
+run_20261020T191818Z_success_full.md,unanchored percentage,boundary,29.6%,0,,0
+run_20261020T191818Z_success_full.md,"institution without ""University"" pattern",boundary,Imperial,0,,0
+run_20261020T191818Z_success_full.md,"institution without ""University"" pattern",boundary,EPFL,0,,0
+run_20261020T191818Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0
+run_20261020T192538Z_success_full.md,invented lift + z (inserted),in-scope,"9.21x, z=5.8",1,numeric,0
+run_20261020T192538Z_success_full.md,invented lift + z (inserted),in-scope,"17.25x, z=8.2",1,numeric,0
+run_20261020T192538Z_success_full.md,invented lift + z (inserted),in-scope,"12.57x, z=15.6",1,numeric,0
+run_20261020T192538Z_success_full.md,invented course code,in-scope,CS 5282,1,content,0
+run_20261020T192538Z_success_full.md,invented course code,in-scope,AIML 8316,1,content,0
+run_20261020T192538Z_success_full.md,invented course code,in-scope,MIE 7709,1,content,0
+run_20261020T192538Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/ethics-2027,1,content,0
+run_20261020T192538Z_success_full.md,invented URL,in-scope,https://www.mcgill.ca/desautels/programs/mma/llm-systems-2027,1,content,0
+run_20261020T192538Z_success_full.md,invented URL,in-scope,https://ai.stanford.edu/courses/agentic-ai-2025,1,content,0
+run_20261020T192538Z_success_full.md,invented institution,in-scope,McGill University,1,content,0
+run_20261020T192538Z_success_full.md,invented institution,in-scope,University of Ottawa,1,content,0
+run_20261020T192538Z_success_full.md,invented institution,in-scope,Dalhousie University,1,content,0
+run_20261020T192538Z_success_full.md,content credited to non-delegated specialist (heading),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20261020T192538Z_success_full.md,content credited to non-delegated specialist (according to),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20261020T192538Z_success_full.md,content credited to non-delegated specialist (citing verb),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20261020T192538Z_success_full.md,content credited to non-delegated specialist (table row),in-scope,Skills Taxonomy Analyst,1,attribution,0
+run_20261020T192538Z_success_full.md,"false ""was consulted"" claim (passive)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20261020T192538Z_success_full.md,"false ""was consulted"" claim (we consulted)",in-scope,Skills Taxonomy Analyst,1,delegation_claim,0
+run_20261020T192538Z_success_full.md,"false ""was consulted"" claim (active verb)",in-scope,Skills Taxonomy Analyst,1,attribution+delegation_claim,0
+run_20261020T192538Z_success_full.md,paraphrased attribution (role not named verbatim),boundary,paraphrase,0,,0
+run_20261020T192538Z_success_full.md,paraphrased claim (role not named verbatim),boundary,paraphrase,0,,0
+run_20261020T192538Z_success_full.md,unanchored percentage,boundary,63.8%,0,,0
+run_20261020T192538Z_success_full.md,unanchored percentage,boundary,49.5%,0,,0
+run_20261020T192538Z_success_full.md,unanchored percentage,boundary,70.8%,0,,0
+run_20261020T192538Z_success_full.md,"institution without ""University"" pattern",boundary,ETH Zurich,0,,0
+run_20261020T192538Z_success_full.md,"institution without ""University"" pattern",boundary,HEC Montréal,0,,0
+run_20261020T192538Z_success_full.md,"institution without ""University"" pattern",boundary,INSEAD,0,,0

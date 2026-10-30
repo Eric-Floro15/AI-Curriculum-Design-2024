@@ -989,7 +989,123 @@ def _extract_market_numbers(text: str) -> list[tuple[str, float, str, int, int]]
                 except ValueError:
                     continue
                 found.append((raw, val, kind, m.start(gi + 1), m.end(gi + 1)))
+                # v60 guard fix: multi-value slash/comma lists like "z = 2.71 / 2.55"
+                # or "lift 3.1 / 2.9" — extract every value, not only the first.
+                # Only for lift and z-score (not frequency, which uses postings context).
+                # Negative lookahead (?![×x]) prevents treating a lift value (e.g.
+                # "6.53×") as a z-score continuation in "z=2.31 / 6.53×" patterns.
+                if kind in ("lift", "z-score"):
+                    _cont_re = re.compile(
+                        r"\s*[/,]\s*(-?\d[\d,]*\.?\d*)(?![×x\d])", re.IGNORECASE
+                    )
+                    pos = m.end(gi + 1)
+                    while True:
+                        cm = _cont_re.match(text, pos)
+                        if not cm:
+                            break
+                        raw_c = cm.group(1)
+                        try:
+                            val_c = _normalize_market_num(raw_c)
+                            found.append((raw_c, val_c, kind, cm.start(1), cm.end(1)))
+                            pos = cm.end()
+                        except ValueError:
+                            break
     return found
+
+
+# v60 guard fix: helpers for the skill-value binding check (fix 6) -----------
+
+def _extract_skill_from_context(text: str, val_start: int, val_end: int, val_raw: str) -> str | None:
+    """Return the skill name from the same table row (first non-numeric cell)
+    as the value at [val_start, val_end], or None if no table context exists."""
+    line_start = text.rfind("\n", 0, val_start) + 1
+    line_end_pos = text.find("\n", val_end)
+    if line_end_pos == -1:
+        line_end_pos = len(text)
+    line = text[line_start:line_end_pos]
+    if "|" not in line:
+        return None
+    cells = [re.sub(r"[*_`]", "", c).strip() for c in line.split("|")]
+    cells = [c for c in cells if c]
+    for i, cell in enumerate(cells):
+        # Find which cell contains the value
+        cell_stripped = re.sub(r"[×x%±~≈<>\s]", "", cell)
+        try:
+            cell_v = _normalize_market_num(cell_stripped)
+        except ValueError:
+            continue
+        try:
+            target_v = _normalize_market_num(val_raw.rstrip("×x").strip())
+        except ValueError:
+            continue
+        # v60 guard fix: use tight tolerance (0.1% relative, 0.01 absolute)
+        # so that small integers like course-row numbers (e.g. "8") are not
+        # misidentified as value cells for nearby z-scores (e.g. 7.95 ≈ 8 at
+        # the earlier 1% tolerance, causing the course name to be extracted
+        # as the skill).
+        if abs(cell_v - target_v) > max(0.001 * abs(target_v), 0.01):
+            continue
+        # This cell is the value cell; return the first non-numeric sibling
+        for j, other in enumerate(cells):
+            if j == i or not other:
+                continue
+            if re.fullmatch(r"[\d.,×x%\s±~≈<>]+", other):
+                continue  # purely numeric — not a skill name
+            if len(other) < 2:
+                continue
+            # v60 guard fix: skip cluster-theme labels like "Cluster 5" or
+            # "Cluster 5: Software Engineering for AI Systems" — these are
+            # structural row headers in the Orchestrator's synthesised output,
+            # not leaf skill names from the analyst's data, and cannot be
+            # reliably bound to per-skill rows in specialist text.
+            if re.match(r"cluster\s*\d", other, re.IGNORECASE):
+                continue
+            return other.lower()
+    return None
+
+
+_BINDING_NUM_RE = re.compile(r"-?\d[\d,. ]*k?", re.IGNORECASE)
+
+
+def _is_bound_in_specialist(val: float, skill: str, tol: float, spec_text: str) -> bool:
+    """True if `val` (within `tol`) appears in the same line as any significant
+    word from `skill` in spec_text. Uses word-level matching so minor
+    paraphrases (e.g. "LangGraph" vs "LangGraph (orchestration)") still bind."""
+    _BINDING_STOP = {"the", "and", "for", "top", "with", "a", "an", "of", "in", "to"}
+    sig_words = [
+        w.lower() for w in re.findall(r"\b[A-Za-z][A-Za-z0-9]+\b", skill)
+        if len(w) >= 4 and w.lower() not in _BINDING_STOP
+    ]
+    if not sig_words:
+        return True  # no discriminating word extractable — assume grounded
+    # v60 guard fix: expand sig_words with British/American spelling variants
+    # (isation ↔ ization, 7-char suffix) so that an answer using
+    # "Containerisation" binds correctly to a specialist line that uses
+    # "Containerization".
+    _all_sig = list(sig_words)
+    for w in sig_words:
+        if w.endswith("isation"):   # 7 chars
+            _all_sig.append(w[:-7] + "ization")
+        elif w.endswith("ization"):  # 7 chars
+            _all_sig.append(w[:-7] + "isation")
+    sig_words = _all_sig
+    # v60 guard fix: if NO sig_word (including spelling variants) appears
+    # anywhere in the specialist text, binding is indeterminate — assume grounded.
+    spec_lc = spec_text.lower()
+    if not any(w in spec_lc for w in sig_words):
+        return True
+    for line in spec_text.split("\n"):
+        line_lc = line.lower()
+        if not any(w in line_lc for w in sig_words):
+            continue
+        for m in _BINDING_NUM_RE.finditer(line):
+            try:
+                v = _normalize_market_num(m.group().rstrip("×x"))
+                if abs(v - val) <= max(tol * abs(val), tol):
+                    return True
+            except ValueError:
+                pass
+    return False
 
 
 def _detect_numeric_fabrication_flags(
@@ -1032,6 +1148,31 @@ def _detect_numeric_fabrication_flags(
             bare_table_numbers.append(_normalize_market_num(m.group(1)))
         except ValueError:
             continue
+
+    # v60 guard fix: also accept bare numbers in a few adjacent-context
+    # patterns that appear in specialist output but lack the postings/freq
+    # keyword anchor — e.g. "(679)" (parenthesized), "in 90" (preposition),
+    # "at 22.7%" (percentage qualifier). These widen the frequency grounding
+    # pool only, and only on the specialist side (grounded_text), so they
+    # cannot produce new false positives (widening the pool can only reduce
+    # flags, per the asymmetry noted in the guard design comments above).
+    _BARE_CONTEXT_NUM_RE = re.compile(
+        r"\((\d[\d,. ]*\d)\)"          # (679)
+        r"|(?:\bin\s+(\d[\d,. ]+))"    # in 90
+        r"|(?:\bat\s+(\d[\d,. ]*\.?\d*)%)",  # at 22.7%
+        re.IGNORECASE,
+    )
+    for m in _BARE_CONTEXT_NUM_RE.finditer(grounded_text):
+        for g in range(1, 4):
+            raw_b = m.group(g)
+            if raw_b is None:
+                continue
+            try:
+                grounded_numbers.setdefault("frequency", []).append(
+                    _normalize_market_num(raw_b.strip())
+                )
+            except ValueError:
+                pass
 
     # Item A range-summary exemption: identify "A<sep>B" range constructs
     # in the answer whose BOTH endpoints are a plausible rounding of a
@@ -1102,8 +1243,36 @@ def _detect_numeric_fabrication_flags(
                 continue
         _pattern, _idxs, tol = _MARKET_NUM_KINDS[kind]
         pool = grounded_numbers.get(kind, []) + bare_table_numbers
-        if any(abs(val - g) <= max(tol * abs(g), tol) for g in pool):
-            continue
+        pool_grounded = any(abs(val - g) <= max(tol * abs(g), tol) for g in pool)
+        if pool_grounded:
+            # v60 guard fix: binding check — value is in the pool, but also verify
+            # it appears near the SAME SKILL in specialist output (not merely anywhere
+            # in the pool). Catches "grounded lift/count moved to the wrong skill".
+            # Only fires when a skill name is extractable from the same table row and
+            # no grounding match appears near that skill in the specialist. Skipped
+            # (passes through) if no skill context is found — conservative by design.
+            if kind in ("lift", "z-score", "frequency"):
+                skill = _extract_skill_from_context(answer, start, end, raw)
+                if skill:
+                    grounding_matches = [
+                        g for g in pool
+                        if abs(val - g) <= max(tol * abs(g), tol)
+                    ]
+                    if not any(
+                        _is_bound_in_specialist(g, skill, 1e-4, grounded_text)
+                        for g in grounding_matches
+                    ):
+                        seen.add((raw, kind))
+                        snippet = answer[max(0, start - 30): end + 30].replace("\n", " ").strip()
+                        flags.append(
+                            f"{kind} value '{raw}' for skill '{skill}' in the "
+                            f"final answer is not bound to '{skill}' in any "
+                            f"consulted specialist's output this run — possibly "
+                            f"moved to a different skill or column. "
+                            f"Context: \"...{snippet}...\""
+                        )
+                        continue
+            continue  # pool check passed, binding OK or no skill context
         seen.add((raw, kind))
         # Snippet built from this exact match's own position (start/end
         # from _extract_market_numbers), NOT answer.find(raw) — a plain
@@ -1256,6 +1425,9 @@ def _normalize_url(url: str) -> str:
     sentence/markdown context tends to leave attached ('.', ',', ')',
     ']')."""
     url = url.rstrip(".,;:)]}>\"'")
+    # v60 guard fix: also strip trailing markdown bold/italic markers (* _ **)
+    # that _URL_RE's "[^\s)\]}>\"'`|]+" can capture (e.g. "Link: https://…/trl-v1*")
+    url = url.rstrip("*_")
     url = url.rstrip("/")
     m = re.match(r"(https?://)([^/]+)(.*)", url, re.IGNORECASE)
     if not m:
@@ -1422,6 +1594,11 @@ def _detect_content_attribution_flags(
             answer[m.end(): m.end() + 20]
         ):
             continue
+        # v60 guard fix: "CSPA 10-cluster" (and similar N-cluster shapes from
+        # the CSPA 10-cluster taxonomy) are cluster-label identifiers, not
+        # course codes — skip any match immediately followed by "cluster".
+        if re.match(r"^\s*cluster\b", answer[m.end(): m.end() + 9], re.IGNORECASE):
+            continue
         seen_codes.add(code_norm)
         idx = m.start()
         snippet = answer[max(0, idx - 30): idx + len(code) + 30].replace("\n", " ").strip()
@@ -1482,6 +1659,19 @@ def _detect_content_attribution_flags(
         # "university of toronto rotman" against a trace phrased
         # "university of toronto — rotman school of management".
         if _normalize_institution_text(name_norm) in consulted_inst_norm:
+            continue
+        # v60 guard fix: also try progressively shorter prefixes for multi-word
+        # "University of X Y" names (minimum 3 words = "University of X").
+        # Handles the case where the Orchestrator condensed a dash-separated
+        # qualifier — e.g. "University of Amsterdam — MSc Medical Informatics"
+        # → "University of Amsterdam Medical Informatics" — so "Amsterdam" IS
+        # grounded but the extra word ("Medical") creates a mismatch.
+        _parts = name_norm.split()
+        if len(_parts) > 3 and any(
+            (" ".join(_parts[:_n]) in consulted_lc
+             or _normalize_institution_text(" ".join(_parts[:_n])) in consulted_inst_norm)
+            for _n in range(3, len(_parts))
+        ):
             continue
         # An institution the PROFESSOR'S OWN QUERY already named is not
         # suspicious merely for being echoed back — e.g. an off-scope

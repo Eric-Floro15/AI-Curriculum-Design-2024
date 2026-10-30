@@ -1,0 +1,22 @@
+family,plant_type,trials,runs,detected,recall,wilson_lo,wilson_hi,collateral_new_flags
+in-scope,altered lift value,59,20,59,1.0,0.939,1.0,0
+in-scope,altered posting count,32,14,13,0.406,0.255,0.577,0
+in-scope,altered z value,60,20,60,1.0,0.94,1.0,0
+in-scope,content credited to non-delegated specialist (according to),39,26,39,1.0,0.91,1.0,0
+in-scope,content credited to non-delegated specialist (citing verb),39,26,39,1.0,0.91,1.0,0
+in-scope,content credited to non-delegated specialist (heading),39,26,39,1.0,0.91,1.0,0
+in-scope,content credited to non-delegated specialist (table row),39,26,39,1.0,0.91,1.0,0
+in-scope,"false ""was consulted"" claim (active verb)",39,26,39,1.0,0.91,1.0,0
+in-scope,"false ""was consulted"" claim (passive)",39,26,39,1.0,0.91,1.0,0
+in-scope,"false ""was consulted"" claim (we consulted)",39,26,39,1.0,0.91,1.0,0
+in-scope,invented URL,81,27,81,1.0,0.955,1.0,0
+in-scope,invented course code,81,27,79,0.975,0.914,0.993,0
+in-scope,invented institution,81,27,81,1.0,0.955,1.0,0
+in-scope,invented lift + z (inserted),81,27,81,1.0,0.955,1.0,0
+boundary,grounded lift moved to wrong skill,59,21,20,0.339,0.231,0.466,0
+boundary,"institution without ""University"" pattern",81,27,0,0.0,-0.0,0.045,0
+boundary,paraphrased attribution (role not named verbatim),26,26,0,0.0,0.0,0.129,0
+boundary,paraphrased claim (role not named verbatim),26,26,0,0.0,0.0,0.129,0
+boundary,unanchored percentage,81,27,0,0.0,-0.0,0.045,0
+in-scope,ALL,748,27,727,0.972,0.957,0.982,0
+boundary,ALL,273,27,20,0.073,0.048,0.11,0
