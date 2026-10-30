@@ -139,7 +139,7 @@ Q: "What's the high-level shape of the taxonomy?"
 → category_summary_tool()
 
 Q: "List every data-engineering skill."
-→ skills_in_cluster_tool(cluster_id=8)  (cluster 8 = data engineering)
+→ skills_in_cluster_tool(cluster_id=3)  (cluster 3 = data-engineering tools)  # v60
 
 Q: "What skills should an agentic AI module cover?"
 → skill_lift_tool(focal_skill="Agentic Ai"), THEN in your final answer cite

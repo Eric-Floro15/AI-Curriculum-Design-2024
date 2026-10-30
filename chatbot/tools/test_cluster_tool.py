@@ -99,6 +99,17 @@ _STALE_LABELS = {
     "Data Engineering — Pipelines & Big Data",
     "Core Analytical Tools",
     "Large Mixed — Ethics, Soft Skills",
+    # v60: pre-unified-corpus W2026 labels (2026-09-24 relabel, now replaced)
+    # "Machine Learning & Generative AI" is NOT stale — it moved to cluster 2 (same string)
+    "Cloud, DevOps & AI Systems Deployment",     # was cluster 2, now gone
+    "Data Engineering & Data Platforms",         # was cluster 3, now cluster 3 (renamed)
+    "Business Intelligence & Data Communication",# was cluster 4
+    "Office Productivity, Business Analysis & Admin Tools",  # was cluster 5
+    "Cross-cutting analytical & collaboration terms (heterogeneous)",  # was cluster 6
+    "Data Science & Statistical Foundations",    # was cluster 7
+    "Training & community terms (heterogeneous)",# was cluster 8
+    "Niche & Emerging ML/AI Tooling (heterogeneous)",  # was cluster 9
+    "Strategic Planning, Program Management & Business Development",   # was cluster 10
 }
 
 for cid, label in CLUSTER_THEMES.items():
@@ -119,7 +130,8 @@ _AGENTIC_ADJACENT_SKILLS = [
     "LlamaIndex", "Generative AI",
 ]
 _ML_THEME_KEYWORDS = ("machine learning", "deep learning", "generative ai",
-                       "ai engineering", "ai-enabled", "genai", "nlp", "llm")
+                       "ai engineering", "ai-enabled", "genai", "nlp", "llm",
+                       "core ai")  # v60: cluster 5 "Core AI, Cloud & Data-Platform Engineering"
 _WRONG_THEME_KEYWORDS = ("devops", "office", "business intelligence",
                           "strategic planning", "communication")
 
@@ -158,10 +170,10 @@ for cid in _agentic_cluster_ids:
 # =====================================================================
 
 _check(
-    "FOCUSED_CLUSTERS == {1, 2, 3, 7} (coherent technical clusters, "
-    "excludes tiny/incoherent catch-alls 6/8/9 and broad soft-skill "
-    "clusters 4/5/10)",
-    FOCUSED_CLUSTERS == {1, 2, 3, 7},
+    "FOCUSED_CLUSTERS == {1, 2, 3, 5} (coherent technical clusters, "  # v60
+    "excludes tiny/incoherent catch-alls 8/9 and broad soft-skill "
+    "clusters 4/6/7/10)",
+    FOCUSED_CLUSTERS == {1, 2, 3, 5},
     f"got {sorted(FOCUSED_CLUSTERS)}",
 )
 
@@ -175,7 +187,8 @@ _check(
 # (e) Live cluster sizes match the paper's canonical V4 set exactly
 # =====================================================================
 
-_CANONICAL_SIZES_SORTED = sorted([282, 174, 159, 137, 71, 69, 54, 12, 2, 2], reverse=True)
+# v60: unified-corpus W2026 partition sizes 47/131/89/21/370/66/98/9/3/128
+_CANONICAL_SIZES_SORTED = sorted([370, 131, 128, 98, 89, 66, 47, 21, 9, 3], reverse=True)
 
 _clusters = all_clusters()
 _check(
@@ -186,8 +199,8 @@ _check(
 
 _live_sizes_sorted = sorted((c["skill_count"] for c in _clusters), reverse=True)
 _check(
-    "live cluster sizes match the paper's canonical V4 set "
-    "(282/174/159/137/71/69/54/12/2/2, sum 962)",
+    "live cluster sizes match the unified-corpus W2026 set "
+    "(370/131/128/98/89/66/47/21/9/3, sum 962)",  # v60
     _live_sizes_sorted == _CANONICAL_SIZES_SORTED,
     f"got {_live_sizes_sorted}",
 )
@@ -222,20 +235,20 @@ _check(
     _detail_1["theme"] == CLUSTER_THEMES[1],
 )
 _check(
-    "cluster_detail(1) skill_count == 174",
-    _detail_1["skill_count"] == 174,
+    "cluster_detail(1) skill_count == 47 (v60 unified-corpus)",  # v60
+    _detail_1["skill_count"] == 47,
     f"got {_detail_1['skill_count']}",
 )
 
-_detail_6 = cluster_detail(6)
+_detail_8 = cluster_detail(8)  # v60: cluster 8 is now the near-zero niche cluster (9 skills)
 _check(
-    "cluster_detail(6) skill_count == 2 (tiny residual cluster)",
-    _detail_6["skill_count"] == 2,
-    f"got {_detail_6['skill_count']}",
+    "cluster_detail(8) skill_count == 9 (near-zero niche cluster, v60)",  # v60
+    _detail_8["skill_count"] == 9,
+    f"got {_detail_8['skill_count']}",
 )
 _check(
-    "cluster_detail(6) is NOT in FOCUSED_CLUSTERS",
-    not _detail_6["focused"],
+    "cluster_detail(8) is NOT in FOCUSED_CLUSTERS",
+    not _detail_8["focused"],
 )
 
 
@@ -244,14 +257,20 @@ _check(
 # =====================================================================
 
 _check(
-    "CLUSTER_RESULTS_FILE exists (data file untouched by this relabel)",
+    "CLUSTER_RESULTS_FILE exists",
     os.path.isfile(cluster_tool.CLUSTER_RESULTS_FILE),
     f"path={cluster_tool.CLUSTER_RESULTS_FILE}",
 )
 _check(
-    "V4_TAXONOMY_XLSX exists (data file untouched by this relabel)",
-    os.path.isfile(cluster_tool.V4_TAXONOMY_XLSX),
-    f"path={cluster_tool.V4_TAXONOMY_XLSX}",
+    "SKILL_FREQ_CSV exists",
+    os.path.isfile(cluster_tool.SKILL_FREQ_CSV),
+    f"path={cluster_tool.SKILL_FREQ_CSV}",
+)
+_check(  # v60
+    "MEMBERSHIP_CONFIDENCE_FILE exists (new in v60)",
+    cluster_tool.MEMBERSHIP_CONFIDENCE_FILE is not None
+    and os.path.isfile(cluster_tool.MEMBERSHIP_CONFIDENCE_FILE),
+    f"path={cluster_tool.MEMBERSHIP_CONFIDENCE_FILE}",
 )
 
 

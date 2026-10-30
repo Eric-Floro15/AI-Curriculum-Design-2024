@@ -170,16 +170,19 @@ def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]
 
 
 CLUSTER_THEMES = {
-    1: "General / Mixed",
-    2: "General / Mixed",
-    3: "General / Mixed",
-    4: "Cloud & Database Infrastructure",
-    5: "Soft Skills & Business",
-    6: "General / Mixed",
-    7: "Core ML, Statistics & Programming",
-    8: "Data Engineering (Spark / Kafka / Docker)",
-    9: "Analytical & BI Tools",
-    10: "Large Mixed Group",
+    # v60: unified-corpus W2026 recompute — matches cluster_tool.py CLUSTER_THEMES exactly.
+    # Keep this dict in sync with cluster_tool.py whenever CLUSTER_THEMES changes;
+    # build_index.py cannot import it directly (env-var initialisation order).
+    1:  "Quantitative & Experimental Methods",
+    2:  "Machine Learning & Generative AI",
+    3:  "Data-Engineering Tools",
+    4:  "Requirements, Validation & Delivery",
+    5:  "Core AI, Cloud & Data-Platform Engineering",
+    6:  "Business Intelligence, Analytics & Finance",
+    7:  "Communication & Professional Skills",
+    8:  "Rare Niche Skills (near-zero frequency)",
+    9:  "Risk & Regulatory",
+    10: "Strategy, Sales & Product Management",
 }
 
 

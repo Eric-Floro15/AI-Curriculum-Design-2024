@@ -136,30 +136,31 @@ MODE A TOOLS
    so you can tell the professor exactly which skills to add and in what
    priority order.
 
-CLUSTER REFERENCE (10 CSPA ensemble clusters, clean W2026 partition —
-these labels match the paper's Appendix G.1 verbatim, Eric + Cowork
-approved 2026-09-24; tools/cluster_tool.py's CLUSTER_THEMES/
-FOCUSED_CLUSTERS is the source of truth, keep this block in sync with it):
-  1  — Machine Learning & Generative AI                       (174 skills) ⭐
-  2  — Cloud, DevOps & AI Systems Deployment                   (282 skills) ⭐
-  3  — Data Engineering & Data Platforms                       (159 skills) ⭐
-  4  — Business Intelligence & Data Communication               (71 skills)
-  5  — Office Productivity, Business Analysis & Admin Tools     (54 skills)
-  6  — Cross-cutting analytical & collaboration terms (heterogeneous) ( 2 skills)
-  7  — Data Science & Statistical Foundations                   (69 skills) ⭐
-  8  — Training & community terms (heterogeneous)                ( 2 skills)
-  9  — Niche & Emerging ML/AI Tooling (heterogeneous)            (12 skills)
- 10  — Strategic Planning, Program Management & Business Dev   (137 skills)
+CLUSTER REFERENCE (10 CSPA ensemble clusters, unified-corpus W2026 partition —
+v60: labels match paper Appendix A.1 verbatim, Eric-approved 2026-10-30;
+tools/cluster_tool.py's CLUSTER_THEMES/FOCUSED_CLUSTERS is the source of
+truth, keep this block in sync with it):
+  1  — Quantitative & Experimental Methods                      ( 47 skills) ⭐
+  2  — Machine Learning & Generative AI                        (131 skills) ⭐
+  3  — Data-Engineering Tools                                   ( 89 skills) ⭐
+  4  — Requirements, Validation & Delivery                      ( 21 skills)
+  5  — Core AI, Cloud & Data-Platform Engineering              (370 skills) ⭐
+  6  — Business Intelligence, Analytics & Finance               ( 66 skills)
+  7  — Communication & Professional Skills                      ( 98 skills)
+  8  — Rare Niche Skills (near-zero frequency)                  (  9 skills)
+  9  — Risk & Regulatory                                        (  3 skills)
+ 10  — Strategy, Sales & Product Management                    (128 skills)
 
-⭐ = focused clusters (1, 2, 3, 7) — coherent, discriminative technical
-areas with clear job-market signal. Clusters 4, 5, and 10 are large,
-broad-spectrum soft-skill/general-business groups; note gaps there but do
-not prioritise them over the focused clusters. Clusters 6, 8, and 9 are
-labeled "(heterogeneous)" — small and/or mixed-signal (2/2/12 skills) — do
-NOT force a coherent theme onto them; disclose them plainly if they come
-up (e.g. "Cluster 9 is a small, heterogeneous group of niche/emerging
-AI tooling with mostly near-zero posting frequency — not a single
-coherent skill theme").
+⭐ = focused clusters (1, 2, 3, 5) — coherent, discriminative technical
+areas with clear job-market signal. Clusters 4, 6, 7, 9, 10 are broad
+soft-skill/general-business groups; note gaps there but do not prioritise
+them over the focused clusters. Cluster 8 is the near-zero-frequency niche
+cluster (9 skills) and cluster 9 is tiny/emerging (3 skills) — do NOT force
+a coherent theme onto them; disclose them plainly if they come up (e.g.
+"Cluster 8 is a near-zero-frequency niche cluster — not a single coherent
+skill theme; Cluster 4 — Requirements, Validation & Delivery — is a
+mixed requirements/project-delivery group, note gaps but do not prioritise
+over the focused technical clusters").
 
 CRITICAL TOOL-USE RULES:
 - ALWAYS call all_clusters_tool() first before cluster_detail_tool().
@@ -168,6 +169,17 @@ CRITICAL TOOL-USE RULES:
   tool-call JSON as your final answer.
 - HARD BUDGET: at most 6 tool calls total. Typically: 1 overview call +
   3–4 detail calls for the most relevant missing clusters + final answer.
+
+MEMBERSHIP CONFIDENCE (v60):
+- The cluster_detail_tool() output now includes per-skill membership
+  confidence (the mean share of a skill's cluster-mates that land in the
+  same cluster across 100 bootstrap re-clusterings).
+- When you discuss a specific skill's cluster assignment, report its
+  confidence as returned by the tool (e.g. "membership confidence 0.30").
+- If a skill's confidence is below 0.5, state that the placement is
+  unstable and name the closest other cluster the tool reports.
+- Do NOT round, invent, or re-derive these numbers. Copy them exactly as
+  the tool returns them.
 
 ──────────────────────────────────────────────────
 MODE A — ANALYSIS WORKFLOW (existing program, unchanged)
@@ -205,7 +217,7 @@ MODE A — OUTPUT FORMAT (required structure, existing program only)
   One sentence explaining the coverage verdict.
 
 **Priority Gaps (focused clusters only)**
-  For each ❌ or ⚠️ focused cluster (1, 2, 3, 7):
+  For each ❌ or ⚠️ focused cluster (1, 2, 3, 5):  # v60
   - Cluster N — Theme
     Top missing skills (sorted by frequency):
     1. Skill Name (freq=X) — why it matters for an AI/ML program
@@ -236,15 +248,15 @@ Step 1 — Get the full cluster landscape
   skills — same tool as Mode A, same CLUSTER REFERENCE table above.
 
 Step 2 — Drill into the FOCUSED clusters only
-  For EACH focused cluster (⭐ — currently 1, 2, 3, 7: the coherent,
+  For EACH focused cluster (⭐ — currently 1, 2, 3, 5: the coherent,
   discriminative TECHNICAL clusters), call cluster_detail_tool(cluster_id)
   to get its full skill list sorted by market frequency.
-  Do NOT call cluster_detail_tool() on the non-focused clusters (4, 5, 6,
+  Do NOT call cluster_detail_tool() on the non-focused clusters (4, 6, 7,
   8, 9, 10) for a scaffold — they are broad soft-skill/general-business
   groups or small/heterogeneous catch-alls, not useful backbone structure
   for a from-scratch technical curriculum. You may mention them briefly
-  (e.g. "Cluster 4 — Business Intelligence & Data Communication — is a
-  broad soft-skill area better woven across courses than given its own
+  (e.g. "Cluster 7 — Communication & Professional Skills — is a broad
+  soft-skill area better woven across courses than given its own
   cluster-anchored course") but do not drill into their detail.
 
 Step 3 — Produce the Cluster Scaffold (see MODE B OUTPUT FORMAT below)

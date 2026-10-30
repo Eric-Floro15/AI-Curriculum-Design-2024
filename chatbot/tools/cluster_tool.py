@@ -41,6 +41,12 @@ largely near-zero-frequency) — labeled "(heterogeneous)" rather than
 themed, per this repo's own README guidance ("don't force a label on
 incoherent clusters").
 
+2026-10-30 v60 RECOMPUTE: analysis re-run on unified corpus (deduplicated
+postings ≥150 words). Partition changed: new sizes 47/131/89/21/370/66/98/
+9/3/128 (sum 962). New labels approved by Eric, match paper Appendix A.1
+verbatim. FOCUSED_CLUSTERS updated from {1,2,3,7} to {1,2,3,5}.
+Membership confidence CSV added (cluster_membership_confidence_W2026.csv).
+
 Exposes:
   Python API   — all_clusters(), cluster_detail(id), skill_frequency(name)
   CrewAI tools — all_clusters_tool, cluster_detail_tool
@@ -103,6 +109,21 @@ CLUSTER_RESULTS_FILE = os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE") or _W2026
 SKILL_FREQ_CSV = os.environ.get("SKILL_FREQ_CSV_OVERRIDE") or _W2026_SKILL_FREQ_CSV
 _ALT_WAVE_MODE = bool(os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE"))
 
+# v60: Membership confidence CSV — mean share of a skill's cluster-mates that
+# land in the same cluster across 100 bootstrap re-clusterings. 1 = always
+# stays with its cluster; below 0.5 = placement unstable.
+# Columns: Skill, Cluster, membership_confidence, closest_other_cluster,
+# coassign_with_closest_other.
+# Override for alt-wave runs (same env-var pattern as CLUSTER_RESULTS_FILE_OVERRIDE).
+# In alt-wave mode with no override, None → loader returns {} (unavailable).
+_W2026_MEMBERSHIP_CONFIDENCE_FILE = os.path.join(
+    _CHATBOT_DIR, "data", "cluster_membership_confidence_W2026.csv"
+)
+MEMBERSHIP_CONFIDENCE_FILE = (
+    os.environ.get("MEMBERSHIP_CONFIDENCE_FILE_OVERRIDE")
+    or (_W2026_MEMBERSHIP_CONFIDENCE_FILE if not _ALT_WAVE_MODE else None)
+)
+
 # Which wave column of skill_frequency_by_semester.csv to read for market
 # frequency. Default W2026 (production). An alternate-wave run
 # (CLUSTER_RESULTS_FILE_OVERRIDE set) must name that wave's column via
@@ -111,23 +132,22 @@ _ALT_WAVE_MODE = bool(os.environ.get("CLUSTER_RESULTS_FILE_OVERRIDE"))
 # the same safe-fallback principle the themes use under an alternate wave.
 FREQ_WAVE = os.environ.get("FREQ_WAVE_OVERRIDE") or ("" if _ALT_WAVE_MODE else "W2026")
 
-# Cluster themes for the clean Winter 2026 CSPA ensemble partition.
-# FINAL labels (2026-09-24) — Eric + Cowork approved; these match the
-# paper's Appendix G.1 verbatim, so code == paper. Do not edit without a
-# corresponding Appendix G.1 change (and vice versa). Only used when
-# _ALT_WAVE_MODE is False (see _theme_for() below) — an override run never
-# reads this dict.
+# v60: Cluster themes for the unified-corpus W2026 partition.
+# FINAL labels — Eric-approved, match paper Appendix A.1 verbatim; code == paper.
+# Do not edit without a corresponding Appendix A.1 change (and vice versa).
+# Cluster sizes: 47/131/89/21/370/66/98/9/3/128 (sum 962).
+# Only used when _ALT_WAVE_MODE is False (see _theme_for() below).
 CLUSTER_THEMES = {
-    1:  "Machine Learning & Generative AI",
-    2:  "Cloud, DevOps & AI Systems Deployment",
-    3:  "Data Engineering & Data Platforms",
-    4:  "Business Intelligence & Data Communication",
-    5:  "Office Productivity, Business Analysis & Admin Tools",
-    6:  "Cross-cutting analytical & collaboration terms (heterogeneous)",
-    7:  "Data Science & Statistical Foundations",
-    8:  "Training & community terms (heterogeneous)",
-    9:  "Niche & Emerging ML/AI Tooling (heterogeneous)",
-    10: "Strategic Planning, Program Management & Business Development",
+    1:  "Quantitative & Experimental Methods",
+    2:  "Machine Learning & Generative AI",
+    3:  "Data-Engineering Tools",
+    4:  "Requirements, Validation & Delivery",
+    5:  "Core AI, Cloud & Data-Platform Engineering",
+    6:  "Business Intelligence, Analytics & Finance",
+    7:  "Communication & Professional Skills",
+    8:  "Rare Niche Skills (near-zero frequency)",
+    9:  "Risk & Regulatory",
+    10: "Strategy, Sales & Product Management",
 }
 
 
@@ -215,16 +235,15 @@ def data_wave_override_notice() -> str | None:
     )
 
 
-# Clusters worth highlighting in gap analysis (focused, high-signal technical
-# areas). Selection criterion (2026-09-24 relabel, Eric + Cowork approved):
-# coherent, discriminative, TECHNICAL clusters only — 1 (Machine Learning &
-# Generative AI), 2 (Cloud, DevOps & AI Systems Deployment), 3 (Data
-# Engineering & Data Platforms), 7 (Data Science & Statistical Foundations).
-# Excludes the tiny/heterogeneous catch-alls (6, 8, 9) and the broad
-# soft-skill / general-business clusters (4, 5, 10 — BI/communication,
-# office/admin, strategy/sales/PM) which are less discriminative for
-# targeted curriculum-gap recommendations, mirroring the same
-# broad-cluster-exclusion logic the old (stale) partition used.
+# v60: Clusters worth highlighting in gap analysis (focused, high-signal
+# technical areas). Selection criterion (v60, 2026-10-30 — pending Eric's
+# confirmation): coherent, discriminative, TECHNICAL clusters only —
+# 1 (Quantitative & Experimental Methods), 2 (Machine Learning & Generative AI),
+# 3 (Data-Engineering Tools), 5 (Core AI, Cloud & Data-Platform Engineering).
+# Included: Core AI/cloud/data platform (5, 370 skills, 95% technical), ML &
+# GenAI (2), Data-engineering tools (3), Quantitative methods (1).
+# Excluded: BI/analytics/finance (6), Communication (7), Strategy/sales (10),
+# mixed requirements cluster (4), and the tiny clusters 8 and 9.
 #
 # 2026-09-25: overridable via FOCUSED_CLUSTERS_OVERRIDE (comma-separated
 # cluster ids), for the same alternate-wave-run reason as CLUSTER_RESULTS_FILE
@@ -234,7 +253,7 @@ _focused_override = os.environ.get("FOCUSED_CLUSTERS_OVERRIDE")
 if _focused_override:
     FOCUSED_CLUSTERS = {int(x) for x in _focused_override.split(",") if x.strip()}
 else:
-    FOCUSED_CLUSTERS = {1, 2, 3, 7}
+    FOCUSED_CLUSTERS = {1, 2, 3, 5}  # v60: updated from {1, 2, 3, 7}
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -291,6 +310,72 @@ def _enrich_with_freq(skills: list[str]) -> list[dict]:
     return sorted(result, key=lambda x: x["frequency"], reverse=True)
 
 
+# v60: Membership confidence helpers ──────────────────────────────────────────
+
+@lru_cache(maxsize=1)
+def _load_membership_confidence() -> dict:
+    """Load per-skill membership confidence from cluster_membership_confidence_W2026.csv.
+
+    Membership confidence = mean share of a skill's cluster-mates that land in the
+    same cluster across 100 posting-bootstrap re-clusterings. 1 means the skill
+    always stays with its cluster; below 0.5 indicates unstable placement.
+
+    In alt-wave mode without a MEMBERSHIP_CONFIDENCE_FILE_OVERRIDE, returns {}
+    (unavailable). Never uses W2026 confidence values for a different wave.
+
+    Returns dict: skill_lower → {"confidence": float, "closest_other_cluster": int,
+                                  "coassign_with_closest_other": float}
+    """
+    if not MEMBERSHIP_CONFIDENCE_FILE:
+        return {}
+    try:
+        df = pd.read_csv(MEMBERSHIP_CONFIDENCE_FILE)
+        result = {}
+        for _, r in df.iterrows():
+            skill = str(r.get("Skill", "")).strip()
+            if skill:
+                result[skill.lower()] = {
+                    "confidence": float(r.get("membership_confidence", float("nan"))),
+                    "closest_other_cluster": int(r.get("closest_other_cluster", 0)),
+                    "coassign_with_closest_other": float(r.get("coassign_with_closest_other", float("nan"))),
+                }
+        return result
+    except Exception:
+        return {}
+
+
+def _format_confidence(skill: str) -> str:
+    """Format membership confidence string for a skill, or '' if unavailable."""
+    conf_map = _load_membership_confidence()
+    if not conf_map:
+        return ""
+    info = conf_map.get(skill.lower())
+    if info is None:
+        return ""
+    c = info["confidence"]
+    if c < 0.5:
+        other_id = info["closest_other_cluster"]
+        coassign = info["coassign_with_closest_other"]
+        other_theme = _theme_for(other_id)
+        return (f"membership confidence {c:.2f} (placement unstable; "
+                f"most often co-clustered with cluster {other_id} — "
+                f"{other_theme}, {coassign:.2f})")
+    return f"membership confidence {c:.2f}"
+
+
+def _cluster_confidence_summary(skills: list) -> dict:
+    """Median membership confidence and count below 0.5 for a list of skills."""
+    conf_map = _load_membership_confidence()
+    if not conf_map:
+        return {"median_confidence": None, "n_below_0_5": None}
+    confs = [conf_map[s.lower()]["confidence"] for s in skills if s.lower() in conf_map]
+    if not confs:
+        return {"median_confidence": None, "n_below_0_5": None}
+    median_c = float(pd.Series(confs).median())
+    n_below = sum(1 for c in confs if c < 0.5)
+    return {"median_confidence": round(median_c, 2), "n_below_0_5": n_below}
+
+
 # ── Python API ────────────────────────────────────────────────────────────────
 
 @_traceable(name="all_clusters", run_type="tool")
@@ -308,12 +393,15 @@ def all_clusters() -> list[dict]:
         skills = df[df["Cluster"] == cid]["Skill"].tolist()
         enriched = _enrich_with_freq(skills)
         top = [s["skill"] for s in enriched[:8]]
+        conf_summary = _cluster_confidence_summary(skills)  # v60
         result.append({
             "cluster_id": int(cid),
             "theme": _theme_for(int(cid)),
             "skill_count": len(skills),
             "focused": cid in FOCUSED_CLUSTERS,
             "top_skills_by_frequency": top,
+            "median_membership_confidence": conf_summary["median_confidence"],  # v60
+            "n_skills_below_0_5": conf_summary["n_below_0_5"],                  # v60
         })
     return result
 
@@ -331,11 +419,24 @@ def cluster_detail(cluster_id: int) -> dict:
     if not skills:
         return {"error": f"No skills found for cluster_id={cluster_id}"}
     enriched = _enrich_with_freq(skills)
+    # v60: add per-skill membership confidence
+    conf_map = _load_membership_confidence()
+    for s in enriched:
+        info = conf_map.get(s["skill"].lower()) if conf_map else None
+        if info:
+            s["membership_confidence"] = info["confidence"]
+            s["closest_other_cluster"] = info["closest_other_cluster"]
+            s["coassign_with_closest_other"] = info["coassign_with_closest_other"]
+        else:
+            s["membership_confidence"] = None
+    conf_summary = _cluster_confidence_summary(skills)  # v60
     return {
         "cluster_id": cluster_id,
         "theme": _theme_for(cluster_id),
         "focused": cluster_id in FOCUSED_CLUSTERS,
         "skill_count": len(skills),
+        "median_membership_confidence": conf_summary["median_confidence"],   # v60
+        "n_skills_below_0_5": conf_summary["n_below_0_5"],                   # v60
         "skills": enriched,
     }
 
@@ -356,24 +457,32 @@ try:
         co-occur in AI/ML job postings.
 
         On the default W2026 data: focused clusters (most discriminative for
-        gap analysis) are 1, 2, 3, 7. Clusters 4, 5, and 10 are large,
-        broad-spectrum soft-skill/business groups — less useful for targeted
-        gap-analysis recommendations. Clusters 6, 8, and 9 are small/
-        incoherent catch-alls — disclose, don't theme. TRUST THE ⭐ MARKERS
-        AND THEMES IN THIS TOOL'S ACTUAL RETURNED TEXT over this note — on a
-        different data wave the same cluster NUMBER can hold different
-        skills, so the returned data (not this static description) is
-        authoritative for which clusters are focused and what they mean.
+        gap analysis) are 1, 2, 3, 5. Clusters 4, 6, 7, 9, 10 are broad
+        soft-skill/business groups — less useful for targeted gap-analysis
+        recommendations. Clusters 8 and 9 are small/near-zero-frequency
+        catch-alls — disclose, don't theme. TRUST THE ⭐ MARKERS AND THEMES
+        IN THIS TOOL'S ACTUAL RETURNED TEXT over this note — on a different
+        data wave the same cluster NUMBER can hold different skills, so the
+        returned data (not this static description) is authoritative for
+        which clusters are focused and what they mean.
         """
         clusters = all_clusters()
         lines = ["CSPA Ensemble Skill Clusters (10 total)\n"]
         for c in clusters:
             flag = "⭐" if c["focused"] else "  "
             top = ", ".join(c["top_skills_by_frequency"])
+            # v60: add cluster stability summary
+            conf_line = ""
+            if c["median_membership_confidence"] is not None:
+                conf_line = (
+                    f"\n   Stability: median confidence "
+                    f"{c['median_membership_confidence']:.2f}, "
+                    f"{c['n_skills_below_0_5']} of {c['skill_count']} skills below 0.5"
+                )
             lines.append(
                 f"{flag} Cluster {c['cluster_id']} — {c['theme']}"
                 f" ({c['skill_count']} skills)\n"
-                f"   Top skills: {top}\n"
+                f"   Top skills: {top}{conf_line}\n"
             )
         lines.append(
             "⭐ = focused cluster (high signal for gap analysis)\n"
@@ -404,11 +513,19 @@ try:
         lines = [
             f"Cluster {detail['cluster_id']} — {detail['theme']}",
             f"Total skills: {detail['skill_count']}",
-            "",
         ]
+        # v60: cluster stability summary
+        if detail["median_membership_confidence"] is not None:
+            lines.append(
+                f"Stability: median confidence {detail['median_membership_confidence']:.2f}, "
+                f"{detail['n_skills_below_0_5']} of {detail['skill_count']} skills below 0.5"
+            )
+        lines.append("")
         for s in detail["skills"]:
             freq_str = f"{s['frequency']:.1f}% of postings" if s["frequency"] > 0 else "freq=n/a"
-            lines.append(f"  - {s['skill']} ({freq_str})")
+            conf_str = _format_confidence(s["skill"])  # v60
+            conf_part = f"; {conf_str}" if conf_str else ""
+            lines.append(f"  - {s['skill']} ({freq_str}{conf_part})")
         return "\n".join(lines)
 
     CLUSTER_TOOLS = [all_clusters_tool, cluster_detail_tool]
@@ -423,12 +540,14 @@ if __name__ == "__main__":
         flag = "⭐" if c["focused"] else "  "
         print(f"{flag} Cluster {c['cluster_id']:2d} | {c['theme']:45s} | {c['skill_count']:3d} skills | top: {c['top_skills_by_frequency'][:3]}")
 
-    print("\n=== Cluster 1 detail (Machine Learning & Generative AI) ===")
+    print("\n=== Cluster 1 detail (Quantitative & Experimental Methods) ===")  # v60
     d = cluster_detail(1)
     for s in d["skills"][:10]:
-        print(f"  {s['skill']:40s} {s['frequency']:.1f}% of postings")
+        conf_str = _format_confidence(s["skill"])
+        print(f"  {s['skill']:40s} {s['frequency']:.1f}%  {conf_str}")
 
-    print("\n=== Cluster 3 detail (Data Engineering & Data Platforms) ===")
+    print("\n=== Cluster 3 detail (Data-Engineering Tools) ===")  # v60
     d = cluster_detail(3)
     for s in d["skills"][:10]:
-        print(f"  {s['skill']:40s} {s['frequency']:.1f}% of postings")
+        conf_str = _format_confidence(s["skill"])
+        print(f"  {s['skill']:40s} {s['frequency']:.1f}%  {conf_str}")

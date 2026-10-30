@@ -3,7 +3,7 @@ csv_tool.py — Pandas-backed structured query tools over the skills taxonomy.
 
 Complements rag_tool.py: where RAG is good at semantic similarity, this tool
 handles deterministic filters and aggregations — "top N by frequency",
-"all skills in Level 1 = soft", "everything in cluster 8", etc.
+"all skills in Level 1 = soft", "everything in cluster 3", etc.  # v60
 
 Reuses load_skills + build_cluster_map from build_index.py so cluster matching
 stays identical between the FAISS index and the structured queries.
@@ -150,7 +150,7 @@ try:
                      string. Do not pass "" — pass -1.
 
         Best for: "what are the most in-demand skills?", "top soft skills",
-        "top skills in cluster 8". Example: top soft skills →
+        "top skills in cluster 3". Example: top soft skills →  # v60
         top_skills_tool(n=5, level1="soft", level2="", cluster_id=-1).
         """
         cid = cluster_id if cluster_id != -1 else None
@@ -229,10 +229,10 @@ if __name__ == "__main__":
     print("\n=== Top 10 soft skills ===")
     for r in top_skills_by_frequency(n=10, level1="soft"):
         print(f"  {r['skill']:35s} freq={r['frequency']:5d}")
-    print("\n=== Skills in cluster 8 (data engineering) ===")
-    rows = skills_in_cluster(8)
+    print("\n=== Skills in cluster 3 (data-engineering tools) ===")  # v60
+    rows = skills_in_cluster(3)
     if rows:
         for r in rows[:15]:
             print(f"  {r['skill']:35s} freq={r['frequency']:5d}")
     else:
-        print("  (no skills with cluster_id=8)")
+        print("  (no skills with cluster_id=3)")

@@ -83,9 +83,12 @@ _healthcare_wrap = sector_wrap("healthcare")
 # lift_analysis.py-sourced in RUN2C) are unchanged and now match exactly
 # instead of the prior ~2% z gap. Tight tolerance (0.01) for all 6, since
 # there is no longer a known cross-script gap to accommodate.
+# v60: unified-corpus W2026 recompute (2026-10-30) shifted all anchors — the
+# compose CSVs were rebuilt from the new cluster partition; values below are
+# the exact sector_wrap()-returned 2dp-rounded figures from compose_*_W2026.csv.
 for name, lift_anchor, z_anchor in [
-    ("Financial Services", 4.3244, 7.1977),
-    ("Risk Management", 4.4101, 6.3097),
+    ("Financial Services", 3.8300, 7.0300),  # v60: was 4.3244, 7.1977
+    ("Risk Management",    3.8300, 6.0100),  # v60: was 4.4101, 6.3097
 ]:
     r = _find(_finance_wrap, name)
     _check(f"finance anchor '{name}' present in sector_wrap", r is not None)
@@ -103,10 +106,10 @@ for name, lift_anchor, z_anchor in [
         )
 
 for name, lift_anchor, z_anchor in [
-    ("Electronic Health Records", 7.2031, 3.1384),
-    ("Health Informatics", 8.9894, 2.8673),
-    ("Clinical Trial Design And Execution", 7.2178, 2.4061),
-    ("Hipaa", 4.2881, 2.2820),
+    ("Electronic Health Records",            7.1400, 3.1400),  # v60: was 7.2031, 3.1384
+    ("Health Informatics",                   8.2700, 2.6500),  # v60: was 8.9894, 2.8673
+    ("Clinical Trial Design And Execution",  7.2100, 2.4400),  # v60: was 7.2178, 2.4061
+    ("Hipaa",                                4.1700, 2.2600),  # v60: was 4.2881, 2.2820
 ]:
     r = _find(_healthcare_wrap, name)
     _check(f"healthcare anchor '{name}' present in sector_wrap", r is not None)

@@ -1746,12 +1746,12 @@ _check(
 # --- Step 4(a): a Mode-B-shaped Cluster Scaffold answer, grounded in
 # real Cluster Interpreter + Analyst output, with NO peer-program
 # content anywhere, passes all three content guards clean. ---
-_scaffold_answer = (
+_scaffold_answer = (  # v60: updated to unified-corpus W2026 cluster labels/sizes
     "## Cluster Scaffold — Graduate AI/ML Curriculum\n\n"
-    "**Cluster 1 — Machine Learning & Generative AI** (174 skills)\n"
+    "**Cluster 2 — Machine Learning & Generative AI** (131 skills)\n"
     "Top demand skills: Machine Learning (freq=5952), Generative Ai (freq=1975), "
     "Mlops (freq=885). Anchors Course 1: Foundations of ML & GenAI.\n\n"
-    "**Cluster 3 — Data Engineering & Data Platforms** (159 skills)\n"
+    "**Cluster 3 — Data-Engineering Tools** (89 skills)\n"
     "Top demand skills: Python (freq=7198), Sql (freq=6725), Cloud Computing (freq=6155). "
     "Anchors Course 2: Data Engineering & Cloud Platforms.\n\n"
     "### Evidence Base\n\n"
@@ -1764,9 +1764,9 @@ _scaffold_answer = (
 _scaffold_grounding_steps = _steps(
     (
         "Cluster Interpreter",
-        "Cluster 1 - Machine Learning & Generative AI (174 skills): "
+        "Cluster 2 - Machine Learning & Generative AI (131 skills): "
         "Machine Learning (freq=5952), Generative Ai (freq=1975), Mlops (freq=885). "
-        "Cluster 3 - Data Engineering & Data Platforms (159 skills): "
+        "Cluster 3 - Data-Engineering Tools (89 skills): "
         "Python (freq=7198), Sql (freq=6725), Cloud Computing (freq=6155).",
     ),
     ("Skills Taxonomy Analyst", "Machine Learning demand grounding, no lift/z figures cited this excerpt."),
@@ -2050,13 +2050,13 @@ finally:
         "Part B still-catches (W2026 default unaffected): after "
         "restoring the environment, cluster 1's theme is back to the "
         "W2026 production label",
-        _cluster_tool_mod._theme_for(1) == "Machine Learning & Generative AI",
+        _cluster_tool_mod._theme_for(1) == "Quantitative & Experimental Methods",  # v60
         f"got: {_cluster_tool_mod._theme_for(1)!r}",
     )
     _check(
         "Part B still-catches: FOCUSED_CLUSTERS is back to the W2026 "
-        "production set {1, 2, 3, 7}",
-        _cluster_tool_mod.FOCUSED_CLUSTERS == {1, 2, 3, 7},
+        "production set {1, 2, 3, 5}",  # v60
+        _cluster_tool_mod.FOCUSED_CLUSTERS == {1, 2, 3, 5},
         f"got: {sorted(_cluster_tool_mod.FOCUSED_CLUSTERS)}",
     )
 
