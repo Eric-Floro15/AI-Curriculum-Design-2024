@@ -235,25 +235,19 @@ def data_wave_override_notice() -> str | None:
     )
 
 
-# v60: Clusters worth highlighting in gap analysis (focused, high-signal
-# technical areas). Selection criterion (v60, 2026-10-30 — pending Eric's
-# confirmation): coherent, discriminative, TECHNICAL clusters only —
-# 1 (Quantitative & Experimental Methods), 2 (Machine Learning & Generative AI),
-# 3 (Data-Engineering Tools), 5 (Core AI, Cloud & Data-Platform Engineering).
-# Included: Core AI/cloud/data platform (5, 370 skills, 95% technical), ML &
-# GenAI (2), Data-engineering tools (3), Quantitative methods (1).
-# Excluded: BI/analytics/finance (6), Communication (7), Strategy/sales (10),
-# mixed requirements cluster (4), and the tiny clusters 8 and 9.
+# v60b2: FOCUSED_CLUSTERS is now COMPUTED from a fixed rule (replaces the
+# hand-picked {1, 2, 3, 5} from v60).  Rule: size >= 20, >= 90% Level 1
+# Category = 'technical' in the V4 taxonomy, median FREQ_WAVE share >= 0.1%.
+# Running the rule at module load for the active wave means alt-wave runs
+# automatically get their own focused set without any manual override.
+# Expected W2026: {1, 2, 3, 5, 6}.  Expected F2022: {3, 4, 8, 10}.
 #
-# 2026-09-25: overridable via FOCUSED_CLUSTERS_OVERRIDE (comma-separated
-# cluster ids), for the same alternate-wave-run reason as CLUSTER_RESULTS_FILE
-# above — a different wave's cluster N is not the same skills as W2026's
-# cluster N, so which numbers are "coherent/technical" can differ by wave.
+# FOCUSED_CLUSTERS_OVERRIDE is still honoured as a manual escape hatch.
+# Pass "PENDING_ERIC" or leave unset to use the rule.
+# IMPORTANT: the actual FOCUSED_CLUSTERS assignment lives AFTER the
+# loaders and _compute_focused_clusters() are defined (see below) — moving
+# it up here would raise NameError at module load.
 _focused_override = os.environ.get("FOCUSED_CLUSTERS_OVERRIDE")
-if _focused_override:
-    FOCUSED_CLUSTERS = {int(x) for x in _focused_override.split(",") if x.strip()}
-else:
-    FOCUSED_CLUSTERS = {1, 2, 3, 5}  # v60: updated from {1, 2, 3, 7}
 
 
 # ── Data loaders ─────────────────────────────────────────────────────────────
@@ -298,6 +292,80 @@ def _load_frequencies() -> dict[str, float]:
         return lookup
     except Exception:
         return {}
+
+
+@lru_cache(maxsize=1)
+def _load_taxonomy_level1() -> dict[str, str]:
+    """Load Level 1 Category per canonical skill from the V4 taxonomy XLSX.
+    Returns {canonical_key_lower: level1_lower}.
+    Used only by _compute_focused_clusters(); cached so it reads the file once.
+    """
+    xlsx_path = os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx")
+    try:
+        df = pd.read_excel(xlsx_path)
+        return {
+            str(r["canonical_key"]).strip().lower(): str(r["Level 1 Category"]).strip().lower()
+            for _, r in df.iterrows()
+            if pd.notna(r.get("canonical_key"))
+        }
+    except Exception:
+        return {}
+
+
+def _compute_focused_clusters() -> frozenset[int]:
+    """Compute focused clusters from a fixed rule (v60b2, replaces hand-picked set).
+
+    A cluster is focused when ALL three hold for the active data wave:
+      1. size >= 20 skills;
+      2. >= 90% of its skills have Level 1 Category = 'technical' in the V4 taxonomy
+         (XLSX canonical_key, case-insensitive);
+      3. median skill frequency >= 0.1% of postings (FREQ_WAVE column of
+         skill_frequency_by_semester.csv).
+
+    Expected W2026: {1, 2, 3, 5, 6}.
+    Expected F2022 (with alt_wave_F2022.env.example overrides): {3, 4, 8, 10}.
+
+    Runs once at load for the active wave via the module-level FOCUSED_CLUSTERS
+    assignment below — alt-wave runs automatically get their own set without any
+    manual override needed.
+    """
+    try:
+        df = _load_clusters()
+    except FileNotFoundError:
+        # Cluster file not found (e.g. a test reload with a fake path and no
+        # FOCUSED_CLUSTERS_OVERRIDE set).  Return the W2026 production default
+        # so the module loads without crashing; tests that care about the
+        # computed value use the real file or set FOCUSED_CLUSTERS_OVERRIDE.
+        print(
+            "  _compute_focused_clusters: cluster file not found — "
+            "returning W2026 fallback {1,2,3,5,6}."
+        )
+        return frozenset({1, 2, 3, 5, 6})
+    freq_map = _load_frequencies()
+    l1_map = _load_taxonomy_level1()
+    focused: set[int] = set()
+    for cid_raw in df["Cluster"].unique():
+        cid = int(cid_raw)
+        skills = df[df["Cluster"] == cid_raw]["Skill"].tolist()
+        n = len(skills)
+        if n < 20:
+            continue
+        tech = sum(1 for s in skills if l1_map.get(s.lower(), "") == "technical")
+        if tech / n < 0.90:
+            continue
+        freqs = sorted(freq_map.get(s.lower(), 0.0) for s in skills)
+        if freqs[n // 2] < 0.1:
+            continue
+        focused.add(cid)
+    return frozenset(focused)
+
+
+# v60b2: actual assignment — here, after all loaders and _compute_focused_clusters()
+# are defined (moving this to the _focused_override block above would cause NameError).
+if _focused_override and _focused_override not in ("PENDING_ERIC", ""):
+    FOCUSED_CLUSTERS = {int(x) for x in _focused_override.split(",") if x.strip()}
+else:
+    FOCUSED_CLUSTERS = _compute_focused_clusters()  # type: ignore[assignment]
 
 
 def _enrich_with_freq(skills: list[str]) -> list[dict]:

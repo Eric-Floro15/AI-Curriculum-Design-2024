@@ -170,10 +170,11 @@ for cid in _agentic_cluster_ids:
 # =====================================================================
 
 _check(
-    "FOCUSED_CLUSTERS == {1, 2, 3, 5} (coherent technical clusters, "  # v60
+    "FOCUSED_CLUSTERS == {1, 2, 3, 5, 6} (coherent technical clusters, "  # v60b2: computed
     "excludes tiny/incoherent catch-alls 8/9 and broad soft-skill "
-    "clusters 4/6/7/10)",
-    FOCUSED_CLUSTERS == {1, 2, 3, 5},
+    "clusters 4/7/10; 6 now included by the rule: >=20 skills, >=90% technical, "
+    "median W2026 freq >=0.1%)",
+    FOCUSED_CLUSTERS == {1, 2, 3, 5, 6},
     f"got {sorted(FOCUSED_CLUSTERS)}",
 )
 
@@ -272,6 +273,47 @@ _check(  # v60
     and os.path.isfile(cluster_tool.MEMBERSHIP_CONFIDENCE_FILE),
     f"path={cluster_tool.MEMBERSHIP_CONFIDENCE_FILE}",
 )
+
+
+# =====================================================================
+# CLUSTER_THEMES sync test — build_index.py vs cluster_tool.py  (v60b2)
+# Uses ast parsing to avoid env-var / import-order side effects.
+# =====================================================================
+
+def _extract_cluster_themes_via_ast(filepath: str) -> dict:
+    """Return CLUSTER_THEMES dict from a source file via ast, no imports."""
+    import ast as _ast
+    with open(filepath, encoding="utf-8") as _fh:
+        _source = _fh.read()
+    _tree = _ast.parse(_source, filename=filepath)
+    for _node in _ast.walk(_tree):
+        if (
+            isinstance(_node, _ast.Assign)
+            and any(
+                isinstance(t, _ast.Name) and t.id == "CLUSTER_THEMES"
+                for t in _node.targets
+            )
+        ):
+            return _ast.literal_eval(_node.value)
+    raise ValueError(f"CLUSTER_THEMES not found in {filepath}")
+
+_BUILD_INDEX_PATH = os.path.join(_CHATBOT_DIR, "build_index.py")
+_CLUSTER_TOOL_PATH = os.path.join(_HERE, "cluster_tool.py")
+
+try:
+    _themes_build  = _extract_cluster_themes_via_ast(_BUILD_INDEX_PATH)
+    _themes_cltool = _extract_cluster_themes_via_ast(_CLUSTER_TOOL_PATH)
+    _check(
+        "CLUSTER_THEMES in build_index.py == CLUSTER_THEMES in cluster_tool.py (v60b2 sync)",
+        _themes_build == _themes_cltool,
+        f"build_index keys={sorted(_themes_build)} cltool keys={sorted(_themes_cltool)}",
+    )
+except Exception as _exc:
+    _check(
+        "CLUSTER_THEMES sync ast-parse succeeded",
+        False,
+        f"parse error: {_exc}",
+    )
 
 
 # =====================================================================

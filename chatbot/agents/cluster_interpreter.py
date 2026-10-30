@@ -78,7 +78,51 @@ if _CHATBOT_DIR not in sys.path:
 from crewai import Agent  # noqa: E402
 
 from llm import get_llm  # noqa: E402
-from tools.cluster_tool import CLUSTER_TOOLS  # noqa: E402
+from tools.cluster_tool import CLUSTER_TOOLS, CLUSTER_THEMES, FOCUSED_CLUSTERS  # noqa: E402
+
+
+def _make_cluster_ref_block() -> str:
+    """Generate the CLUSTER REFERENCE table from cluster_tool's live data.
+
+    v60b2: generated at import time so the table cannot drift when
+    CLUSTER_THEMES or FOCUSED_CLUSTERS changes — no manual sync needed.
+    """
+    from tools.cluster_tool import _load_clusters as _ct_load
+    df = _ct_load()
+    sizes = {int(cid): len(df[df["Cluster"] == cid]) for cid in df["Cluster"].unique()}
+    focused_str = ", ".join(str(c) for c in sorted(FOCUSED_CLUSTERS))
+    header = (
+        "CLUSTER REFERENCE (10 CSPA ensemble clusters, unified-corpus W2026 partition —\n"
+        "v60: labels match paper Appendix A.1 verbatim, Eric-approved 2026-10-30;\n"
+        "generated at import time from tools/cluster_tool.py so it cannot drift):"
+    )
+    rows = []
+    for cid in range(1, 11):
+        theme = CLUSTER_THEMES.get(cid, f"Cluster {cid}")
+        n = sizes.get(cid, 0)
+        star = " ⭐" if cid in FOCUSED_CLUSTERS else "   "
+        rows.append(f" {cid:2d}{star} — {theme:<45s} ({n:3d} skills)")
+    footer = (
+        f"\n⭐ = focused clusters ({focused_str}) — coherent, discriminative technical\n"
+        "areas with clear job-market signal (rule: ≥20 skills, ≥90% technical,\n"
+        "median W2026 frequency ≥0.1%). Clusters 4, 7, 9, 10 are broad\n"
+        "soft-skill/general-business groups; note gaps there but do not prioritise\n"
+        "them over the focused clusters. Cluster 8 is the near-zero-frequency niche\n"
+        "cluster (9 skills) and cluster 9 is tiny/emerging (3 skills) — do NOT force\n"
+        "a coherent theme onto them; disclose them plainly if they come up (e.g.\n"
+        '"Cluster 8 is a near-zero-frequency niche cluster — not a single coherent\n'
+        "skill theme; Cluster 4 — Requirements, Validation & Delivery — is a\n"
+        "mixed requirements/project-delivery group, note gaps but do not prioritise\n"
+        'over the focused technical clusters").'
+    )
+    return header + "\n" + "\n".join(rows) + footer
+
+
+_CLUSTER_REF_BLOCK = _make_cluster_ref_block()
+_FOCUSED_STR = ", ".join(str(c) for c in sorted(FOCUSED_CLUSTERS))
+_NON_FOCUSED_STR = ", ".join(
+    str(c) for c in range(1, 11) if c not in FOCUSED_CLUSTERS
+)
 
 
 CLUSTER_INTERPRETER_BACKSTORY = """\
@@ -136,31 +180,7 @@ MODE A TOOLS
    so you can tell the professor exactly which skills to add and in what
    priority order.
 
-CLUSTER REFERENCE (10 CSPA ensemble clusters, unified-corpus W2026 partition —
-v60: labels match paper Appendix A.1 verbatim, Eric-approved 2026-10-30;
-tools/cluster_tool.py's CLUSTER_THEMES/FOCUSED_CLUSTERS is the source of
-truth, keep this block in sync with it):
-  1  — Quantitative & Experimental Methods                      ( 47 skills) ⭐
-  2  — Machine Learning & Generative AI                        (131 skills) ⭐
-  3  — Data-Engineering Tools                                   ( 89 skills) ⭐
-  4  — Requirements, Validation & Delivery                      ( 21 skills)
-  5  — Core AI, Cloud & Data-Platform Engineering              (370 skills) ⭐
-  6  — Business Intelligence, Analytics & Finance               ( 66 skills)
-  7  — Communication & Professional Skills                      ( 98 skills)
-  8  — Rare Niche Skills (near-zero frequency)                  (  9 skills)
-  9  — Risk & Regulatory                                        (  3 skills)
- 10  — Strategy, Sales & Product Management                    (128 skills)
-
-⭐ = focused clusters (1, 2, 3, 5) — coherent, discriminative technical
-areas with clear job-market signal. Clusters 4, 6, 7, 9, 10 are broad
-soft-skill/general-business groups; note gaps there but do not prioritise
-them over the focused clusters. Cluster 8 is the near-zero-frequency niche
-cluster (9 skills) and cluster 9 is tiny/emerging (3 skills) — do NOT force
-a coherent theme onto them; disclose them plainly if they come up (e.g.
-"Cluster 8 is a near-zero-frequency niche cluster — not a single coherent
-skill theme; Cluster 4 — Requirements, Validation & Delivery — is a
-mixed requirements/project-delivery group, note gaps but do not prioritise
-over the focused technical clusters").
+""" + _CLUSTER_REF_BLOCK + """
 
 CRITICAL TOOL-USE RULES:
 - ALWAYS call all_clusters_tool() first before cluster_detail_tool().
@@ -217,7 +237,7 @@ MODE A — OUTPUT FORMAT (required structure, existing program only)
   One sentence explaining the coverage verdict.
 
 **Priority Gaps (focused clusters only)**
-  For each ❌ or ⚠️ focused cluster (1, 2, 3, 5):  # v60
+  For each ❌ or ⚠️ focused cluster (""" + _FOCUSED_STR + """):  # v60b2: computed from rule
   - Cluster N — Theme
     Top missing skills (sorted by frequency):
     1. Skill Name (freq=X) — why it matters for an AI/ML program
@@ -248,11 +268,11 @@ Step 1 — Get the full cluster landscape
   skills — same tool as Mode A, same CLUSTER REFERENCE table above.
 
 Step 2 — Drill into the FOCUSED clusters only
-  For EACH focused cluster (⭐ — currently 1, 2, 3, 5: the coherent,
+  For EACH focused cluster (⭐ — currently """ + _FOCUSED_STR + """: the coherent,
   discriminative TECHNICAL clusters), call cluster_detail_tool(cluster_id)
   to get its full skill list sorted by market frequency.
-  Do NOT call cluster_detail_tool() on the non-focused clusters (4, 6, 7,
-  8, 9, 10) for a scaffold — they are broad soft-skill/general-business
+  Do NOT call cluster_detail_tool() on the non-focused clusters (""" + _NON_FOCUSED_STR + """)
+  for a scaffold — they are broad soft-skill/general-business
   groups or small/heterogeneous catch-alls, not useful backbone structure
   for a from-scratch technical curriculum. You may mention them briefly
   (e.g. "Cluster 7 — Communication & Professional Skills — is a broad

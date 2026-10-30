@@ -50,7 +50,8 @@ INDEX_DIR   = os.path.join(BASE_DIR, "faiss_index")
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
 SKILLS_FILE  = os.path.join(DATA_DIR, "Grouped_Skills_Categorized_V4.xlsx")
-CLUSTER_FILE = os.path.join(DATA_DIR, "clust_ensembled_results_W2026_clean.csv")
+CLUSTER_FILE    = os.path.join(DATA_DIR, "clust_ensembled_results_W2026_clean.csv")
+SKILL_FREQ_FILE = os.path.join(DATA_DIR, "skill_frequency_by_semester.csv")  # v60b2: W2026 market shares
 
 # FOR_CASSIE V2 additions — disabled for V4 (see module docstring). Pointing
 # at a nonexistent dir fires the existing graceful-skip path with no logic
@@ -91,6 +92,33 @@ def load_skills(path: str) -> pd.DataFrame:
     return df
 
 
+def load_w2026_freq(path: str) -> dict[str, float]:
+    """Load Winter 2026 skill market shares from skill_frequency_by_semester.csv.
+
+    Returns {canonical_name_lower: share_percent_1dp}.  Used by build_documents()
+    to replace the taxonomy's raw Frequency count (which is a per-variant integer,
+    not a market-share — see cluster_tool.py's freq_lookup_fix memo) with the true
+    per-wave mention-share used in the paper.
+    """
+    if not os.path.exists(path):
+        print(f"  Frequency file not found ({path}) — skill documents will say 'not available'.")
+        return {}
+    df = pd.read_csv(path)
+    if "W2026" not in df.columns or "skill" not in df.columns:
+        print("  Frequency file missing expected columns (skill, W2026) — skipping.")
+        return {}
+    result: dict[str, float] = {}
+    for _, r in df.iterrows():
+        name = str(r["skill"]).strip().lower()
+        if name:
+            try:
+                result[name] = round(float(r["W2026"]), 1)
+            except (TypeError, ValueError):
+                pass
+    print(f"  Loaded W2026 frequency for {len(result):,} skills.")
+    return result
+
+
 _NORMALIZE_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -104,14 +132,17 @@ def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]
     Match cluster-CSV skill names to canonical XLSX groups and return
     {canonical_key_lower: cluster_id}.
 
-    The cluster CSV (clean W2026, ~962 skills) was generated from a different
-    skills file than the XLSX we index (5,123 rows / 1,015 canonical / 962
-    live groups), so the names don't align exactly. Matching strategy:
-      1. Normalized exact match (strip non-alphanumerics, lowercase) against
-         the union of XLSX Skills + Alternate Spellings columns.
-      2. Fuzzy fallback via difflib with cutoff=0.9 — high enough to avoid
-         wrong matches like "Brand Management" -> "Management".
-    CSV skills with no confident match are skipped and counted.
+    v60b2: Three-step matching strategy (comment with # v60b2:):
+      1. Direct canonical_key exact match (case-insensitive).  The clean
+         W2026 cluster CSV's 'Skill' values ARE exactly the XLSX
+         canonical_key values; all 962 match this way with zero
+         normalization. Expected result: exact=962, fuzzy=0, unmatched=0.
+      2. Normalized exact match (strip non-alphanumerics, lowercase) against
+         the union of XLSX Skills + Alternate Spellings columns — fallback
+         for any future cluster CSV that has imperfect alignment.
+      3. Fuzzy fallback via difflib with cutoff=0.9 — avoids wrong matches
+         like "Brand Management" → "Management".
+    A step-2/3 result never overwrites a step-1 canonical match.
 
     Keyed on canonical_key (not the raw Alternate Spellings column) — see
     module docstring for why the two diverge in V4, and build_documents()
@@ -125,7 +156,12 @@ def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]
         print("  Cluster file missing expected columns (Cluster, Skill) — skipping.")
         return {}
 
-    # Normalized name → canonical_key-lower, from the XLSX taxonomy
+    # v60b2: Step 1 set — canonical_key values (lowercase) for direct matching.
+    # The clean W2026 cluster CSV's Skill == XLSX canonical_key (case-insensitive);
+    # all 962 match step 1 and steps 2/3 should fire 0 times.
+    canonical_lower_set = {str(k).strip().lower() for k in df["canonical_key"].unique()}
+
+    # Build the normalized fallback map from all XLSX Skills + Alternate Spellings.
     norm_to_canonical: dict[str, str] = {}
     for _, row in df.iterrows():
         canonical = str(row["canonical_key"]).strip().lower()
@@ -144,18 +180,34 @@ def build_cluster_map(df: pd.DataFrame, cluster_csv_path: str) -> dict[str, int]
         if pd.isna(row["Skill"]):
             miss += 1
             continue
-        key = _normalize(str(row["Skill"]))
         cid = int(row["Cluster"])
-        if not key:
+        skill_raw = str(row["Skill"]).strip()
+        if not skill_raw:
             miss += 1
             continue
-        if key in norm_to_canonical:
-            result[norm_to_canonical[key]] = cid
+
+        # v60b2: Step 1 — canonical_key direct match (case-insensitive)
+        skill_lower = skill_raw.lower()
+        if skill_lower in canonical_lower_set:
+            result[skill_lower] = cid
             exact += 1
             continue
+
+        # Step 2 — normalised exact match (fallback; should fire 0 times for clean W2026 CSV)
+        key = _normalize(skill_lower)
+        if key in norm_to_canonical:
+            canon = norm_to_canonical[key]
+            if canon not in result:  # don't overwrite a step-1 canonical match
+                result[canon] = cid
+            fuzzy += 1
+            continue
+
+        # Step 3 — fuzzy difflib (last resort)
         close = difflib.get_close_matches(key, all_norm_names, n=1, cutoff=0.9)
         if close:
-            result[norm_to_canonical[close[0]]] = cid
+            canon = norm_to_canonical[close[0]]
+            if canon not in result:  # don't overwrite a step-1 canonical match
+                result[canon] = cid
             fuzzy += 1
         else:
             miss += 1
@@ -186,11 +238,18 @@ CLUSTER_THEMES = {
 }
 
 
-def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
+def build_documents(df: pd.DataFrame, cluster_map: dict,
+                    freq_lookup: dict | None = None) -> list[dict]:
     """
     Group rows by canonical_key (canonical skill group) and build one
     rich text document per group.  Returns a list of {page_content, metadata} dicts.
+
+    v60b2: freq_lookup maps canonical_name_lower → W2026 share (float, 1 dp).
+    When provided, each document says "Share of Winter 2026 postings mentioning
+    this skill: X.X%" instead of the taxonomy's raw Frequency count.
     """
+    if freq_lookup is None:
+        freq_lookup = {}
     documents = []
 
     for canonical_group, group in df.groupby("canonical_key", sort=False):
@@ -203,11 +262,19 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
         level2 = group["Level 2 Category"].dropna().iloc[0] if group["Level 2 Category"].notna().any() else "Unknown"
         description = group["Description"].dropna().iloc[0] if group["Description"].notna().any() else ""
         dates = sorted(group["Date"].dropna().unique().tolist())
-        total_freq = int(group["Frequency"].fillna(0).sum())
 
         # Look up cluster for the canonical name
         cluster_id = cluster_map.get(canonical_name.lower())
         cluster_theme = CLUSTER_THEMES.get(cluster_id, "Unknown") if cluster_id is not None else "Unknown"
+
+        # v60b2: W2026 market share replaces the taxonomy's raw Frequency count
+        w26_share = freq_lookup.get(canonical_name.lower())
+        if w26_share is not None:
+            freq_line = f"Share of Winter 2026 postings mentioning this skill: {w26_share:.1f}%"
+            freq_meta: float = w26_share
+        else:
+            freq_line = "Share of Winter 2026 postings mentioning this skill: not available"
+            freq_meta = 0.0
 
         # Build the text representation
         lines = [
@@ -219,7 +286,7 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
                 lines.append(f"Also known as: {', '.join(other_variants)}")
         lines += [
             f"Category: {level1} > {level2}",
-            f"Frequency in job postings: {total_freq}",
+            freq_line,
         ]
         if dates:
             lines.append(f"Observed in datasets: {', '.join(str(d) for d in dates)}")
@@ -234,7 +301,7 @@ def build_documents(df: pd.DataFrame, cluster_map: dict) -> list[dict]:
             "skill": canonical_name,
             "level1": str(level1),
             "level2": str(level2),
-            "frequency": total_freq,
+            "frequency": freq_meta,
             "cluster_id": cluster_id if cluster_id is not None else -1,
             "cluster_theme": cluster_theme,
         }
@@ -379,8 +446,11 @@ def main():
         print(f"  Dropped generic skills: {before:,} -> {df['canonical_key'].nunique():,} canonical groups.")
     cluster_map = build_cluster_map(df, CLUSTER_FILE)
 
+    # v60b2: load W2026 market shares to replace the taxonomy's raw Frequency counts
+    freq_lookup = load_w2026_freq(SKILL_FREQ_FILE)
+
     print("\nBuilding documents from skill groups …")
-    raw_docs = build_documents(df, cluster_map)
+    raw_docs = build_documents(df, cluster_map, freq_lookup)
     print(f"  Created {len(raw_docs):,} skill group documents.")
 
     print("\nChunking documents …")

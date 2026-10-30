@@ -2055,8 +2055,8 @@ finally:
     )
     _check(
         "Part B still-catches: FOCUSED_CLUSTERS is back to the W2026 "
-        "production set {1, 2, 3, 5}",  # v60
-        _cluster_tool_mod.FOCUSED_CLUSTERS == {1, 2, 3, 5},
+        "production set {1, 2, 3, 5, 6}",  # v60b2: computed rule now includes 6
+        _cluster_tool_mod.FOCUSED_CLUSTERS == {1, 2, 3, 5, 6},
         f"got: {sorted(_cluster_tool_mod.FOCUSED_CLUSTERS)}",
     )
 
