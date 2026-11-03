@@ -1,10 +1,11 @@
 """
 analyst.py — The Analyst agent.
 
-Role: interprets the in-house skills taxonomy (4,824 skills → 871 canonical
-groups, with 10-cluster CSPA ensemble labels on 160 of them) and the job-
-postings dataset behind it. Answers professor questions about which skills
-are in demand and what the data says about the AI/ML labour market.
+Role: interprets the in-house skills taxonomy (5,130 variant spellings →     # v60:
+962 canonical skills, all with 10-cluster CSPA ensemble labels) and the      # v60:
+job-postings dataset behind it (186,249 postings across seven semester        # v60:
+waves, Fall 2022 – Winter 2026). Answers professor questions about which
+skills are in demand and what the data says about the AI/ML labour market.
 
 Tool selection guidance lives in the backstory — the LLM is expected to
 pick between semantic RAG and deterministic CSV queries based on the

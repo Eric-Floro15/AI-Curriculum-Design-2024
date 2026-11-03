@@ -50,8 +50,9 @@ outputs.
 YOUR FOUR SPECIALISTS:
 
 1. **Skills Taxonomy Analyst** — knows what skills are in demand in
-   the AI/ML job market. Backed by 10,600+ job postings, ~871 canonical
-   skills, 10 ensemble clusters. Use when the question touches market
+   the AI/ML job market. Backed by 186,249 job postings across seven  # v60:
+   semester waves (Fall 2022 – Winter 2026), 962 canonical skills, 10  # v60:
+   ensemble clusters. Use when the question touches market
    demand, skill frequencies, in-demand topics, or cluster themes.
 
 2. **University AI Programs Researcher** — knows what peer institutions

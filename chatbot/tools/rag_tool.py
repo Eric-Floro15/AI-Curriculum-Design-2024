@@ -56,7 +56,7 @@ def _load_bm25() -> BM25Retriever:
     FAISS index uses. BM25 catches exact-token matches (e.g. "Python", "SQL",
     "Spark") that pure vector search misses when the embedder prefers
     conceptual neighbours over literal ones.
-    Rebuilt fresh from the source XLSX — fast at 871 docs.
+    Rebuilt fresh from the source XLSX — fast at 962 docs.  # v60:
     """
     # Lazy import — build_index.py belongs to chatbot/, not tools/.
     from build_index import (  # noqa: E402
@@ -137,13 +137,13 @@ def retrieve(
                         forgiving than `level2` when you only know a fragment
                         like "statistic" matching "Statistical Methods" /
                         "Statistical Analysis" / "Statistical software").
-      cluster_id        exact ensemble cluster id (1-10). Only ~160 of 871
-                        canonical skills carry a cluster label.
+      cluster_id        exact ensemble cluster id (1-10). All 962 canonical  # v60:
+                        skills carry a cluster label.
 
     Hybrid retrieval: results from FAISS (semantic) and BM25 (lexical) are
     combined via Reciprocal Rank Fusion. BM25 catches exact-token matches
     like "Python" / "Spark" / "SQL" that the embedder otherwise misses when
-    it prefers conceptual neighbours. The index only has ~871 docs so over-
+    it prefers conceptual neighbours. The index has 962 docs so over-  # v60:
     fetching from both retrievers is cheap.
     """
     store = _load_vectorstore()
@@ -213,9 +213,10 @@ try:
         cluster_id: int = -1,
     ) -> str:
         """
-        Semantic search the in-house skills taxonomy (4,824 skills extracted
-        from 10,600+ AI/ML job postings, grouped into ~871 canonical skills
-        and 10 ensemble clusters). Returns the top relevant skill records —
+        Semantic search the in-house skills taxonomy (5,130 variant spellings  # v60:
+        consolidated into 962 canonical skills across 10 ensemble clusters;   # v60:
+        backed by 186,249 job postings across seven semester waves,            # v60:
+        Fall 2022 – Winter 2026). Returns the top relevant skill records —
         frequency in job postings, Level 1/2 category, cluster membership,
         and description.
 
@@ -241,10 +242,10 @@ try:
                             Pair with level1 for best results.
 
           cluster_id        integer 1-10, or -1 to skip. MUST be an integer,
-                            never a string. Do not pass "" — pass -1. Only
-                            ~160 of 871 canonical skills carry a cluster
-                            label, so this is most useful for cluster-themed
-                            questions where you already know the cluster id.
+                            never a string. Do not pass "" — pass -1. All    # v60:
+                            962 canonical skills carry a cluster label, so   # v60:
+                            this is useful for cluster-themed questions
+                            where you already know the cluster id.
 
         Examples:
           - "What is BERT?" → skills_rag_tool(query="BERT", level1="",

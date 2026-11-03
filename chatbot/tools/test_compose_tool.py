@@ -106,10 +106,11 @@ for name, lift_anchor, z_anchor in [
         )
 
 for name, lift_anchor, z_anchor in [
-    ("Electronic Health Records",            7.1400, 3.1400),  # v60: was 7.2031, 3.1384
-    ("Health Informatics",                   8.2700, 2.6500),  # v60: was 8.9894, 2.8673
-    ("Clinical Trial Design And Execution",  7.2100, 2.4400),  # v60: was 7.2178, 2.4061
-    ("Hipaa",                                4.1700, 2.2600),  # v60: was 4.2881, 2.2820
+    # v60hcls: pooled healthcare+life-sciences compose file (compose_healthcare_W2026_hcls.csv)
+    ("Electronic Health Records",            5.8900, 3.3600),  # v60hcls: was 7.1400, 3.1400
+    ("Health Informatics",                   6.7700, 2.8200),  # v60hcls: was 8.2700, 2.6500
+    ("Clinical Trial Design And Execution",  8.6800, 3.9500),  # v60hcls: was 7.2100, 2.4400
+    ("Hipaa",                                3.6900, 2.5900),  # v60hcls: was 4.1700, 2.2600
 ]:
     r = _find(_healthcare_wrap, name)
     _check(f"healthcare anchor '{name}' present in sector_wrap", r is not None)
@@ -283,9 +284,9 @@ _check(
     _find(_healthcare_wrap, "Grant Proposal Preparation") is None,
 )
 _check(
-    "healthcare wrap correctly excludes Laboratory Procedures "
-    "(n_fin=23 < 25, same reason)",
-    _find(_healthcare_wrap, "Laboratory Procedures") is None,
+    "healthcare wrap includes Laboratory Procedures "
+    "(n_fin=32 in pooled corpus — passes n>=25 floor, z=2.80)",  # v60hcls:
+    _find(_healthcare_wrap, "Laboratory Procedures") is not None,
 )
 
 

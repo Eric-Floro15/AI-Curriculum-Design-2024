@@ -190,7 +190,7 @@ def _initial_label(labels: list[str], lookup: dict[str, tuple[str, str]]) -> str
 # ── Agent display metadata ─────────────────────────────────────────────────
 _AGENT_META: dict[str, tuple[str, str]] = {
     "Skills Taxonomy Analyst": (
-        "📊", "Querying 10,600+ job postings for in-demand skills…",
+        "📊", "Querying 186,249 job postings for in-demand skills…",  # v60:
     ),
     "University AI Programs Researcher": (
         "🎓", "Searching peer AI/ML program pages…",
@@ -229,7 +229,7 @@ _WELCOME = """\
 
 I coordinate four specialist agents to help you design or update an AI/ML Master's curriculum:
 
-- 📊 **Skills Taxonomy Analyst** — 10,600+ job postings, ~871 canonical skills across 10 skill clusters
+- 📊 **Skills Taxonomy Analyst** — 186,249 job postings (7 waves), 962 canonical skills in 10 clusters  # v60:
 - 🎓 **University Programs Researcher** — what peer institutions teach (live web search)
 - 📰 **Industry News Researcher** — recent AI/ML developments from MIT TR, TechCrunch, VentureBeat, HuggingFace & The Decoder
 - 🔬 **Cluster Interpreter** — takes a fetched program's course list and maps it against the 10 skill clusters to flag what's missing or underrepresented

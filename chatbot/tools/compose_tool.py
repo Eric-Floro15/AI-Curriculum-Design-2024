@@ -205,7 +205,9 @@ try:
 
         Argument:
           sector   e.g. "finance", "healthcare" — matches a precomputed
-                   compose_<sector>_W2026.csv in chatbot/data/.
+                   compose_<sector>_W2026.csv in chatbot/data/. For this
+                   dataset "healthcare" covers healthcare delivery AND life   # v60:
+                   sciences roles (pooled), per the sector-audit decision.   # v60:
 
         Returns every skill clearing z>=2 AND lift>=3 on the sector axis,
         excluding anything already in the agentic core (so nothing is

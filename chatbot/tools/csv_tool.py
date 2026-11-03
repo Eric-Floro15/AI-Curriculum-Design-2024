@@ -184,13 +184,9 @@ try:
     @tool("Skills In Cluster")
     def skills_in_cluster_tool(cluster_id: int) -> str:
         """
-        List all skills with a given ensemble cluster_id (1-10). Themes
-        (per the CSPA ensemble): 4=Cloud/DB infra, 5=Soft skills/business,
-        7=Core ML+stats+programming, 8=Data engineering (Spark/Kafka/Docker),
-        9=Analytical/BI tools, 10=Large mixed group; others=General/Mixed.
-
-        Note: only ~160 of 871 canonical skills carry a cluster label due to
-        vocabulary drift between the cluster CSV and the indexed XLSX.
+        List all skills with a given ensemble cluster_id (1-10). All 962  # v60:
+        canonical skills carry a cluster label. For current cluster themes
+        see the All Clusters Overview tool.
         """
         rows = skills_in_cluster(cluster_id)
         if not rows:
