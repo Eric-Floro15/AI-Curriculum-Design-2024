@@ -106,14 +106,31 @@ Q_FIN = (
     "Report lift and statistical significance (z) for the skills you cite, "
     "and give concrete course recommendations."
 )
+# ── §4.6 re-run queries (v60 Part D, 2026-11-03) ─────────────────────────────
+Q_SECTOR = (
+    "Using the sector-specific demand analysis, what agentic-AI skills are "
+    "distinctively in demand for finance roles versus healthcare roles? For "
+    "each sector, show the shared core skills and the sector-specific "
+    "additions, and state whether that sector sits at, above, or below the "
+    "overall market rate for agentic AI."
+)
+Q_AGENTIC_CL = (
+    "We're considering how to teach agentic AI. Based on current "
+    "labour-market demand, what skills most distinguish agentic-AI roles "
+    "from AI roles generally, and should agentic AI be its own course or "
+    "folded into an existing machine-learning or cloud/DevOps course?"
+)
 
 # (label, query, use_f2022)
 RUNS = [
-    ("v60-A2-W2026", Q_A2,      False),
-    ("v60-A2-F2022", Q_A2,      True),
-    ("v60-MMAI",     Q_MMAI,    False),
-    ("v60-agentic",  Q_AGENTIC, False),
-    ("v60-finance",  Q_FIN,     False),
+    ("v60-A2-W2026",   Q_A2,         False),
+    ("v60-A2-F2022",   Q_A2,         True),
+    ("v60-MMAI",       Q_MMAI,       False),
+    ("v60-agentic",    Q_AGENTIC,    False),
+    ("v60-finance",    Q_FIN,        False),
+    # Part D additions (2026-11-03):
+    ("v60-sector-cl",  Q_SECTOR,     False),
+    ("v60-agentic-cl", Q_AGENTIC_CL, False),
 ]
 
 
