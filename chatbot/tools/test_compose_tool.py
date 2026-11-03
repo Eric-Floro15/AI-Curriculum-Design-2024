@@ -291,6 +291,82 @@ _check(
 
 
 # =====================================================================
+# 5. ADOPTION RATE LINES — v60: sector_adoption_W2026.csv exposed via tools
+# =====================================================================
+print("\n=== 5: adoption rate lines (v60 sector_adoption_W2026.csv) ===")
+
+from tools.compose_tool import _adoption_line  # noqa: E402
+
+_fin_line = _adoption_line("finance")
+_hc_line  = _adoption_line("healthcare")
+
+# Exact numeric values from sector_adoption_W2026.csv:
+#   finance:    135/1783 = 7.57%, corpus 7.84%, lift 0.97, z -0.47
+#   healthcare: 67/1107  = 6.05%, corpus 7.84%, lift 0.77, z -0.57  (pooled HC+LS)
+_check("finance adoption line contains pct_sector 7.57%",   "7.57%" in _fin_line,    _fin_line)
+_check("finance adoption line contains pct_corpus 7.84%",   "7.84%" in _fin_line,    _fin_line)
+_check("finance adoption line contains lift 0.97",          "0.97"   in _fin_line,    _fin_line)
+_check("finance adoption line contains z -0.47",            "-0.47"  in _fin_line,    _fin_line)
+_check("finance adoption line contains 135 of 1783",        "135 of 1783" in _fin_line, _fin_line)
+_check("finance adoption line contains market-rate legend", "Lift" in _fin_line and "at market rate" in _fin_line, _fin_line)
+
+_check("healthcare adoption line contains pct_sector 6.05%",   "6.05%" in _hc_line,    _hc_line)
+_check("healthcare adoption line contains pct_corpus 7.84%",   "7.84%" in _hc_line,    _hc_line)
+_check("healthcare adoption line contains lift 0.77",           "0.77"  in _hc_line,    _hc_line)
+_check("healthcare adoption line contains z -0.57",             "-0.57" in _hc_line,    _hc_line)
+_check("healthcare adoption line contains 67 of 1107",          "67 of 1107" in _hc_line, _hc_line)
+
+# Fallback: no row for unknown sector → unavailable message, no lift computed
+_unknown_line = _adoption_line("biotech")
+_check(
+    "adoption_line for unknown sector says 'unavailable', no numeric lift invented",
+    "unavailable" in _unknown_line.lower() and "lift" not in _unknown_line.lower().replace("unavailable", ""),
+    _unknown_line,
+)
+
+# Tool output: sector_wrap_tool must lead with the adoption line
+_fin_tool_text = sector_wrap_tool.func("finance")
+_hc_tool_text  = sector_wrap_tool.func("healthcare")
+_check(
+    "sector_wrap_tool('finance') first non-empty line is the adoption line",
+    _fin_tool_text.lstrip().startswith("Agentic-AI adoption in finance:"),
+    repr(_fin_tool_text[:120]),
+)
+_check(
+    "sector_wrap_tool('finance') adoption line contains 7.57%",
+    "7.57%" in _fin_tool_text.split("\n")[0],
+    _fin_tool_text.split("\n")[0],
+)
+_check(
+    "sector_wrap_tool('healthcare') first non-empty line is the adoption line",
+    _hc_tool_text.lstrip().startswith("Agentic-AI adoption in healthcare:"),
+    repr(_hc_tool_text[:120]),
+)
+_check(
+    "sector_wrap_tool('healthcare') adoption line contains 6.05%",
+    "6.05%" in _hc_tool_text.split("\n")[0],
+    _hc_tool_text.split("\n")[0],
+)
+
+# composed_sector_tool must also lead with the adoption line
+try:
+    from tools.compose_tool import composed_sector_tool
+    _fin_comp_text = composed_sector_tool.func("finance")
+    _check(
+        "composed_sector_tool('finance') first non-empty line is the adoption line",
+        _fin_comp_text.lstrip().startswith("Agentic-AI adoption in finance:"),
+        repr(_fin_comp_text[:120]),
+    )
+    _check(
+        "composed_sector_tool('finance') adoption line contains 7.57%",
+        "7.57%" in _fin_comp_text.split("\n")[0],
+        _fin_comp_text.split("\n")[0],
+    )
+except ImportError:
+    print("  [SKIP] composed_sector_tool not importable (crewai not installed)")
+
+
+# =====================================================================
 # Summary
 # =====================================================================
 print(f"\n{'='*60}")

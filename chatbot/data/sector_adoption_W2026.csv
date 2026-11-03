@@ -1,0 +1,3 @@
+sector,n_sector_postings,n_sector_agentic,pct_sector_agentic,n_corpus_postings,n_corpus_agentic,pct_corpus_agentic,adoption_lift,adoption_z
+finance,1783,135,7.57,17741,1391,7.84,0.97,-0.47
+healthcare,1107,67,6.05,17741,1391,7.84,0.77,-0.57

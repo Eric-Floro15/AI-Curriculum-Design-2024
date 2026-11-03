@@ -91,10 +91,37 @@ if _CHATBOT_DIR not in sys.path:
 
 _AGENTIC_FOCAL_SKILL = "Agentic Ai"
 _AGENTIC_CORE_SOURCE_FILE = "skill_lift_table.csv"
+_SECTOR_ADOPTION_CSV = os.path.join(_DATA_DIR, "sector_adoption_W2026.csv")  # v60:
 
 
 def _norm(s: str) -> str:
     return "".join(ch for ch in str(s).lower() if ch.isalnum())
+
+
+@lru_cache(maxsize=1)
+def _load_adoption():  # v60:
+    """Load sector_adoption_W2026.csv; returns dict keyed by _norm(sector)."""
+    if not os.path.exists(_SECTOR_ADOPTION_CSV):
+        return {}
+    df = pd.read_csv(_SECTOR_ADOPTION_CSV)
+    return {_norm(str(row.sector)): row for row in df.itertuples()}
+
+
+def _adoption_line(sector: str) -> str:  # v60:
+    """One-line adoption-rate statement for sector, loaded from sector_adoption_W2026.csv.
+    Never computed from partner-skill lifts — if no row, returns unavailable message."""
+    rows = _load_adoption()
+    key = _norm(sector)
+    row = rows.get(key)
+    if row is None:
+        return f"Agentic-AI adoption rate for '{sector}': unavailable (no row in sector_adoption_W2026.csv)."
+    return (
+        f"Agentic-AI adoption in {sector}: {row.pct_sector_agentic}% of sector postings"
+        f" vs {row.pct_corpus_agentic}% of all Winter 2026 postings"
+        f" (adoption lift {row.adoption_lift}, z {row.adoption_z};"
+        f" {row.n_sector_agentic} of {row.n_sector_postings})."
+        f" Lift ≈ 1 = at market rate; < 1 = below; > 1 = above."
+    )
 
 
 def _sector_file(sector: str) -> str | None:
@@ -225,6 +252,8 @@ try:
                 f"agentic core). Available sectors: {av}."
             )
         lines = [
+            _adoption_line(sector),  # v60:
+            "",
             f"Sector wrap for '{sector}' — {len(rows)} domain-distinctive "
             f"skill(s) clearing z>=2 AND lift>=3 on the sector axis alone "
             f"(agentic-core skills excluded; source: {rows[0]['source_file']}):",
@@ -270,6 +299,8 @@ try:
                 "compose_<sector>_W2026.csv into chatbot/data/ (see the file header)."
             )
         lines = [
+            _adoption_line(sector),  # v60:
+            "",
             f"Composed agentic-in-{sector} curriculum "
             f"(top {len(rows)} by lift_agentic × lift_sector):",
             "",

@@ -112,6 +112,8 @@ RUNS = [
     # Part D additions:
     ("v60dry-sector",     Q_SECTOR,     False),
     ("v60dry-agentic-cl", Q_AGENTIC_CL, False),
+    # D3 re-run with adoption-rate tool fix:
+    ("v60dry-sector-2",   Q_SECTOR,     False),
 ]
 
 
