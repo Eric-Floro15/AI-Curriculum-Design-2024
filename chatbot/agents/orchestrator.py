@@ -889,6 +889,244 @@ _MARKET_NUM_KINDS = {
 }
 
 
+# --- v60 guard part C: skill-name normalisation helpers (C1) ---------------
+
+def _load_taxonomy_variants() -> "dict[str, list[str]]":
+    """Load canonical_key → [all variant skill names] from the skills xlsx.
+    Falls back to {} on any error so guard still works without the file.
+    Result: canonical_key_lc → sorted list of variant name strings (lc).
+    """
+    try:
+        import openpyxl
+        # Try V4_3 first (future file), fall back to V4 (current production).
+        xlsx_candidates = [
+            os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4_3.xlsx"),
+            os.path.join(_CHATBOT_DIR, "data", "Grouped_Skills_Categorized_V4.xlsx"),
+        ]
+        wb_path = next((p for p in xlsx_candidates if os.path.exists(p)), None)
+        if wb_path is None:
+            return {}
+        wb = openpyxl.load_workbook(wb_path, read_only=True, data_only=True)
+        ws = wb.active
+        headers = [str(c.value).strip() if c.value else "" for c in next(ws.rows)]
+        try:
+            skills_col = headers.index("Skills")
+            altsp_col  = headers.index("Alternate Spellings")
+            ckey_col   = headers.index("canonical_key")
+        except ValueError:
+            wb.close()
+            return {}
+        # canonical_key_lc → set of variant name strings (lc)
+        mapping: dict[str, set[str]] = {}
+        for row in ws.rows:
+            vals = [str(c.value).strip() if c.value else "" for c in row]
+            if len(vals) <= max(skills_col, altsp_col, ckey_col):
+                continue
+            skill = vals[skills_col].lower()
+            ckey  = vals[ckey_col].lower()
+            alts  = vals[altsp_col]
+            if not ckey:
+                continue
+            mapping.setdefault(ckey, set()).add(skill)
+            # Alternate Spellings may be pipe-separated.
+            for alt in alts.split("|"):
+                alt_lc = alt.strip().lower()
+                if alt_lc:
+                    mapping.setdefault(ckey, set()).add(alt_lc)
+        wb.close()
+        # Also build skill_lc → canonical_key_lc (every variant → its canonical).
+        # Stored as a separate module-level dict via caller.
+        result: dict[str, list[str]] = {k: sorted(v) for k, v in mapping.items()}
+        return result
+    except Exception:  # openpyxl absent, file corrupt, etc.
+        return {}
+
+
+def _build_skill_to_canonical() -> "dict[str, str]":
+    """Return skill_name_lc → canonical_key_lc using the loaded variants dict."""
+    out: dict[str, str] = {}
+    for ckey, variants in _TAXONOMY_VARIANTS.items():
+        for v in variants:
+            out[v] = ckey
+    return out
+
+
+_TAXONOMY_VARIANTS: dict[str, list[str]] = _load_taxonomy_variants()
+_SKILL_TO_CANONICAL: dict[str, str]      = _build_skill_to_canonical()
+
+
+def _strip_skill_parentheticals(skill: str) -> list[str]:
+    """Return [original] + stripped candidates with trailing parentheticals removed.
+
+    Strips:
+     - (via …) qualifiers: e.g. "RAG (via NLP cluster)" → "RAG"
+     - (… cluster) qualifiers: e.g. "foo (bar cluster)" → "foo"
+     - expansion parentheticals where the base token is an acronym/abbreviation
+       of the parenthetical text: "dbt (Data Build Tool)" → "dbt".
+    Always includes the original as the first candidate.
+    """  # v60 guard part C:
+    candidates = [skill]
+    m = re.match(r"^(.+?)\s*\((.+)\)\s*$", skill.strip())
+    if not m:
+        return candidates
+    base    = m.group(1).strip()
+    paren   = m.group(2).strip()
+    paren_lc = paren.lower()
+
+    # (via …) or (… cluster)
+    if paren_lc.startswith("via ") or paren_lc.endswith(" cluster") or paren_lc == "cluster":
+        if base not in candidates:
+            candidates.append(base)
+        return candidates
+
+    # Expansion: base is an acronym of the parenthetical words.
+    # e.g. "dbt" → ["Data", "Build", "Tool"] → initials "dbt"
+    words = re.findall(r"[A-Za-z]+", paren)
+    if words:
+        initials = "".join(w[0] for w in words).lower()
+        if initials == base.lower():
+            if base not in candidates:
+                candidates.append(base)
+            return candidates
+
+    # Expansion: parenthetical starts with the base token (lenient expansion check).
+    # e.g. "AI (Artificial Intelligence)" — base "AI", paren starts "Artificial"
+    if paren_lc.lower().startswith(base.lower()):
+        if base not in candidates:
+            candidates.append(base)
+
+    return candidates
+
+
+def _skill_candidates(skill: str) -> list[str]:
+    """Return all binding-candidate names for `skill`:
+    stripped forms + taxonomy variants.
+
+    Original form is dropped only for annotation-type parentheticals —
+    "(via …)" and "(… cluster)" — which add no useful sig_words.
+    Acronym/expansion parentheticals like "SQL (Structured Query Language)"
+    are KEPT because they provide discriminating sig_words that the short
+    stripped form lacks, preventing the short-name bail-out from firing.
+    """  # v60 guard part C:
+    all_forms = _strip_skill_parentheticals(skill)
+    if len(all_forms) > 1:
+        m = re.match(r"^.+?\s*\((.+)\)\s*$", skill.strip())
+        paren_lc = m.group(1).strip().lower() if m else ""
+        is_annotation = (paren_lc.startswith("via ") or
+                         paren_lc.endswith(" cluster") or
+                         paren_lc == "cluster")
+        core_forms = all_forms[1:] if is_annotation else all_forms
+    else:
+        core_forms = all_forms
+    result: list[str] = list(core_forms)
+    for cand in core_forms:
+        ckey = _SKILL_TO_CANONICAL.get(cand.lower())
+        if ckey:
+            for v in _TAXONOMY_VARIANTS.get(ckey, []):
+                if v not in result:
+                    result.append(v)
+    return result
+
+
+# --- v60 guard part C: table column-header helper (C2 / C4) ----------------
+
+def _table_column_header(text: str, match_pos: int) -> str | None:
+    """Return the column header (lowercased) for the markdown table cell at
+    `match_pos`, or None if not in a table or header cannot be found.
+
+    Algorithm: find the current row, count which pipe-delimited column the
+    position falls in, then walk backwards to find a header row (the row
+    immediately preceding the separator row |---|---|...).
+    """  # v60 guard part C:
+    # Find current line boundaries.
+    line_start = text.rfind("\n", 0, match_pos) + 1
+    line_end   = text.find("\n", match_pos)
+    if line_end == -1:
+        line_end = len(text)
+    line = text[line_start:line_end]
+    if "|" not in line:
+        return None
+
+    # Determine column index (0-based, counting "|"-split cells).
+    before_match = text[line_start:match_pos]
+    col_idx = before_match.count("|") - 1  # -1 for the leading |
+    if col_idx < 0:
+        col_idx = 0
+
+    # Walk backwards to find the separator row (|---|...) and then the header row.
+    # We search upward from line_start through preceding lines.
+    _SEP_RE = re.compile(r"^\s*\|[\s\-|:]+\|\s*$")
+    prev_end = line_start - 1  # points just before the newline before line_start
+    sep_start = None
+    while prev_end > 0:
+        prev_start = text.rfind("\n", 0, prev_end) + 1
+        prev_line  = text[prev_start:prev_end]
+        if _SEP_RE.match(prev_line):
+            sep_start = prev_start
+            break
+        if "|" not in prev_line:
+            break  # left the table
+        prev_end = prev_start - 1
+
+    if sep_start is None:
+        return None
+
+    # Header row is immediately above the separator row.
+    header_end   = sep_start - 1  # just before the newline
+    if header_end <= 0:
+        return None
+    header_start = text.rfind("\n", 0, header_end) + 1
+    header_line  = text[header_start:header_end]
+    if "|" not in header_line:
+        return None
+
+    # Split into cells and get the cell at col_idx.
+    cells = [re.sub(r"[*_`]", "", c).strip().lower() for c in header_line.split("|")]
+    cells = [c for c in cells if c or True]  # keep empties to preserve index
+    # Strip empty leading/trailing cells from the split.
+    if cells and cells[0] == "":
+        cells = cells[1:]
+    if cells and cells[-1] == "":
+        cells = cells[:-1]
+    if col_idx < len(cells):
+        return cells[col_idx].strip()
+    return None
+
+
+# --- v60 guard part C: hedge-word detector (C4 prose tolerance) ------------
+
+_HEDGE_WORDS_RE = re.compile(
+    r"\b(?:~|≈|about|roughly|over|nearly|approximately|around)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_hedge_word(text: str, start: int, window: int = 25) -> bool:
+    """True if a hedge word (~ ≈ about roughly over nearly) precedes `start`
+    within `window` characters in `text`."""  # v60 guard part C:
+    preceding = text[max(0, start - window): start]
+    return bool(_HEDGE_WORDS_RE.search(preceding))
+
+
+# --- v60 guard part C: z-score range regex (C3) ----------------------------
+# Matches "z = 2.5–3.0", "z=4.0 – 4.5" etc. — MUST use a Unicode en/em dash
+# (not a plain ASCII hyphen, which risks matching "z = 2-5" prose incorrectly).
+# Plain ASCII hyphen is NOT included in the separator class so that
+# "z = 2-5" (unusual but possible prose) doesn't trigger the binned-range
+# exemption; the existing endpoint extraction + pool check handles it normally.
+_EN_DASH_CHARS = "–—‒‑"  # en, em, figure, non-breaking hyphen
+_RANGE_Z_RE = re.compile(
+    r"\bz\s*[=:]?\s*(-?\d[\d,]*\.?\d*)\s*[" + _EN_DASH_CHARS + r"]\s*(-?\d[\d,]*\.?\d*)",
+    re.IGNORECASE,
+)
+# Also match en-dash lift ranges that _RANGE_LIFT_RE might miss
+# (pure digit ranges like "11.53–13.64×" with en-dash).
+_RANGE_LIFT_ENDASH_RE = re.compile(
+    r"(\d[\d,]*\.?\d*)\s?[×x]?\s*[" + _EN_DASH_CHARS + r"]\s*(\d[\d,]*\.?\d*)\s?[×x](?!\w)",
+    re.IGNORECASE,
+)
+
+
 # --- Item A (GUARD_POLISH_batch, 2026-09-14): rounded prose ranges --------
 # A summary sentence like "lift values ranging from 6x to 13x" paraphrases
 # several real, individually-grounded numbers as a rounded span — a real
@@ -1029,8 +1267,10 @@ def _extract_skill_from_context(text: str, val_start: int, val_end: int, val_raw
     cells = [re.sub(r"[*_`]", "", c).strip() for c in line.split("|")]
     cells = [c for c in cells if c]
     for i, cell in enumerate(cells):
-        # Find which cell contains the value
+        # Find which cell contains the value.
+        # Also strip "z=" / "Z=" prefix so "z=5.50" table cells are parseable.
         cell_stripped = re.sub(r"[×x%±~≈<>\s]", "", cell)
+        cell_stripped = re.sub(r"(?i)^z=", "", cell_stripped)
         try:
             cell_v = _normalize_market_num(cell_stripped)
         except ValueError:
@@ -1065,20 +1305,70 @@ def _extract_skill_from_context(text: str, val_start: int, val_end: int, val_raw
     return None
 
 
-_BINDING_NUM_RE = re.compile(r"-?\d[\d,. ]*k?", re.IGNORECASE)
+# v60 guard fix: tightened from r"-?\d[\d,. ]*k?" — the original pattern
+# included ASCII space in the character class, causing greedy matches like
+# "6.08  345" (a z-score and a posting count on the same spec line) to be
+# consumed as one token and normalized to 6.08345, failing the ±1e-4 check.
+# New pattern: integer digits (with optional thousands-sep groups: exactly
+# one space-like char followed by exactly 3 digits) followed by an optional
+# decimal part — this handles "2 387" (space-sep thousands) and "1,435"
+# (comma-sep) correctly while NOT spanning double-space gaps between
+# adjacent values.
+_BINDING_NUM_RE = re.compile(
+    r"-?\d+(?:[,    ]\d{3})*(?:\.\d*)?k?",
+    re.IGNORECASE,
+)
 
 
-def _is_bound_in_specialist(val: float, skill: str, tol: float, spec_text: str) -> bool:
-    """True if `val` (within `tol`) appears in the same line as any significant
-    word from `skill` in spec_text. Uses word-level matching so minor
-    paraphrases (e.g. "LangGraph" vs "LangGraph (orchestration)") still bind."""
+def _is_bound_in_specialist(
+    val: float, skill: str, tol: float, spec_text: str
+) -> "bool | None":
+    """Return True (definitively grounded), False (definitively NOT grounded),
+    or None (indeterminate — skill context absent from specialist, can't tell).
+
+    Three-valued so the caller can distinguish a confirmed mismatch (False)
+    from a pure absence of evidence (None). The candidates loop flags only
+    when at least one candidate returns False and none return True; if all
+    return None it stays conservative (assume grounded, as before).
+
+    Uses word-level matching so minor paraphrases (e.g. "LangGraph" vs
+    "LangGraph (orchestration)") still bind.
+    """
     _BINDING_STOP = {"the", "and", "for", "top", "with", "a", "an", "of", "in", "to"}
     sig_words = [
         w.lower() for w in re.findall(r"\b[A-Za-z][A-Za-z0-9]+\b", skill)
         if len(w) >= 4 and w.lower() not in _BINDING_STOP
     ]
     if not sig_words:
-        return True  # no discriminating word extractable — assume grounded
+        # Short name (no long discriminating words): search by whole-word
+        # match, then verify the number on matching lines.
+        # Returns None (not False) when absent — the skill name might just not
+        # appear verbatim in the specialist even though the value is grounded —
+        # so absence is indeterminate, not a confirmed mismatch.
+        # Returns False only when the name IS found but the number is NOT on
+        # any matching line, which IS a confirmed mismatch.
+        skill_lc = skill.lower()
+        spec_lc = spec_text.lower()
+        # v60 guard fix: use character-class boundaries instead of \b so that
+        # non-word-terminal skill names (C++, C#, Node.js) are found correctly.
+        # \b fails after non-word chars: "c++" in "| c++ |" has both sides
+        # of \b after ++ non-word, so \bc\+\+\b never matches.
+        pat = re.compile(
+            r"(?<![A-Za-z0-9])" + re.escape(skill_lc) + r"(?![A-Za-z0-9])"
+        )
+        if not pat.search(spec_lc):
+            return None   # absent from specialist → indeterminate
+        for line in spec_text.split("\n"):
+            if not pat.search(line.lower()):
+                continue
+            for m in _BINDING_NUM_RE.finditer(line):
+                try:
+                    v = _normalize_market_num(m.group().rstrip("×x"))
+                    if abs(v - val) <= max(tol * abs(val), tol):
+                        return True   # found and matches
+                except ValueError:
+                    pass
+        return False   # found in specialist but number not on any matching line
     # v60 guard fix: expand sig_words with British/American spelling variants
     # (isation ↔ ization, 7-char suffix) so that an answer using
     # "Containerisation" binds correctly to a specialist line that uses
@@ -1091,10 +1381,11 @@ def _is_bound_in_specialist(val: float, skill: str, tol: float, spec_text: str) 
             _all_sig.append(w[:-7] + "isation")
     sig_words = _all_sig
     # v60 guard fix: if NO sig_word (including spelling variants) appears
-    # anywhere in the specialist text, binding is indeterminate — assume grounded.
+    # anywhere in the specialist text, binding is indeterminate — return None
+    # so the caller's loop can still flag if another candidate definitively fails.
     spec_lc = spec_text.lower()
     if not any(w in spec_lc for w in sig_words):
-        return True
+        return None   # skill context absent → indeterminate
     for line in spec_text.split("\n"):
         line_lc = line.lower()
         if not any(w in line_lc for w in sig_words):
@@ -1182,6 +1473,7 @@ def _detect_numeric_fabrication_flags(
     # the check for any other (non-range, specific) claim.
     range_exempt_spans: set[tuple[int, int]] = set()
     lift_pool = grounded_numbers.get("lift", []) + bare_table_numbers
+    z_pool    = grounded_numbers.get("z-score", []) + bare_table_numbers
     for rm in _RANGE_LIFT_RE.finditer(answer):
         try:
             v1 = _normalize_market_num(rm.group(1))
@@ -1192,12 +1484,79 @@ def _detect_numeric_fabrication_flags(
             range_exempt_spans.add((rm.start(1), rm.end(1)))
             range_exempt_spans.add((rm.start(2), rm.end(2)))
 
-    flags = []
+    # v60 guard part C (C3): binned metric ranges using en-dash form.
+    #
+    # C3a — lift ranges: original logic unchanged (value_inside alone).
+    # Lift recall is 100% and false-positive-free; no proximity gate needed.
+    for rm in _RANGE_LIFT_ENDASH_RE.finditer(answer):
+        try:
+            v1 = _normalize_market_num(rm.group(1))
+            v2 = _normalize_market_num(rm.group(2))
+        except ValueError:
+            continue
+        lo, hi = (v1, v2) if v1 <= v2 else (v2, v1)
+        both_grounded = (_range_endpoint_grounded(v1, lift_pool)
+                         and _range_endpoint_grounded(v2, lift_pool))
+        value_inside  = any(lo <= g <= hi for g in lift_pool)
+        if both_grounded or value_inside:
+            range_exempt_spans.add((rm.start(1), rm.end(1)))
+            range_exempt_spans.add((rm.start(2), rm.end(2)))
+
+    # C3b — z-score ranges: tighter than C3a.  Require BOTH endpoints within
+    # 5% of some pool value when relying on value_inside.  Without this gate
+    # a planted z endpoint far from pool is exempted because the range spans
+    # real values (seed-20261021 recall regression: "z=4.80–2.87" was exempt
+    # because 4.25 and 2.87 lie inside [2.87,4.80] even though 4.80 is 12.9%
+    # from nearest pool value 4.25; "z=3.51–2.22" similarly, 3.51 is 8.7%
+    # from nearest pool value 3.23).
+    # FP4 "z=2.5–3.0" with specialist values 2.60/2.93 still passes (3.8%,
+    # 2.4%).  Flags collected here because _extract_market_numbers may not
+    # re-extract the second range endpoint as a z-score (no "z=" prefix).
+    c3_pending_flags: list = []
+    for rm in _RANGE_Z_RE.finditer(answer):
+        try:
+            v1 = _normalize_market_num(rm.group(1))
+            v2 = _normalize_market_num(rm.group(2))
+        except ValueError:
+            continue
+        lo, hi = (v1, v2) if v1 <= v2 else (v2, v1)
+        both_grounded = (_range_endpoint_grounded(v1, z_pool)
+                         and _range_endpoint_grounded(v2, z_pool))
+        value_inside  = any(lo <= g <= hi for g in z_pool)
+        both_near     = all(
+            any(abs(v - g) <= max(0.05 * abs(g), 0.05) for g in z_pool)
+            for v in [v1, v2]
+        )
+        if both_grounded or (value_inside and both_near):
+            range_exempt_spans.add((rm.start(1), rm.end(1)))
+            range_exempt_spans.add((rm.start(2), rm.end(2)))
+        elif value_inside:
+            # Range spans real z values but at least one endpoint is far (>5%)
+            # from any pool value — flag it and exempt the span.
+            for _v, (_vs, _ve) in [
+                (v1, (rm.start(1), rm.end(1))),
+                (v2, (rm.start(2), rm.end(2))),
+            ]:
+                _ep_near = any(
+                    abs(_v - g) <= max(0.05 * abs(g), 0.05) for g in z_pool
+                )
+                if not _ep_near:
+                    _nearest = (min(z_pool, key=lambda g: abs(g - _v))
+                                if z_pool else None)
+                    c3_pending_flags.append(
+                        f"fabricated z-score range endpoint "
+                        f"'{answer[_vs:_ve]}' ({_v:.4g}) not in specialist "
+                        f"output (range: '{answer[rm.start():rm.end()]}', "
+                        f"nearest pool value: {_nearest:.4g})"
+                    )
+                range_exempt_spans.add((_vs, _ve))
+
+    flags = list(c3_pending_flags)
     seen = set()  # avoid duplicate flags for the same raw number repeated in the answer
     for raw, val, kind, start, end in _extract_market_numbers(answer):
         if (raw, kind) in seen:
             continue
-        if kind == "lift" and (start, end) in range_exempt_spans:
+        if (start, end) in range_exempt_spans:
             continue
         # Exempt approximate/threshold phrasing ("lift ≈ 11–13×", "lift
         # ≥ 18×", "≈ 30× total", "over 20×", "more than 9×"). Added
@@ -1243,8 +1602,31 @@ def _detect_numeric_fabrication_flags(
             if _range_endpoint_grounded(val, pool_for_kind):
                 continue
         _pattern, _idxs, tol = _MARKET_NUM_KINDS[kind]
+        # v60 guard part C (C4): posting-count tolerance depends on context.
+        # Table row → exact match (or ±1 if specialist non-integer).
+        # Prose with hedge word (~ ≈ about roughly over nearly) → keep 10%.
+        # Prose without hedge → ±2%.
+        freq_in_table = False
+        if kind == "frequency":
+            _line_s = max(0, answer.rfind("\n", 0, start) + 1)
+            _line_e = answer.find("\n", end)
+            _line_e = _line_e if _line_e != -1 else len(answer)
+            freq_in_table = "|" in answer[_line_s:_line_e]
+            if freq_in_table:
+                tol = 0.0  # exact (or ±1 for non-integer specialist, checked below)
+            elif not _has_hedge_word(answer, start):
+                tol = 0.02
         pool = grounded_numbers.get(kind, []) + bare_table_numbers
-        pool_grounded = any(abs(val - g) <= max(tol * abs(g), tol) for g in pool)
+
+        def _val_match(v: float, g: float) -> bool:
+            """True if v matches g within tol, or ±1 for table-row frequency."""
+            if abs(v - g) <= max(tol * abs(g), tol):
+                return True
+            if freq_in_table and kind == "frequency" and abs(v - g) <= 1.0:
+                return True
+            return False
+
+        pool_grounded = any(_val_match(val, g) for g in pool)
         if pool_grounded:
             # v60 guard fix: binding check — value is in the pool, but also verify
             # it appears near the SAME SKILL in specialist output (not merely anywhere
@@ -1255,14 +1637,21 @@ def _detect_numeric_fabrication_flags(
             if kind in ("lift", "z-score", "frequency"):
                 skill = _extract_skill_from_context(answer, start, end, raw)
                 if skill:
-                    grounding_matches = [
-                        g for g in pool
-                        if abs(val - g) <= max(tol * abs(g), tol)
-                    ]
-                    if not any(
-                        _is_bound_in_specialist(g, skill, 1e-4, grounded_text)
+                    grounding_matches = [g for g in pool if _val_match(val, g)]
+                    # v60 guard part C (C1): try all normalised/taxonomy candidates.
+                    # _is_bound_in_specialist now returns True/False/None so the
+                    # loop must flag only when at least one candidate is definitively
+                    # False (found but wrong) and none return True (confirmed match).
+                    # If all return None (all bail-out / indeterminate) the guard
+                    # stays conservative and passes through, as before.
+                    cands = _skill_candidates(skill)
+                    _bind_results = [
+                        _is_bound_in_specialist(g, cand, 1e-4, grounded_text)
                         for g in grounding_matches
-                    ):
+                        for cand in cands
+                    ]
+                    if (not any(r is True for r in _bind_results)
+                            and any(r is False for r in _bind_results)):
                         seen.add((raw, kind))
                         snippet = answer[max(0, start - 30): end + 30].replace("\n", " ").strip()
                         flags.append(
@@ -1595,6 +1984,13 @@ def _detect_content_attribution_flags(
             answer[m.end(): m.end() + 20]
         ):
             continue
+        # v60 guard part C (C2): a bare digit-pair in a markdown table cell
+        # whose column header contains "posting"/"count"/"n" is a posting-count
+        # range, not a course code.  Walk up to the header row and check.
+        if not any(c.isalpha() for c in code):
+            hdr = _table_column_header(answer, m.start())
+            if hdr and re.search(r"\b(?:postings?|count|n)\b", hdr, re.IGNORECASE):
+                continue
         # v60 guard fix: "CSPA 10-cluster" (and similar N-cluster shapes from
         # the CSPA 10-cluster taxonomy) are cluster-label identifiers, not
         # course codes — skip any match immediately followed by "cluster".

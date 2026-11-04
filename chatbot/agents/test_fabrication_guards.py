@@ -2062,6 +2062,259 @@ finally:
 
 
 # =====================================================================
+# v60 guard part C: C1–C4 unit tests
+# =====================================================================
+print("\n=== v60 guard part C: C1–C4 ===")
+from agents.orchestrator import (  # noqa: E402
+    _skill_candidates,
+    _strip_skill_parentheticals,
+    _table_column_header,
+    _has_hedge_word,
+    _RANGE_Z_RE,
+    _detect_content_attribution_flags,
+    _detect_numeric_fabrication_flags,
+    _TAXONOMY_VARIANTS,
+)
+
+_ANALYST_ROLE = "Skills Taxonomy Analyst"
+
+
+def _mksteps(role, text):
+    """Minimal step_log fixture for numeric guard."""
+    class _F:
+        def __init__(self, t): self.output = t
+    return [{"role": role, "output": _F(text)}]
+
+
+# --- C1: skill-name normalisation ---
+
+_check(
+    "C1: strip (via …) parenthetical — 'rag (via nlp cluster)' → 'rag' in candidates",
+    "rag" in _strip_skill_parentheticals("rag (via nlp cluster)"),
+)
+_check(
+    "C1: strip (… cluster) parenthetical — 'foo (bar cluster)' → 'foo' in candidates",
+    "foo" in _strip_skill_parentheticals("foo (bar cluster)"),
+)
+_check(
+    "C1: strip expansion parenthetical — 'dbt (data build tool)' → 'dbt' in candidates",
+    "dbt" in _strip_skill_parentheticals("dbt (data build tool)"),
+)
+_check(
+    "C1: original always preserved in candidates",
+    "dbt (data build tool)" in _strip_skill_parentheticals("dbt (data build tool)"),
+)
+
+# Taxonomy expansion: 'rag' → Retrieval-Augmented Generation (Rag) variants
+_rag_cands = _skill_candidates("rag (via nlp cluster)")
+_check(
+    "C1: taxonomy expansion — 'rag' finds 'retrieval-augmented generation (rag)' variant",
+    any("retrieval-augmented generation" in c for c in _rag_cands),
+    f"candidates: {_rag_cands}",
+)
+
+# FP1 fix: dbt (Data Build Tool) lift 4.29× no longer flags
+_fp1_spec = "dbt  4.29x  z=6.08  345 postings"
+_fp1_ans  = "| dbt (Data Build Tool) | 4.29× | z=6.08 | 345 |"
+_fp1_flags = _detect_numeric_fabrication_flags(
+    _fp1_ans, _mksteps(_ANALYST_ROLE, _fp1_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C1 FP1: 'dbt (Data Build Tool)' with grounded dbt lift 4.29× — no flag",
+    not _fp1_flags,
+    f"flags: {_fp1_flags}",
+)
+
+# FP2 fix: RAG (via NLP cluster) lift 4.47× no longer flags
+_fp2_spec = "Retrieval-Augmented Generation (Rag)  4.47x  z=4.33  259 postings"
+_fp2_ans  = "| RAG (via NLP cluster) | 4.47× | z=4.33 | 259 |"
+_fp2_flags = _detect_numeric_fabrication_flags(
+    _fp2_ans, _mksteps(_ANALYST_ROLE, _fp2_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C1 FP2: 'RAG (via NLP cluster)' with grounded RAG lift 4.47× — no flag",
+    not _fp2_flags,
+    f"flags: {_fp2_flags}",
+)
+
+# Still-catches (C1): lift moved to a different skill row still flags.
+# Requires a skill whose sig_words APPEAR in specialist text (otherwise the
+# bail-out returns True). "LangChain" appears in specialist text but only
+# with its own lift 5.73×; the answer assigns 4.29× to it, which only
+# appears near "AutoGen" in the specialist → binding fails → flag.
+_tp1_spec = ("LangChain  5.73x  z=4.10  200 postings\n"
+             "AutoGen    4.29x  z=6.08  345 postings")
+_tp1_ans  = "| LangChain | 4.29× | z=6.08 | 345 |"
+_tp1_flags = _detect_numeric_fabrication_flags(
+    _tp1_ans, _mksteps(_ANALYST_ROLE, _tp1_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C1 TC1 still-catches: lift 4.29× for 'LangChain' but specialist only binds it to 'AutoGen' — flags",
+    bool(_tp1_flags),
+    f"flags: {_tp1_flags}",
+)
+
+# Still-catches (C1): RAG value under a different skill still flags.
+# Specialist has RAG with 3.21× (not 4.47×); 4.47× only near AutoGen.
+# After normalisation "rag (via nlp cluster)" → "retrieval-augmented
+# generation (rag)" candidates; that name appears in specialist text, so
+# the bail-out does NOT trigger, and 4.47 is not near any RAG line.
+_tp2_spec = ("AutoGen  4.47x  z=4.33  259 postings\n"
+             "Retrieval-Augmented Generation  3.21x  z=2.10  100 postings")
+_tp2_ans  = "| RAG (via NLP cluster) | 4.47× | z=4.33 | 259 |"
+_tp2_flags = _detect_numeric_fabrication_flags(
+    _tp2_ans, _mksteps(_ANALYST_ROLE, _tp2_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C1 TC2 still-catches: lift 4.47× for 'RAG (via NLP cluster)' but specialist binds it to 'AutoGen' — flags",
+    bool(_tp2_flags),
+    f"flags: {_tp2_flags}",
+)
+
+# --- C2: ranges in postings column are not course codes ---
+
+_TABLE_HDR = "| Skill | Lift | z | Postings |\n|---|---|---|---|\n"
+
+# FP3 fix: 51–189 in postings column should not flag as course code
+_fp3_spec = "Vector Databases  11.53x  z=3.30  51 postings\nVector Databases  13.64x  z=5.78  189 postings"
+_fp3_ans  = _TABLE_HDR + "| Vector Databases | 11.53–13.64× | z=3.30–5.78 | 51–189 |"
+_fp3_cflags = _detect_content_attribution_flags(
+    _fp3_ans, "skills", _mksteps(_ANALYST_ROLE, _fp3_spec), [_ANALYST_ROLE]
+)
+_fp3_cc = [f for f in _fp3_cflags if "course_code" in f and "51" in f]
+_check(
+    "C2 FP3: '51–189' in Postings column — no course_code flag",
+    not _fp3_cc,
+    f"flags: {_fp3_cc}",
+)
+
+# Still-catches (C2): CSE-189 in a postings column IS a real course code and flags
+_tp3_ans  = _TABLE_HDR + "| Some Skill | 3.5× | z=2.1 | CSE-189 |"
+_tp3_cflags = _detect_content_attribution_flags(
+    _tp3_ans, "skills", _mksteps(_ANALYST_ROLE, "Some Skill 3.5x z=2.1 50 postings"), [_ANALYST_ROLE]
+)
+_tp3_cc = [f for f in _tp3_cflags if "course_code" in f and "CSE" in f]
+_check(
+    "C2 TC3 still-catches: 'CSE-189' in postings column — still flags (has alpha prefix)",
+    bool(_tp3_cc),
+    f"flags: {_tp3_cc}",
+)
+
+# Still-catches (C2): 51–189 in a 'Course' column IS suspicious and flags
+_TABLE_HDR_COURSE = "| Skill | Lift | z | Course |\n|---|---|---|---|\n"
+_tp4_ans  = _TABLE_HDR_COURSE + "| Vector Databases | 11.53× | z=3.30 | 51–189 |"
+_tp4_cflags = _detect_content_attribution_flags(
+    _tp4_ans, "skills", _mksteps(_ANALYST_ROLE, "Vector Databases 11.53x z=3.30 50 postings"), [_ANALYST_ROLE]
+)
+_tp4_cc = [f for f in _tp4_cflags if "course_code" in f and "51" in f]
+_check(
+    "C2 TC4 still-catches: '51–189' in a 'Course' column — still flags",
+    bool(_tp4_cc),
+    f"flags: {_tp4_cc}",
+)
+
+# TC_new: short name found in specialist (via abbreviation) but with wrong number.
+# This is the production-miss scenario: "RAG" is in specialist text (abbreviated)
+# so \brag\b fires; the taxonomy variant "retrieval-augmented generation (rag)"
+# can't find "retrieval" in the spec (abbreviated-only) so would have bailed out
+# as indeterminate. The sentinel (False/None) logic must still flag.
+# Specialist has AutoGen with z=5.50 (the planted z also appears there) and RAG
+# with z=5.00 (real, but answer claims z=5.50 for RAG → binding check must fail).
+_tcn_spec = ("AutoGen  4.47x  z=5.50  259 postings\n"
+             "RAG  3.21x  z=5.00  100 postings")
+_tcn_ans  = "| RAG (via NLP cluster) | 3.21× | z=5.50 | 100 |"
+_tcn_flags = _detect_numeric_fabrication_flags(
+    _tcn_ans, _mksteps(_ANALYST_ROLE, _tcn_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C1 TC_new still-catches: 'RAG (via NLP cluster)' z=5.50 but specialist's "
+    "RAG line has z=5.00 (5.50 only appears on AutoGen) — sentinel flags",
+    bool(_tcn_flags),
+    f"flags: {_tcn_flags}",
+)
+
+# TC_new2: same scenario but grounded (z=5.00 IS on the RAG line) — no flag.
+_tcn2_spec = "RAG  3.21x  z=5.00  100 postings"
+_tcn2_ans  = "| RAG (via NLP cluster) | 3.21× | z=5.00 | 100 |"
+_tcn2_flags = _detect_numeric_fabrication_flags(
+    _tcn2_ans, _mksteps(_ANALYST_ROLE, _tcn2_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C1 TC_new2: 'RAG (via NLP cluster)' z=5.00 and specialist's RAG line "
+    "has z=5.00 — sentinel does NOT flag grounded value",
+    not _tcn2_flags,
+    f"flags: {_tcn2_flags}",
+)
+
+# --- C3: binned metric ranges ---
+
+# FP4 fix: z = 2.5–3.0 bin with specialist values 2.60, 2.93 inside — no flag
+_fp4_spec = "Skill A  3.5x  z=2.60  100 postings\nSkill B  4.1x  z=2.93  150 postings"
+_fp4_ans  = "Attested (z = 2.5–3.0) in multiple skills."
+_fp4_flags = _detect_numeric_fabrication_flags(
+    _fp4_ans, _mksteps(_ANALYST_ROLE, _fp4_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C3 FP4: 'z = 2.5–3.0' with specialist values 2.60/2.93 inside — no flag",
+    not _fp4_flags,
+    f"flags: {_fp4_flags}",
+)
+
+# Still-catches (C3): z = 4.0–4.5 with no specialist z in that interval — flags
+_tp5_spec = "Skill A  3.5x  z=2.60  100 postings\nSkill B  4.1x  z=2.93  150 postings"
+_tp5_ans  = "Attested (z = 4.0–4.5) in multiple skills."
+_tp5_flags = _detect_numeric_fabrication_flags(
+    _tp5_ans, _mksteps(_ANALYST_ROLE, _tp5_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C3 TC5 still-catches: 'z = 4.0–4.5' with no specialist z in [4.0, 4.5] — flags",
+    bool(_tp5_flags),
+    f"flags: {_tp5_flags}",
+)
+
+# C3 endpoint proximity: planted endpoint far from pool must still flag even
+# when other values lie inside the range (seed-20261021 recall regression).
+# "z=4.80–2.87": 4.80 is 12.9% from nearest pool value 4.25 → still flags.
+_c3ep_spec = ("Skill A  2.0x  z=4.25  80 postings\n"
+              "Skill B  1.8x  z=2.87  60 postings")
+_c3ep_ans  = "Analysis shows z = 2.87–4.80 clustering."
+_c3ep_flags = _detect_numeric_fabrication_flags(
+    _c3ep_ans, _mksteps(_ANALYST_ROLE, _c3ep_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C3 TC6 endpoint-proximity: 'z=2.87–4.80' where 4.80 is 12.9% from pool 4.25 — still flags",
+    bool(_c3ep_flags),
+    f"flags: {_c3ep_flags}",
+)
+
+# --- C4: posting-count binding in table rows ---
+
+# FP (C4): posting count 345 for dbt in table row — specialist has dbt with 345
+_c4fp_spec = "dbt  4.29x  z=6.08  345 postings"
+_c4fp_ans  = _TABLE_HDR + "| dbt | 4.29× | z=6.08 | 345 |"
+_c4fp_flags = _detect_numeric_fabrication_flags(
+    _c4fp_ans, _mksteps(_ANALYST_ROLE, _c4fp_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C4 FP: posting count 345 for 'dbt' in table row, specialist binds it — no flag",
+    not _c4fp_flags,
+    f"flags: {_c4fp_flags}",
+)
+
+# Still-catches (C4): posting count off by 5 from specialist's value — flags
+_tp6_spec = "dbt  4.29x  z=6.08  345 postings"
+_tp6_ans  = _TABLE_HDR + "| dbt | 4.29× | z=6.08 | 350 postings |"
+_tp6_flags = _detect_numeric_fabrication_flags(
+    _tp6_ans, _mksteps(_ANALYST_ROLE, _tp6_spec), [_ANALYST_ROLE]
+)
+_check(
+    "C4 TC6 still-catches: posting count 350 for 'dbt' but specialist has 345 — flags",
+    bool(_tp6_flags),
+    f"flags: {_tp6_flags}",
+)
+
+
+# =====================================================================
 # Summary
 # =====================================================================
 print(f"\n{'='*60}")

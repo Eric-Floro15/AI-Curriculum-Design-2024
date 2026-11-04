@@ -91,13 +91,16 @@ else:
     os.environ.pop("OTEL_SDK_DISABLED", None)
 
 # ── LangSmith tracing ─────────────────────────────────────────────────────────
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 
 api_key = os.getenv("LANGCHAIN_API_KEY") or os.getenv("LANGSMITH_API_KEY")
 if api_key:
     os.environ["LANGCHAIN_API_KEY"] = api_key
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
 else:
+    # No key → keep tracing OFF so litellm's langsmith callback doesn't hang
+    # trying to connect to api.smith.langchain.com with no credentials.
+    os.environ["LANGCHAIN_TRACING_V2"] = "false"
     print("⚠️  WARNING: No LangSmith API key found. Tracing will NOT work.")
     print("   Add LANGSMITH_API_KEY or LANGCHAIN_API_KEY to your .env file.")
 
@@ -114,8 +117,9 @@ if not os.getenv("LANGCHAIN_PROJECT"):
 # are not nested under a single per-query parent yet.
 import litellm  # transitive dep of crewai — always installed
 
-litellm.success_callback = ["langsmith"]
-litellm.failure_callback = ["langsmith"]
+if api_key:
+    litellm.success_callback = ["langsmith"]
+    litellm.failure_callback = ["langsmith"]
 
 from crewai import LLM
 

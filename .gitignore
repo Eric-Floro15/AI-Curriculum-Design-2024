@@ -25,3 +25,8 @@ News-Agent-Chatbot-Code-Example/
 
 # Chainlit runtime config (auto-generated on first run)
 chatbot/.chainlit/
+
+# v60 guard part C (C5): raw per-student submission files — file names
+# contain student names and IDs; never committed or deposited.
+INDEED-WEBSCRAPING-ASSIGNMENT/
+AGGREGATED-SUBMISSIONS/

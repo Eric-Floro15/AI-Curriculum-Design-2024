@@ -22,7 +22,8 @@ sys.path.insert(0, HERE)
 import guardlib
 O = guardlib.O
 RR = os.path.join(guardlib.ROOT, 'chatbot', 'run_records')
-SEED = 20261021
+SEED = 20261021          # original seed (used in v60 paper)
+SEED2 = 20261103         # fresh seed (v60E verification)
 TRIALS_PER_TYPE = 3   # per run, where the run offers enough targets
 
 # Pin to the original 27 Sonnet production runs used to compute the paper's
@@ -272,19 +273,15 @@ def plants_unanchored(r, rng):
 
 
 # ---------------------------------------------------------------- main
-def main():
-    rng = random.Random(SEED)
-    all_parsed = [x for x in (parse(p) for p in sorted(glob.glob(os.path.join(RR, '*_full.md')))) if x]
-    runs = [r for r in all_parsed if r['file'][4:20] in _PINNED_TIMESTAMPS]
-    skipped = [r['file'][4:20] for r in all_parsed if r['file'][4:20] not in _PINNED_TIMESTAMPS]
-    if skipped:
-        print(f'[pin] skipped {len(skipped)} Sonnet run(s) not in _PINNED_TIMESTAMPS: {skipped}')
-    base_rows, trial_rows = [], []
+def _run_one_seed(runs, base_flag_sets, seed):
+    """Return trial_rows for the given seed.
+
+    base_flag_sets: dict[run_filename -> set[full_flag_text]] (pre-computed).
+    """
+    rng = random.Random(seed)
+    trial_rows = []
     for r in runs:
-        base = run_guards(r['answer'], r)
-        bset = set(f for _, f in base)
-        for g, f in base:
-            base_rows.append(dict(run=r['file'], guard=g, flag=f[:300]))
+        bset = base_flag_sets.get(r['file'], set())
         gens = (plants_numeric_alter(r, rng, 'lift', 'altered lift value')
                 + plants_numeric_alter(r, rng, 'z-score', 'altered z value')
                 + plants_numeric_alter(r, rng, 'frequency', 'altered posting count')
@@ -293,14 +290,17 @@ def main():
                 + plants_swap(r, rng) + plants_unanchored(r, rng) + plants_inst(r, rng, nonpattern=True))
         for ptype, fam, a, token, note in gens:
             new = [(g, f) for g, f in run_guards(a, r) if f not in bset]
-            if token is None:   # paraphrase: any new attribution/delegation flag counts
+            if token is None:
                 hit = [g for g, f in new if g in ('attribution', 'delegation_claim')]
             else:
                 hit = [g for g, f in new if f"'{token}'" in f or token in f]
-            trial_rows.append(dict(run=r['file'], plant_type=ptype, family=fam, planted=note,
+            trial_rows.append(dict(run=r['file'], seed=seed, plant_type=ptype, family=fam, planted=note,
                                    detected=int(bool(hit)), by_guard='+'.join(sorted(set(hit))),
                                    other_new_flags=len(new) - len(hit)))
-    # ---- summaries
+    return trial_rows
+
+
+def _summarise(trial_rows):
     agg = defaultdict(lambda: [0, 0, set(), 0])
     for t in trial_rows:
         a = agg[(t['family'], t['plant_type'])]
@@ -320,18 +320,147 @@ def main():
         summ.append(dict(family=fam, plant_type='ALL', trials=n, runs=len({t['run'] for t in trial_rows if t['family'] == fam}),
                          detected=k, recall=round(k / n, 3), wilson_lo=round(lo, 3), wilson_hi=round(hi, 3),
                          collateral_new_flags=sum(t['other_new_flags'] for t in trial_rows if t['family'] == fam)))
-    for name, rows in [('recall_trials.csv', trial_rows), ('recall_summary.csv', summ), ('baseline_flags.csv', base_rows)]:
-        with open(os.path.join(HERE, name), 'w', newline='', encoding='utf-8') as f:
-            if rows:
-                w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
-    print(f'runs={len(runs)}  baseline flags={len(base_rows)} in {len({b["run"] for b in base_rows})} runs')
+    return summ
+
+
+def _write_csv(path, rows):
+    with open(path, 'w', newline='', encoding='utf-8') as f:
+        if rows:
+            w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
+
+
+def main():
+    all_parsed = [x for x in (parse(p) for p in sorted(glob.glob(os.path.join(RR, '*_full.md')))) if x]
+    runs = [r for r in all_parsed if r['file'][4:20] in _PINNED_TIMESTAMPS]
+    skipped = [r['file'][4:20] for r in all_parsed if r['file'][4:20] not in _PINNED_TIMESTAMPS]
+    if skipped:
+        print(f'[pin] skipped {len(skipped)} Sonnet run(s) not in _PINNED_TIMESTAMPS: {skipped}')
+
+    # Baseline (seed-independent): store both full-text sets (for filtering) and
+    # truncated rows (for CSV output).
+    base_rows = []
+    base_flag_sets = {}   # run_filename -> set of full-text flags
+    for r in runs:
+        base = run_guards(r['answer'], r)
+        bset = set(f for _, f in base)
+        base_flag_sets[r['file']] = bset
+        for g, f in base:
+            base_rows.append(dict(run=r['file'], guard=g, flag=f[:300]))
+
+    # Per-seed trial runs
+    print(f'--- seed {SEED} (original) ---')
+    trials_s1 = _run_one_seed(runs, base_flag_sets, SEED)
+    summ_s1   = _summarise(trials_s1)
+    print(f'--- seed {SEED2} (fresh) ---')
+    trials_s2 = _run_one_seed(runs, base_flag_sets, SEED2)
+    summ_s2   = _summarise(trials_s2)
+
+    # Combined summary (all seeds pooled)
+    trials_all = trials_s1 + trials_s2
+    summ_all   = _summarise(trials_all)
+
+    # Console summary (printed BEFORE file writes so a disk-full crash doesn't hide results)
+    print(f'\nruns={len(runs)}  baseline flags={len(base_rows)} in {len({b["run"] for b in base_rows})} runs')
     by_g = defaultdict(int)
     for b in base_rows: by_g[b['guard']] += 1
     print('baseline by guard:', dict(by_g))
-    for s in summ:
-        print(f"{s['family']:9s} {s['plant_type'][:60]:60s} n={s['trials']:3d} runs={s['runs']:2d} hit={s['detected']:3d} "
+    print(f'\n--- Seed {SEED} summary ---')
+    for s in summ_s1:
+        print(f"  {s['family']:9s} {s['plant_type'][:55]:55s} n={s['trials']:3d} hit={s['detected']:3d} "
               f"recall={s['recall']:.3f} [{s['wilson_lo']:.3f},{s['wilson_hi']:.3f}] collat={s['collateral_new_flags']}")
+    print(f'\n--- Seed {SEED2} summary ---')
+    for s in summ_s2:
+        print(f"  {s['family']:9s} {s['plant_type'][:55]:55s} n={s['trials']:3d} hit={s['detected']:3d} "
+              f"recall={s['recall']:.3f} [{s['wilson_lo']:.3f},{s['wilson_hi']:.3f}] collat={s['collateral_new_flags']}")
+
+    # Stop-condition check vs v60 baseline (seed SEED only)
+    V60 = {  # v60 detected counts at seed 20261021 (from recall_summary_v60.csv)
+        'altered lift value': 59, 'altered z value': 60, 'altered posting count': 13,
+        'invented lift + z (inserted)': 81, 'invented course code': 79, 'invented URL': 81,
+        'invented institution': 81,
+        'content credited to non-delegated specialist (according to)': 39,
+        'content credited to non-delegated specialist (citing verb)': 39,
+        'content credited to non-delegated specialist (heading)': 39,
+        'content credited to non-delegated specialist (table row)': 39,
+        'false "was consulted" claim (active verb)': 39,
+        'false "was consulted" claim (passive)': 39,
+        'false "was consulted" claim (we consulted)': 39,
+    }
+    s1_by_pt = {s['plant_type']: s['detected'] for s in summ_s1 if s['plant_type'] != 'ALL'}
+    stops = []
+    for pt, v60_det in V60.items():
+        new_det = s1_by_pt.get(pt, 0)
+        if new_det < v60_det - 1:
+            stops.append(f"  STOP: {pt}: v60={v60_det}, v60E={new_det} (drop={v60_det-new_det} > 1)")
+    collat = sum(t['other_new_flags'] for t in trials_s1)
+    if collat > 0:
+        stops.append(f"  STOP: collateral flags = {collat} > 0")
+    new_base = len(base_rows)
+    # Compare baseline count against v60 baseline (baseline_flags_v60.csv)
+    v60_base_path = os.path.join(HERE, 'baseline_flags_v60.csv')
+    if os.path.exists(v60_base_path):
+        import csv as _csv
+        with open(v60_base_path, encoding='utf-8') as _f:
+            v60_base_count = sum(1 for _ in _csv.DictReader(_f))
+        if new_base > v60_base_count:
+            stops.append(f"  STOP: new baseline flags={new_base} > v60 baseline flags={v60_base_count}")
+
+    if stops:
+        print('\n*** STOP CONDITIONS TRIGGERED ***')
+        for s in stops: print(s)
+    else:
+        print('\nAll stop conditions PASS.')
     print('runs:', ', '.join(r['file'][4:20] for r in runs))
+    sys.stdout.flush()  # flush before writes in case a write crash corrupts stdout buffer
+
+    # Write output files (v60E names) — after console so a disk-full crash doesn't hide results
+    _write_csv(os.path.join(HERE, f'recall_trials_v60E_s{SEED}.csv'),  trials_s1)
+    _write_csv(os.path.join(HERE, f'recall_trials_v60E_s{SEED2}.csv'), trials_s2)
+    _write_csv(os.path.join(HERE, 'recall_summary_v60E.csv'),  summ_all)
+    _write_csv(os.path.join(HERE, 'baseline_flags_v60E.csv'),  base_rows)
+    # Keep legacy names (overwrite) so downstream scripts still work
+    _write_csv(os.path.join(HERE, 'recall_trials.csv'),  trials_s1)
+    _write_csv(os.path.join(HERE, 'recall_summary.csv'), summ_all)
+    _write_csv(os.path.join(HERE, 'baseline_flags.csv'), base_rows)
+
+    # Write RECALL_RESULTS_v60E markdown
+    md_lines = [
+        '# Guard Recall — v60E (Part C) — 2026-11-03',
+        '',
+        '## Stop-condition assessment',
+        'PASS — no stop conditions triggered.' if not stops else '\n'.join(stops),
+        '',
+        f'Baseline flags: {new_base}  |  Collateral (seed {SEED}): {collat}',
+        '',
+        '## Seed ' + str(SEED) + ' (original) recall',
+        'family | plant_type | n | hit | recall | [lo, hi] | collat',
+        '---|---|---|---|---|---|---',
+    ]
+    for s in summ_s1:
+        md_lines.append(f"{s['family']} | {s['plant_type']} | {s['trials']} | {s['detected']} | "
+                        f"{s['recall']:.3f} | [{s['wilson_lo']:.3f},{s['wilson_hi']:.3f}] | "
+                        f"{s['collateral_new_flags']}")
+    md_lines += ['', '## Seed ' + str(SEED2) + ' (fresh) recall',
+                 'family | plant_type | n | hit | recall | [lo, hi] | collat',
+                 '---|---|---|---|---|---|---']
+    for s in summ_s2:
+        md_lines.append(f"{s['family']} | {s['plant_type']} | {s['trials']} | {s['detected']} | "
+                        f"{s['recall']:.3f} | [{s['wilson_lo']:.3f},{s['wilson_hi']:.3f}] | "
+                        f"{s['collateral_new_flags']}")
+    md_lines += ['', '## v60 vs v60E comparison (seed ' + str(SEED) + ')',
+                 'plant_type | v60_hit | v60E_hit | delta',
+                 '---|---|---|---']
+    for pt, v60_det in sorted(V60.items()):
+        new_det = s1_by_pt.get(pt, '?')
+        delta = (new_det - v60_det) if isinstance(new_det, int) else '?'
+        md_lines.append(f"{pt} | {v60_det} | {new_det} | {delta:+d}" if isinstance(delta, int) else
+                        f"{pt} | {v60_det} | {new_det} | ?")
+    md_lines += ['', '## Run list', ', '.join(r['file'][4:20] for r in runs)]
+    with open(os.path.join(HERE, 'RECALL_RESULTS_v60E_2026-11-03.md'), 'w', encoding='utf-8') as f:
+        f.write('\n'.join(md_lines) + '\n')
+
+    if stops:
+        sys.exit(1)
 
 
 if __name__ == '__main__':
