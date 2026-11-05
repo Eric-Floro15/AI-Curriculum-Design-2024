@@ -39,8 +39,20 @@ from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
 from llm import describe_llm_config, get_llm  # noqa: E402
 
+# v62 pilot2 amend1:
+_ORCH_PROCEDURE = os.environ.get("ORCH_PROCEDURE", "plain").lower()
 
-ORCHESTRATOR_BACKSTORY = """\
+_ORCH_GENERAL_PROCEDURE_TEXT = """
+
+WORKING PROCEDURE FOR MULTI-PART REQUESTS (follow in order):
+1. Before delegating, list every part the request asks for.
+2. Delegate each part to the specialist that holds its evidence: peer programs → University AI Programs Researcher; demand structure and gaps → Cluster Interpreter and Skills Taxonomy Analyst; anything about a sector → Skills Taxonomy Analyst, explicitly asking for that sector's Sector Skill Wrap and Composed Sector Curriculum; recent developments → AI Industry News Researcher.
+3. For each course you propose, ask the Skills Taxonomy Analyst for the lift profile of that course's own focal skill, and cite its values for that course.
+4. State only numbers, course codes, URLs and institution names that came from a specialist's output in this run.
+5. Answer every part under its own heading, in the order the request gave them."""
+
+
+_ORCHESTRATOR_PLAIN_BACKSTORY = """\
 You are a senior curriculum advisor coordinating four specialist
 researchers to help a university professor design or update an AI/ML
 Master's program. You do NOT answer the professor directly from your
@@ -411,6 +423,18 @@ OUTPUT FORMAT for your final answer:
   and never manufacture the numbers that specialist would have provided.
 - Close with the trade-off or caveat the professor should consider.
 """
+
+# v62 pilot2 amend1: dynamic backstory assembly
+ORCHESTRATOR_BACKSTORY = (
+    _ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT
+    if _ORCH_PROCEDURE == "general"
+    else _ORCHESTRATOR_PLAIN_BACKSTORY
+)
+
+# v62 pilot2 amend1: hash pins — recompute with:
+#   python -c "import hashlib; from agents.orchestrator import _ORCHESTRATOR_PLAIN_BACKSTORY, _ORCH_GENERAL_PROCEDURE_TEXT; plain=_ORCHESTRATOR_PLAIN_BACKSTORY; print('plain:', hashlib.sha256(plain.encode()).hexdigest()); print('general:', hashlib.sha256((plain+_ORCH_GENERAL_PROCEDURE_TEXT).encode()).hexdigest())"
+_ORCH_PLAIN_BACKSTORY_HASH = "24bbfe5b63e70cd1b441620493a94ab8e14baaa1442580d9b356fc37c84b5f67"  # v62 pilot2 amend1:
+_ORCH_GENERAL_BACKSTORY_HASH = "5eb0e8299c62b6811552122863ab28cc0fdf610688ab37f1371589c6697726fe"  # v62 pilot2 amend1:
 
 
 def make_orchestrator() -> Agent:
@@ -2491,6 +2515,7 @@ def _write_run_record(
         f"**Query:** {query}",
         "",
         f"**Model:** {describe_llm_config()}",
+        f"**ORCH_PROCEDURE:** {_ORCH_PROCEDURE}",  # v62 pilot2 amend1:
         "",
         "## Metrics",
         # required_specialist_missing is placed first/at the top of
@@ -2509,6 +2534,31 @@ def _write_run_record(
         "",
     ]
     lines += _format_cost_section(usage_metrics)
+    # v62 pilot2 amend1: Delegations section — specialist order from step_log.
+    # Delegation task text cannot be captured without wrapping the delegation
+    # tools (a behavioural change): step_callback fires only on AgentFinish,
+    # not on AgentAction (tool calls, including delegate_work_to_coworker).
+    _delegation_order: list[str] = []
+    _seen_delegation_roles: set[str] = set()
+    for _step in step_log:
+        _r = _step["role"]
+        if _r not in _seen_delegation_roles:
+            _seen_delegation_roles.add(_r)
+            _delegation_order.append(_r)
+    lines += [
+        "## Delegations",
+        "",
+        "_(Specialist order from step_callback — AgentFinish only. "
+        "Delegation task text is not captured: step_callback does not fire "
+        "on AgentAction/delegate_work_to_coworker in this CrewAI version.)_",
+        "",
+    ]
+    if _delegation_order:
+        for _i, _role in enumerate(_delegation_order, 1):
+            lines.append(f"{_i}. {_role}")
+        lines.append("")
+    else:
+        lines += ["_(none)_", ""]
     if required_missing:
         lines += [
             "## 🚨 REQUIRED SPECIALIST NOT DELEGATED 🚨",

@@ -44,6 +44,10 @@ from agents.orchestrator import (  # noqa: E402
     _detect_numeric_fabrication_flags,
     build_crew,
     make_orchestrator,
+    _ORCHESTRATOR_PLAIN_BACKSTORY,   # v62 pilot2 amend1:
+    _ORCH_PLAIN_BACKSTORY_HASH,      # v62 pilot2 amend1:
+    _ORCH_GENERAL_BACKSTORY_HASH,    # v62 pilot2 amend1:
+    _ORCH_GENERAL_PROCEDURE_TEXT,    # v62 pilot2 amend1:
 )
 
 
@@ -277,6 +281,40 @@ def test_general_backstory_hash():  # v62 pilot2:
     print(f"  PASS — SA_BACKSTORY hash matches pinned general value (len={len(SA_BACKSTORY)})")
 
 
+# ── Tests 8–9: v62 pilot2 amend1: Orchestrator backstory hash pins ────────────
+
+def test_orch_plain_backstory_hash():  # v62 pilot2 amend1:
+    """_ORCHESTRATOR_PLAIN_BACKSTORY must match the pinned plain hash.
+    If ORCH_PROCEDURE != 'plain', skip the test (hash only checks plain).
+    If this fails, _ORCHESTRATOR_PLAIN_BACKSTORY was edited without updating
+    _ORCH_PLAIN_BACKSTORY_HASH — update the hash in orchestrator.py to match.
+    """
+    actual = hashlib.sha256(_ORCHESTRATOR_PLAIN_BACKSTORY.encode()).hexdigest()
+    assert actual == _ORCH_PLAIN_BACKSTORY_HASH, (
+        f"_ORCHESTRATOR_PLAIN_BACKSTORY hash mismatch:\n"
+        f"  got    : {actual}\n"
+        f"  pinned : {_ORCH_PLAIN_BACKSTORY_HASH}\n"
+        "Update _ORCH_PLAIN_BACKSTORY_HASH in orchestrator.py if you intentionally changed it."
+    )
+    print(f"  PASS — _ORCHESTRATOR_PLAIN_BACKSTORY hash matches pinned value (len={len(_ORCHESTRATOR_PLAIN_BACKSTORY)})")
+
+
+def test_orch_general_backstory_hash():  # v62 pilot2 amend1:
+    """_ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT must match
+    the pinned general hash. If this fails, one of those was edited without
+    updating _ORCH_GENERAL_BACKSTORY_HASH — update it in orchestrator.py.
+    """
+    general_text = _ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT
+    actual = hashlib.sha256(general_text.encode()).hexdigest()
+    assert actual == _ORCH_GENERAL_BACKSTORY_HASH, (
+        f"Orchestrator general backstory hash mismatch:\n"
+        f"  got    : {actual}\n"
+        f"  pinned : {_ORCH_GENERAL_BACKSTORY_HASH}\n"
+        "Update _ORCH_GENERAL_BACKSTORY_HASH in orchestrator.py if you intentionally changed it."
+    )
+    print(f"  PASS — Orchestrator general backstory hash matches pinned value (len={len(general_text)})")
+
+
 # ── Runner ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -290,6 +328,8 @@ if __name__ == "__main__":
         test_plain_backstory_unchanged,       # v62 pilot:
         test_structured_backstory_hash,       # v62 pilot2:
         test_general_backstory_hash,          # v62 pilot2:
+        test_orch_plain_backstory_hash,       # v62 pilot2 amend1:
+        test_orch_general_backstory_hash,     # v62 pilot2 amend1:
     ]
     failures = []
     for fn in tests:
