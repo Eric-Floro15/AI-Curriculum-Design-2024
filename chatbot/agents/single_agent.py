@@ -36,7 +36,10 @@ CLI:
 """
 
 import argparse
+import hashlib  # v62 pilot:
+import math     # v62 pilot:
 import os
+import pickle   # v62 pilot:
 import sys
 import time
 from datetime import datetime, timezone
@@ -64,11 +67,11 @@ from agents.orchestrator import (  # noqa: E402
     _is_tool_call,
 )
 from llm import describe_llm_config, get_llm  # noqa: E402
-from tools.cluster_tool import CLUSTER_TOOLS, data_wave_override_notice  # noqa: E402
+from tools.cluster_tool import CLUSTER_TOOLS, FOCUSED_CLUSTERS, data_wave_override_notice  # noqa: E402  # v62 pilot: FOCUSED_CLUSTERS
 from tools.tool_capture import ToolCallCapture  # noqa: E402
 from tools.compose_tool import COMPOSE_TOOLS, SECTOR_WRAP_TOOLS  # noqa: E402
 from tools.csv_tool import CSV_TOOLS  # noqa: E402
-from tools.lift_tool import LIFT_TOOLS  # noqa: E402
+from tools.lift_tool import LIFT_TOOLS, focal_associations  # noqa: E402  # v62 pilot: focal_associations
 from tools.news_tool import news_rag_tool  # noqa: E402
 from tools.program_rag_tool import program_rag_tool  # noqa: E402
 from tools.rag_tool import skills_rag_tool  # noqa: E402
@@ -177,7 +180,10 @@ OUTPUT FORMAT for your final answer:
 - Close with the trade-off or caveat the professor should consider.
 """
 
-SA_BACKSTORY = (
+# v62 pilot: read SA_PROCEDURE at import time (plain or structured; default plain)
+_SA_PROCEDURE: str = os.environ.get("SA_PROCEDURE", "plain")
+
+_SA_PLAIN_BACKSTORY = (
     "===== SKILLS TAXONOMY ANALYST TOOLS =====\n"
     + ANALYST_BACKSTORY
     + "\n\n===== UNIVERSITY AI PROGRAMS RESEARCHER TOOLS =====\n"
@@ -188,6 +194,37 @@ SA_BACKSTORY = (
     + CLUSTER_INTERPRETER_BACKSTORY
     + "\n\n===== SYNTHESIS AND OUTPUT RULES =====\n"
     + _SA_SYNTHESIS_RULES
+)
+
+# v62 pilot: pinned hash of the plain backstory — asserted in test_single_agent.py
+_SA_PLAIN_BACKSTORY_HASH: str = "f0a10a8206ae4a4712cb4b6dd9e5175efb2f6fd6cce9efb0d1c1cd0814dfe700"
+
+# v62 pilot: step-by-step working procedure appended when SA_PROCEDURE=structured
+_SA_PROCEDURE_TEXT: str = (
+    "\n\n===== WORKING PROCEDURE =====\n"
+    "WORKING PROCEDURE FOR CURRICULUM-DESIGN REQUESTS (follow in order):\n"
+    "1. Call All Clusters Overview once to get the demand-cluster scaffold.\n"
+    "2. Draft the course list (each course's title and the cluster or clusters it draws on) "
+    "before writing any course in full.\n"
+    "3. For EACH course, choose the one skill that best names that course's own area "
+    "(its focal skill: the course's core method, tool or topic; use agentic AI only for a "
+    "course about agentic AI) and call Skill Lift / Differential Analysis with that focal "
+    "skill before writing the course. Use a different focal skill for each course unless "
+    "two courses genuinely share one.\n"
+    "4. In each course's rationale, cite lift and z values only from that course's own "
+    "focal-skill call, and name the focal skill.\n"
+    "5. Use Cluster Detail for any cluster whose skills you need in more detail. Use "
+    "University Program RAG only if the request asks for a comparison with existing programs, "
+    "and AI News RAG for current industry signal.\n"
+    "6. Do not state any number that did not come from a tool output in this run."
+)
+
+# v62 pilot: SA_BACKSTORY is extended with _SA_PROCEDURE_TEXT when SA_PROCEDURE=structured;
+# byte-identical to _SA_PLAIN_BACKSTORY otherwise.
+SA_BACKSTORY: str = (
+    _SA_PLAIN_BACKSTORY + _SA_PROCEDURE_TEXT
+    if _SA_PROCEDURE == "structured"
+    else _SA_PLAIN_BACKSTORY
 )
 
 # Exact union of all four specialists' tool lists, same tool objects.
@@ -202,6 +239,85 @@ _SA_TOOLS = [
     news_rag_tool,
     *CLUSTER_TOOLS,
 ]
+
+
+def _run_sa_preflight() -> bool:  # v62 pilot:
+    """Check data-integrity invariants before each v62 SA run.
+
+    Three checks (all required):
+    1. Lift table: Agentic AI → Large Language Models lift≈4.76 / z≈9.39
+    2. FOCUSED_CLUSTERS == {1, 2, 3, 5, 6}
+    3. FAISS skills index: ntotal=962, 0 Unknown/empty level1 docs
+
+    Returns True if all pass. Prints status for each check.
+    """
+    import faiss as _faiss  # v62 pilot: lazy import, same lib LangChain uses
+
+    _EXP_FOCAL   = "Agentic AI"
+    _EXP_PARTNER = "Large Language Models"
+    _EXP_LIFT    = 4.76
+    _EXP_Z       = 9.39
+    _EXP_FOCUSED = frozenset({1, 2, 3, 5, 6})
+    _EXP_NTOTAL  = 962
+
+    ok = True
+    print(f"\n{'─'*64}")
+    print("PREFLIGHT [v62 SA]")
+    print(f"{'─'*64}")
+
+    # ── check 1: lift table ───────────────────────────────────────────────────
+    assocs = focal_associations(_EXP_FOCAL, z_min=0.0)
+    partner_row = next(
+        (a for a in assocs if a.get("skill", "").lower() == _EXP_PARTNER.lower()),
+        None,
+    )
+    if partner_row is None:
+        print(f"\n  [X] lift check: no '{_EXP_PARTNER}' row for focal '{_EXP_FOCAL}'")
+        ok = False
+    else:
+        got_lift = float(partner_row.get("lift", 0))
+        got_z    = float(partner_row.get("z", 0))
+        match_l  = math.isclose(got_lift, _EXP_LIFT, rel_tol=0.005)
+        match_z  = math.isclose(got_z,   _EXP_Z,    rel_tol=0.005)
+        print(f"\n  [{'OK' if match_l else 'X'}] lift: got {got_lift}  expected {_EXP_LIFT}")
+        print(f"  [{'OK' if match_z else 'X'}] z   : got {got_z}     expected {_EXP_Z}")
+        if not (match_l and match_z):
+            ok = False
+
+    # ── check 2: FOCUSED_CLUSTERS ─────────────────────────────────────────────
+    match_fc = FOCUSED_CLUSTERS == _EXP_FOCUSED
+    print(f"\n  [{'OK' if match_fc else 'X'}] FOCUSED_CLUSTERS: "
+          f"got {sorted(FOCUSED_CLUSTERS)}  expected {sorted(_EXP_FOCUSED)}")
+    if not match_fc:
+        ok = False
+
+    # ── check 3: FAISS index ntotal + 0 Unknown ──────────────────────────────
+    _idx_path = os.path.join(_CHATBOT_DIR, "faiss_index", "index.faiss")
+    _pkl_path = os.path.join(_CHATBOT_DIR, "faiss_index", "index.pkl")
+    try:
+        raw_idx = _faiss.read_index(_idx_path)
+        ntotal  = raw_idx.ntotal
+        match_n = ntotal == _EXP_NTOTAL
+        print(f"\n  [{'OK' if match_n else 'X'}] index ntotal: got {ntotal}  expected {_EXP_NTOTAL}")
+        if not match_n:
+            ok = False
+        with open(_pkl_path, "rb") as _pf:
+            _docstore, _id_map = pickle.load(_pf)
+        n_unknown = sum(
+            1 for doc in _docstore._dict.values()
+            if doc.metadata.get("level1", "") in ("", "Unknown")
+        )
+        match_u = n_unknown == 0
+        print(f"  [{'OK' if match_u else 'X'}] Unknown level1 docs: {n_unknown}  expected 0")
+        if not match_u:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] FAISS index check failed: {_e}")
+        ok = False
+
+    print(f"\n  {'PREFLIGHT PASS' if ok else 'PREFLIGHT FAIL -- aborting'}")
+    print(f"{'─'*64}\n")
+    return ok
 
 
 def make_single_agent() -> Agent:
@@ -235,6 +351,7 @@ def _write_sa_run_record(
     error: Exception | None,
     usage_metrics: object | None = None,
     tool_call_log: list[dict] | None = None,
+    label: str = "",  # v62 pilot:
 ) -> str:
     """Write a durable run record for a SA ablation run.
 
@@ -256,8 +373,9 @@ def _write_sa_run_record(
     os.makedirs(_RUN_RECORDS_DIR, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     status = "failure" if error is not None else "success"
+    _label_part = f"{label}_" if label else ""  # v62 pilot:
     path = os.path.join(
-        _RUN_RECORDS_DIR, f"run_{ts}_{status}_single-agent.md"
+        _RUN_RECORDS_DIR, f"run_{ts}_{_label_part}{status}_single-agent.md"
     )
     full_path = path[: -len(".md")] + "_full.md"
 
@@ -298,6 +416,7 @@ def _write_sa_run_record(
         f"**Query:** {query}",
         "",
         f"**Model:** {describe_llm_config()}",
+        f"**SA_PROCEDURE:** {_SA_PROCEDURE}",  # v62 pilot:
         "",
         "## Metrics",
         f"- **Status:** {status}",
@@ -406,7 +525,7 @@ def _write_sa_run_record(
     return path
 
 
-def run_query_single(query: str) -> str:
+def run_query_single(query: str, label: str = "") -> str:  # v62 pilot: label
     """Run a single professor query end-to-end in single-agent mode.
 
     Mirrors run_query() from orchestrator.py in structure, but with one
@@ -414,6 +533,10 @@ def run_query_single(query: str) -> str:
     hub-and-spoke topology.  Every run — success or failure — is written
     as a durable record via _write_sa_run_record().
     """
+    # v62 pilot: preflight must pass before any LLM call
+    if not _run_sa_preflight():
+        raise RuntimeError("SA preflight failed — aborting run. See output above.")
+
     # Same data-wave override injection point as run_query().
     _wave_notice = data_wave_override_notice()
     if _wave_notice:
@@ -463,7 +586,7 @@ def run_query_single(query: str) -> str:
             path = _write_sa_run_record(
                 query, step_log, wall_time,
                 answer=None, error=e, usage_metrics=usage_metrics,
-                tool_call_log=cap.calls,
+                tool_call_log=cap.calls, label=label,
             )
             raise RuntimeError(
                 f"{type(e).__name__}: {e}\n\n"
@@ -475,7 +598,7 @@ def run_query_single(query: str) -> str:
     path = _write_sa_run_record(
         query, step_log, wall_time,
         answer=answer, error=None, usage_metrics=usage_metrics,
-        tool_call_log=cap.calls,
+        tool_call_log=cap.calls, label=label,
     )
     return answer
 

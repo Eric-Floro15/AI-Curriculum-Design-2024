@@ -13,11 +13,14 @@ Tests (no LLM calls — all static / import-time checks):
                        lift/z value absent from _build_sa_step_log tool outputs.
   6. guard3_catches  — guard #3 (_detect_content_attribution_flags) flags a URL
                        absent from _build_sa_step_log tool outputs.
+  7. plain_backstory_unchanged  — (v62 pilot) SA_BACKSTORY is byte-identical to
+                       the pinned hash when SA_PROCEDURE is unset / "plain".
 
 Run:
   KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/agents/test_single_agent.py
 """
 
+import hashlib  # v62 pilot:
 import os
 import sys
 
@@ -26,7 +29,12 @@ _CHATBOT_DIR = os.path.dirname(_HERE)
 if _CHATBOT_DIR not in sys.path:
     sys.path.insert(0, _CHATBOT_DIR)
 
-from agents.single_agent import _SA_TOOLS, _build_sa_step_log  # noqa: E402
+from agents.single_agent import (  # noqa: E402
+    _SA_TOOLS,
+    _build_sa_step_log,
+    SA_BACKSTORY,
+    _SA_PLAIN_BACKSTORY_HASH,
+)
 from agents.orchestrator import (  # noqa: E402
     _detect_content_attribution_flags,
     _detect_delegation_claim_flags,
@@ -197,6 +205,29 @@ def test_guard3_catches_content_fabrication():
     )
 
 
+# ── Test 7 — v62 pilot: SA_BACKSTORY unchanged when SA_PROCEDURE=plain ────────
+
+def test_plain_backstory_unchanged():  # v62 pilot:
+    """When SA_PROCEDURE is unset or 'plain', SA_BACKSTORY must be byte-identical
+    to the pinned plain backstory (verified by SHA-256 hash).
+    If this fails, _SA_PLAIN_BACKSTORY was edited without updating
+    _SA_PLAIN_BACKSTORY_HASH — update the hash in single_agent.py to match.
+    """
+    import os as _os
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "plain":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; this test only runs when plain")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    assert actual_hash == _SA_PLAIN_BACKSTORY_HASH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=plain):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_PLAIN_BACKSTORY_HASH}\n"
+        "Update _SA_PLAIN_BACKSTORY_HASH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY hash matches pinned value (len={len(SA_BACKSTORY)})")
+
+
 # ── Runner ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -207,6 +238,7 @@ if __name__ == "__main__":
         test_guard4_catches_delegation_claim,
         test_guard2_catches_numeric_fabrication,
         test_guard3_catches_content_fabrication,
+        test_plain_backstory_unchanged,  # v62 pilot:
     ]
     failures = []
     for fn in tests:
