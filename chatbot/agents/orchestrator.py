@@ -49,7 +49,8 @@ WORKING PROCEDURE FOR MULTI-PART REQUESTS (follow in order):
 2. Delegate each part to the specialist that holds its evidence: peer programs → University AI Programs Researcher; demand structure and gaps → Cluster Interpreter and Skills Taxonomy Analyst; anything about a sector → Skills Taxonomy Analyst, explicitly asking for that sector's Sector Skill Wrap and Composed Sector Curriculum; recent developments → AI Industry News Researcher.
 3. For each course you propose, ask the Skills Taxonomy Analyst for the lift profile of that course's own focal skill, and cite its values for that course.
 4. State only numbers, course codes, URLs and institution names that came from a specialist's output in this run.
-5. Answer every part under its own heading, in the order the request gave them."""
+5. Answer every part under its own heading, in the order the request gave them.
+6. Budget for this procedure: it replaces the 3-delegation maximum stated earlier. Delegate at most ONCE to each of the four specialists (at most 4 delegations in total), and put everything you need from a specialist into that one delegation. For example, ask the Skills Taxonomy Analyst in a single request for the lift values behind the gaps, the lift profile of each proposed course's focal skill, AND the requested sector's Sector Skill Wrap and Composed Sector Curriculum."""  # v62 pilot2 amend1b:
 
 
 _ORCHESTRATOR_PLAIN_BACKSTORY = """\
@@ -434,7 +435,7 @@ ORCHESTRATOR_BACKSTORY = (
 # v62 pilot2 amend1: hash pins — recompute with:
 #   python -c "import hashlib; from agents.orchestrator import _ORCHESTRATOR_PLAIN_BACKSTORY, _ORCH_GENERAL_PROCEDURE_TEXT; plain=_ORCHESTRATOR_PLAIN_BACKSTORY; print('plain:', hashlib.sha256(plain.encode()).hexdigest()); print('general:', hashlib.sha256((plain+_ORCH_GENERAL_PROCEDURE_TEXT).encode()).hexdigest())"
 _ORCH_PLAIN_BACKSTORY_HASH = "24bbfe5b63e70cd1b441620493a94ab8e14baaa1442580d9b356fc37c84b5f67"  # v62 pilot2 amend1:
-_ORCH_GENERAL_BACKSTORY_HASH = "5eb0e8299c62b6811552122863ab28cc0fdf610688ab37f1371589c6697726fe"  # v62 pilot2 amend1:
+_ORCH_GENERAL_BACKSTORY_HASH = "773ea6e1ccfe767f5da958b338ea15b4275a03637e6ab8e7ec282ffd481ae057"  # v62 pilot2 amend1b:
 
 
 def make_orchestrator() -> Agent:
