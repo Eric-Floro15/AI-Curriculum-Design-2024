@@ -644,7 +644,7 @@ def run_query_single(query: str, label: str = "") -> str:  # v62 pilot: label
     )
     crew = Crew(agents=[agent], tasks=[task], verbose=False)
     t0 = time.time()
-    with ToolCallCapture(tools=_SA_TOOLS) as cap:
+    with ToolCallCapture(tools=_SA_TOOLS, max_output_chars=10**9 if _CAPTURE_FULL_OUTPUT else 3_000) as cap:  # v62 pilot2:
         try:
             answer = str(crew.kickoff())
         except Exception as e:
