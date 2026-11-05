@@ -34,6 +34,8 @@ from agents.single_agent import (  # noqa: E402
     _build_sa_step_log,
     SA_BACKSTORY,
     _SA_PLAIN_BACKSTORY_HASH,
+    _SA_STRUCTURED_BACKSTORY_HASH,  # v62 pilot2:
+    _SA_GENERAL_BACKSTORY_HASH,     # v62 pilot2:
 )
 from agents.orchestrator import (  # noqa: E402
     _detect_content_attribution_flags,
@@ -206,6 +208,7 @@ def test_guard3_catches_content_fabrication():
 
 
 # ── Test 7 — v62 pilot: SA_BACKSTORY unchanged when SA_PROCEDURE=plain ────────
+# ── Extended for structured and general  # v62 pilot2: ───────────────────────
 
 def test_plain_backstory_unchanged():  # v62 pilot:
     """When SA_PROCEDURE is unset or 'plain', SA_BACKSTORY must be byte-identical
@@ -215,8 +218,8 @@ def test_plain_backstory_unchanged():  # v62 pilot:
     """
     import os as _os
     sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
-    if sa_procedure != "plain":
-        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; this test only runs when plain")
+    if sa_procedure not in ("plain", ""):
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; plain test skipped")
         return
     actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
     assert actual_hash == _SA_PLAIN_BACKSTORY_HASH, (
@@ -226,6 +229,52 @@ def test_plain_backstory_unchanged():  # v62 pilot:
         "Update _SA_PLAIN_BACKSTORY_HASH in single_agent.py if you intentionally changed SA_BACKSTORY."
     )
     print(f"  PASS — SA_BACKSTORY hash matches pinned value (len={len(SA_BACKSTORY)})")
+
+
+def test_structured_backstory_hash():  # v62 pilot2:
+    """When SA_PROCEDURE=structured, SA_BACKSTORY must match the pinned structured hash.
+    If _SA_STRUCTURED_BACKSTORY_HASH is empty (not yet pinned), prints the actual hash
+    to paste into single_agent.py and skips the assertion.
+    """
+    import os as _os
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "structured":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; structured test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    if not _SA_STRUCTURED_BACKSTORY_HASH:
+        print(f"  HASH (not yet pinned) — paste into _SA_STRUCTURED_BACKSTORY_HASH: {actual_hash}")
+        return
+    assert actual_hash == _SA_STRUCTURED_BACKSTORY_HASH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=structured):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_STRUCTURED_BACKSTORY_HASH}\n"
+        "Update _SA_STRUCTURED_BACKSTORY_HASH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY hash matches pinned structured value (len={len(SA_BACKSTORY)})")
+
+
+def test_general_backstory_hash():  # v62 pilot2:
+    """When SA_PROCEDURE=general, SA_BACKSTORY must match the pinned general hash.
+    If _SA_GENERAL_BACKSTORY_HASH is empty (not yet pinned), prints the actual hash
+    to paste into single_agent.py and skips the assertion.
+    """
+    import os as _os
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "general":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; general test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    if not _SA_GENERAL_BACKSTORY_HASH:
+        print(f"  HASH (not yet pinned) — paste into _SA_GENERAL_BACKSTORY_HASH: {actual_hash}")
+        return
+    assert actual_hash == _SA_GENERAL_BACKSTORY_HASH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=general):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_GENERAL_BACKSTORY_HASH}\n"
+        "Update _SA_GENERAL_BACKSTORY_HASH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY hash matches pinned general value (len={len(SA_BACKSTORY)})")
 
 
 # ── Runner ────────────────────────────────────────────────────────────────────
@@ -238,7 +287,9 @@ if __name__ == "__main__":
         test_guard4_catches_delegation_claim,
         test_guard2_catches_numeric_fabrication,
         test_guard3_catches_content_fabrication,
-        test_plain_backstory_unchanged,  # v62 pilot:
+        test_plain_backstory_unchanged,       # v62 pilot:
+        test_structured_backstory_hash,       # v62 pilot2:
+        test_general_backstory_hash,          # v62 pilot2:
     ]
     failures = []
     for fn in tests:

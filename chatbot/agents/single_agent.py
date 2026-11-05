@@ -181,7 +181,11 @@ OUTPUT FORMAT for your final answer:
 """
 
 # v62 pilot: read SA_PROCEDURE at import time (plain or structured; default plain)
+# v62 pilot2: also supports "general" (multi-part request procedure)
 _SA_PROCEDURE: str = os.environ.get("SA_PROCEDURE", "plain")
+
+# v62 pilot2: full capture flag — when set, write complete tool outputs to main .md
+_CAPTURE_FULL_OUTPUT: bool = os.environ.get("CAPTURE_FULL_OUTPUT", "").strip() == "1"
 
 _SA_PLAIN_BACKSTORY = (
     "===== SKILLS TAXONOMY ANALYST TOOLS =====\n"
@@ -219,13 +223,41 @@ _SA_PROCEDURE_TEXT: str = (
     "6. Do not state any number that did not come from a tool output in this run."
 )
 
-# v62 pilot: SA_BACKSTORY is extended with _SA_PROCEDURE_TEXT when SA_PROCEDURE=structured;
-# byte-identical to _SA_PLAIN_BACKSTORY otherwise.
+# v62 pilot2: working procedure for multi-part requests appended when SA_PROCEDURE=general
+_SA_GENERAL_PROCEDURE_TEXT: str = (
+    "\n\n===== WORKING PROCEDURE =====\n"
+    "WORKING PROCEDURE FOR MULTI-PART REQUESTS (follow in order):\n"
+    "1. Before calling any tool, list every part the request asks for.\n"
+    "2. For each part, call the tools that hold its evidence before writing that part: "
+    "peer programs → University Program RAG (web search only if the program is not in "
+    "the corpus); demand structure and gaps → All Clusters Overview / Cluster Detail and "
+    "Skill Lift / Differential Analysis; anything about a sector → the sector compose or "
+    "sector wrap tools; recent developments → AI News RAG.\n"
+    "3. When you propose a course, call Skill Lift / Differential Analysis for that course's "
+    "own focal skill and cite its values for that course.\n"
+    "4. State only numbers, course codes, URLs and institution names that came from a tool "
+    "output in this run.\n"
+    "5. Answer every part under its own heading, in the order the request gave them."
+)
+
+# v62 pilot: SA_BACKSTORY is extended with the relevant procedure text when
+# SA_PROCEDURE=structured or SA_PROCEDURE=general; byte-identical to
+# _SA_PLAIN_BACKSTORY otherwise.  # v62 pilot2: added general branch
 SA_BACKSTORY: str = (
     _SA_PLAIN_BACKSTORY + _SA_PROCEDURE_TEXT
     if _SA_PROCEDURE == "structured"
-    else _SA_PLAIN_BACKSTORY
+    else (
+        _SA_PLAIN_BACKSTORY + _SA_GENERAL_PROCEDURE_TEXT
+        if _SA_PROCEDURE == "general"  # v62 pilot2:
+        else _SA_PLAIN_BACKSTORY
+    )
 )
+
+# v62 pilot2: pinned hashes for structured and general backstories
+# Computed by: hashlib.sha256(SA_BACKSTORY.encode()).hexdigest() with each SA_PROCEDURE value.
+# Update when the corresponding procedure text changes.
+_SA_STRUCTURED_BACKSTORY_HASH: str = "eca9b063b9b5bd569aac19a998288b184e82bd069e2212d3ab3748f9f240570d"  # v62 pilot2:
+_SA_GENERAL_BACKSTORY_HASH: str = "db06f4850506ed02099f9db9ab61656cc2e7f39f944aacb84bd744aea9c7a23e"    # v62 pilot2:
 
 # Exact union of all four specialists' tool lists, same tool objects.
 _SA_TOOLS = [
@@ -244,10 +276,12 @@ _SA_TOOLS = [
 def _run_sa_preflight() -> bool:  # v62 pilot:
     """Check data-integrity invariants before each v62 SA run.
 
-    Three checks (all required):
+    Five checks (all required):
     1. Lift table: Agentic AI → Large Language Models lift≈4.76 / z≈9.39
     2. FOCUSED_CLUSTERS == {1, 2, 3, 5, 6}
     3. FAISS skills index: ntotal=962, 0 Unknown/empty level1 docs
+    4. Queen's MMAI document is in the program index  # v62 pilot2:
+    5. Finance sector compose tool returns >=1 row for focal Agentic AI  # v62 pilot2:
 
     Returns True if all pass. Prints status for each check.
     """
@@ -313,6 +347,36 @@ def _run_sa_preflight() -> bool:  # v62 pilot:
             ok = False
     except Exception as _e:
         print(f"\n  [X] FAISS index check failed: {_e}")
+        ok = False
+
+    # ── check 4: Queen's MMAI in program index  # v62 pilot2: ───────────────────
+    try:
+        from tools.program_rag_tool import retrieve as _prog_retrieve
+        hits = _prog_retrieve("Queen's MMAI Master of Management Artificial Intelligence")
+        queens_found = any(
+            "queen" in (h.get("content", "") + h.get("title", "") + h.get("source", "")).lower()
+            for h in hits
+        )
+        print(f"\n  [{'OK' if queens_found else 'X'}] Queen's MMAI in program index: "
+              f"{'found' if queens_found else 'NOT FOUND'} in top results")
+        if not queens_found:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] Queen's MMAI program index check failed: {_e}")
+        ok = False
+
+    # ── check 5: finance sector compose returns rows  # v62 pilot2: ─────────────
+    try:
+        from tools.compose_tool import composed_curriculum as _compose
+        rows = _compose("finance")
+        n_rows = len(rows)
+        match_compose = n_rows >= 1
+        print(f"\n  [{'OK' if match_compose else 'X'}] Finance sector compose rows: "
+              f"got {n_rows}  expected >=1")
+        if not match_compose:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] Finance sector compose check failed: {_e}")
         ok = False
 
     print(f"\n  {'PREFLIGHT PASS' if ok else 'PREFLIGHT FAIL -- aborting'}")
@@ -417,6 +481,7 @@ def _write_sa_run_record(
         "",
         f"**Model:** {describe_llm_config()}",
         f"**SA_PROCEDURE:** {_SA_PROCEDURE}",  # v62 pilot:
+        f"**CAPTURE_FULL_OUTPUT:** {'1' if _CAPTURE_FULL_OUTPUT else '0'}",  # v62 pilot2:
         "",
         "## Metrics",
         f"- **Status:** {status}",
@@ -481,7 +546,9 @@ def _write_sa_run_record(
         tc_full_lines = [no_cap, ""]
 
     split_idx = len(lines)  # index in lines[] where TC section will start
-    lines += tc_header + tc_lines
+    # v62 pilot2: when CAPTURE_FULL_OUTPUT=1, main .md also uses full output
+    main_tc_lines = tc_full_lines if _CAPTURE_FULL_OUTPUT else tc_lines
+    lines += tc_header + main_tc_lines
 
     # full_lines: identical prefix, then tc_full_lines instead of tc_lines
     full_lines: list[str] = list(lines[:split_idx]) + tc_header + tc_full_lines
