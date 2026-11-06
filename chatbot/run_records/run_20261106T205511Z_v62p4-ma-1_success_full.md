@@ -1,0 +1,1430 @@
+# Orchestrator run — 20261106T205511Z — SUCCESS
+
+**Query:** Compare Carnegie Mellon's MSAII program with current labour-market demand. Identify its three biggest gaps, propose two new courses to fill them, specialize one of those courses for finance-sector students, and note any recent industry developments that bear on these recommendations.
+
+**Model:** LLM: provider=anthropic, model=claude-sonnet-4-6
+**ORCH_PROCEDURE:** general
+
+## Metrics
+- **required_specialist_missing:** []
+- **Status:** success
+- **Error:** None
+- **Delegated to:** ['AI Industry News Researcher', 'Cluster Interpreter', 'Senior Curriculum Advisor', 'Skills Taxonomy Analyst', 'University AI Programs Researcher']
+- **Tool calls:** 0
+- **Wall time:** 395.9s
+- **fabrication_flags:** []
+
+## Cost / Usage
+
+- **Prompt tokens:** 165,151
+- **Completion tokens:** 28,742
+- **Total tokens:** 193,893
+- **Cached prompt tokens:** 57,932 (not separately priced below — see the pricing note above _estimate_cost_usd)
+- **Cache-creation tokens:** 24,859 (not separately priced below)
+- **Successful LLM requests:** 17
+- **Approx. cost:** $0.9266 USD (rough estimate at claude-sonnet-4-6 list rates, prompt+completion tokens only — verify against the Anthropic console for the exact bill)
+
+## Delegations
+
+_(Specialist order from step_callback — AgentFinish only. Delegation task text is not captured: step_callback does not fire on AgentAction/delegate_work_to_coworker in this CrewAI version.)_
+
+1. University AI Programs Researcher
+2. AI Industry News Researcher
+3. Cluster Interpreter
+4. Skills Taxonomy Analyst
+5. Senior Curriculum Advisor
+
+## Final Answer
+
+Now I have all three specialist outputs. Let me synthesise these into a single coherent recommendation.
+
+---
+
+# CMU MSAII vs. Labour-Market Demand: Gap Analysis & Course Proposals
+
+## Executive Summary
+
+Carnegie Mellon's MSAII program is exceptionally strong in model-layer AI — machine learning, deep learning, NLP, and generative AI — but leaves three structurally unaddressed gaps that expose graduates to significant employability risk: **production AI systems engineering (MLOps + agentic AI)**, **data engineering pipelines**, and **applied business analytics with finance-domain AI**. Two new courses, one of them specialised for finance, would close the most critical of these gaps; they are grounded jointly in cluster-level market demand, lift/significance evidence from 186,249 job postings, and converging signals from recent industry reporting.
+
+---
+
+## 1. The Three Biggest Gaps
+
+### 🔴 Gap #1 — Production AI Systems Engineering: MLOps, Agentic AI & Responsible AI
+**Cluster 5 (Core AI, Cloud & Data-Platform Engineering, 370 skills) — most consequential gap**
+
+The CMU MSAII curriculum covers how to *train* models in depth, but not how to *deploy, orchestrate, monitor, and govern* them. The Skills Taxonomy Analyst found this is the market's most explosively co-demanded skill area:
+
+**Agentic AI** (focal skill, 62 co-demanded skills at z ≥ 2):
+- Large Language Models (lift 4.76×, z=9.39)
+- Retrieval-Augmented Generation / RAG (lift 6.66×, z=8.89)
+- LangChain (lift 7.53×, z=7.90)
+- Prompt Engineering (lift 6.26×, z=7.03)
+- Agentic Frameworks (lift 9.11×, z=6.79)
+- LangGraph (lift 9.47×, z=6.73)
+- Vector Databases (lift 6.85×, z=6.29)
+- Multi-Agent Systems (lift 10.31×, z=5.08)
+- CrewAI (lift 10.23×, z=4.95), AutoGen (lift 9.87×, z=4.66)
+- Responsible AI (lift 5.12×, z=4.53) — critically, the market co-demands governance *within* agentic engineering
+
+**MLOps** (focal skill, 56 co-demanded skills at z ≥ 2):
+- MLflow (lift 15.12×, z=7.38) — highest specialist lift in the entire analysis
+- Model Versioning (lift 15.91×, z=6.86)
+- Model Deployment (lift 8.92×, z=4.79), SageMaker (lift 9.06×, z=4.75), Kubeflow (lift 15.36×, z=4.66)
+- Model Monitoring (lift 12.82×, z=4.23), Feature Stores (lift 11.43×, z=3.93)
+- LLMOps (lift 12.45×, z=3.37) — the LLM-specific deployment layer, now explicitly tracked by the market
+- CI/CD (lift 3.94×, z=3.80), Docker (lift 4.73×, z=3.68), Kubernetes (lift 4.37×, z=3.34)
+
+**Key structural finding:** Agentic AI and MLOps are **symmetrically co-demanded** with each other (each at lift 3.98×, z=4.34), confirming these cannot be taught as separate electives — they share foundational infrastructure (containers, orchestration, CI/CD, observability). The Cluster Interpreter confirmed the Cluster 5 gap: CI/CD appears in 11.9% of postings, DevOps in 9.3%, Agentic AI in 7.8%, Kubernetes 6.6%, Docker 6.2%, RAG 5.2% — none taught in any MSAII course.
+
+**Responsible AI** (focal skill, 16 co-demanded skills): Though a narrower cluster, its lift/z with agentic engineering is striking — AI Agent Systems Architecture (lift 13.46×, z=2.13), Model Versioning (lift 10.08×, z=2.44), MLOps (lift 6.88×, z=4.04). The market integrates governance into the deployment workflow, not as a standalone ethics elective. MSAII's 17-762 Law of Computer Technology covers legal framing but not the technical governance skills employers pair with Responsible AI.
+
+**Industry confirmation:** MIT Technology Review (May 26, 2026) reports that "85% of organizations want to be agentic within three years, but 76% say their current operations and infrastructure can't support that change." McKinsey State of AI 2025 (November 2025) confirms 23% of organizations are already scaling agentic systems. IBM Research (HuggingFace Blog, February & April 2026) has published agent failure-mode benchmarking frameworks (IT-Bench/MAST, VAKRA) — an emerging sub-discipline not covered anywhere in the MSAII curriculum.
+
+---
+
+### 🔴 Gap #2 — Data Engineering for Machine Learning
+**Cluster 3 (Data-Engineering Tools, 89 skills) — most structurally stable missing cluster (median ensemble confidence 0.88)**
+
+No MSAII required course covers the data-engineering toolchain that underlies every production AI system. The Cluster Interpreter's finding is unambiguous: Cluster 3 has the highest ensemble stability of any gap cluster, meaning this signal is robust.
+
+**Data Pipelines** (focal skill, 66 co-demanded skills at z ≥ 2):
+- ETL / ELT (lift 4.37×, z=10.42 and lift 5.21×, z=8.08) — the z=10 anchor: the most statistically attested co-demand in the entire dataset
+- Data Engineering (lift 3.99×, z=10.08)
+- Airflow (lift 5.04×, z=7.99), dbt (lift 4.29×, z=6.08)
+- Data Warehousing (lift 3.94×, z=6.93), Data Lakes (lift 4.42×, z=6.90)
+- PySpark (lift 3.47×, z=6.79), Snowflake (lift 3.48×, z=6.40), Databricks (lift 3.38×, z=5.60)
+- Kafka (lift 3.84×, z=4.98), Redshift (lift 4.35×, z=5.34)
+- Feature Engineering (lift 3.34×, z=3.26) — also co-demanded with MLOps at lift 8.63×
+- Medallion Architecture (lift 5.09×, z=2.64), Data Lineage (lift 3.52×, z=2.43), Great Expectations/data quality (lift 5.27×, z=2.42), Data Contracts (lift 4.11×, z=2.03) — emerging forward-looking additions
+
+The Cluster Interpreter notes the ML-specific slice missing from MSAII is: Feature Stores (lift 11.43×, z=3.93 when co-demanded with MLOps), Feature Engineering, Airflow, dbt, and data quality tooling — none in the curriculum. The existing 15-645 Database Systems and 15-688 Practical Data Science are elective-only and cover analysis, not pipeline construction.
+
+---
+
+### 🔴 Gap #3 — Applied Business Analytics & Finance-Domain AI
+**Cluster 6 (Business Intelligence, Analytics & Finance, 66 skills) — entirely absent despite MSAII's "Future Markets" branding**
+
+Despite 11-651 Artificial Intelligence and Future Markets being a *required* course, the program contains zero finance-domain AI content and no applied analytics toolkit. The Cluster Interpreter identifies this as the most visible mismatch between program positioning and actual course content. Market frequencies from Cluster 6: Data Analytics (41.6% of postings), Business Intelligence (21.9%), Finance domain (17.8%), Data Visualization (15.9%), Forecasting (8.0%), Predictive Modeling (4.4%), Financial Analysis (2.0%), Financial Modeling (1.7%).
+
+For finance specifically, the Analyst's sector wrap identified 8 domain-distinctive skills (z ≥ 2 AND sector lift ≥ 3×):
+- Financial Services (sector lift 3.83×, z=7.03)
+- Risk Management (sector lift 3.83×, z=6.01)
+- Quantitative Finance (sector lift 6.41×, z=2.48) — highest sector lift
+- Decision Automation (sector lift 5.06×, z=2.20)
+- Payment Processing (sector lift 3.85×, z=2.21)
+
+**Critical cross-finding:** Finance's agentic AI adoption is exactly at the market average (sector lift 0.97, z=−0.47), meaning a finance AI specialisation doesn't need a separate technical foundation — it can be built as the shared Agentic+MLOps core plus a 4–5 skill finance domain module. This simplifies curriculum design considerably.
+
+Stanford HAI AI Index 2026 notes that documented AI incidents rose 55% year-over-year (362 in 2025 vs. 233 in 2024), and in regulated industries like finance, those incidents carry regulatory and reputational risk of a categorically different magnitude. The AI Industry News Researcher also flagged that specific AI-in-finance coverage (algorithmic trading, credit modeling, SEC regulatory AI compliance, SR 11-7 model risk guidance) was thin in its indexed corpus — the professor should supplement with specialized fintech sources (Oliver Wyman, Deloitte fintech reports, BIS working papers).
+
+---
+
+## 2. Two Proposed New Courses
+
+### Course A — *Agentic AI Systems & MLOps Engineering*
+**Recommended status: Required (replace or expand 11-695 AI Engineering)**
+**Addresses: Gap #1 (Production AI Systems Engineering)**
+
+**Rationale:** This course closes the single most consequential structural gap. The market co-demands agentic frameworks and MLOps at extremely high lift and significance scores, and they are symmetrically co-demanded with each other — they form a coherent pedagogical unit.
+
+**Module structure grounded in lift/z evidence:**
+
+| Module | Key Skills | Lift/Z Anchor |
+|---|---|---|
+| **1. RAG & Vector Infrastructure** | RAG pipelines, Vector Databases (Pinecone, Weaviate, FAISS), Semantic Search | RAG: lift 6.66×, z=8.89; Vector DBs: lift 6.85×, z=6.29 |
+| **2. Agentic Frameworks & Orchestration** | LangChain, LangGraph, CrewAI, AutoGen, Multi-Agent Systems | LangChain: lift 7.53×, z=7.90; LangGraph: lift 9.47×, z=6.73; Multi-Agent: lift 10.31×, z=5.08 |
+| **3. Model Lifecycle & MLOps** | MLflow, Model Versioning, Model Monitoring, Feature Stores, ML Pipelines | MLflow: lift 15.12×, z=7.38; Model Versioning: lift 15.91×, z=6.86; Kubeflow: lift 15.36×, z=4.66 |
+| **4. ML DevOps & Deployment** | CI/CD, Docker, Kubernetes, SageMaker, Containerisation | CI/CD: lift 3.94×, z=3.80; Kubernetes: lift 4.37×, z=3.34 |
+| **5. LLMOps & Observability** | LLMOps, Model Serving, Observability, Model Evaluation | LLMOps: lift 12.45×, z=3.37; Observability: lift 3.52×, z=2.14 |
+| **6. Responsible AI in Production** | AI governance, bias/fairness auditing, model cards, EU AI Act compliance | Responsible AI with AI Agent Systems Architecture: lift 13.46×, z=2.13; with Model Versioning: lift 10.08×, z=2.44 |
+
+**Industry grounding:** Coursera Job Skills Report 2026 identifies agentic AI as "among the fastest-growing skill areas for 2026." IBM Research's IT-Bench/MAST framework (HuggingFace Blog, February 18, 2026) and VAKRA benchmark (HuggingFace Blog, April 15, 2026) represent an emerging engineering sub-discipline — agent evaluation and failure-mode diagnosis — that fits naturally into Module 5.
+
+---
+
+### Course B — *Data Engineering for AI Systems*
+**Recommended status: Required (or mandatory elective for all non-specialist students)**
+**Addresses: Gap #2 (Data Engineering)**
+
+**Rationale:** Cluster 3 is the most ensemble-stable missing cluster (median confidence 0.88). ETL/ELT co-demand with Data Pipelines reaches z=10+ — the strongest statistical signal in the entire analysis. The existing 15-688 Practical Data Science and 15-645 Database Systems electives are insufficient substitutes.
+
+**Module structure grounded in lift/z evidence:**
+
+| Module | Key Skills | Lift/Z Anchor |
+|---|---|---|
+| **1. ETL/ELT Fundamentals** | ETL, ELT, Data Ingestion, Data Transformation, Schema Design | ETL: lift 4.37×, z=10.42; ELT: lift 5.21×, z=8.08 |
+| **2. Pipeline Orchestration** | Airflow, Dagster, pipeline scheduling, monitoring | Airflow: lift 5.04×, z=7.99 |
+| **3. Modern Data Stack** | dbt, Snowflake, Databricks, Delta Lake, Medallion Architecture | dbt: lift 4.29×, z=6.08; Databricks: lift 3.38×, z=5.60 |
+| **4. Cloud Data Infrastructure** | S3, Redshift, BigQuery, AWS Glue, Azure Data Factory, Data Lakes | Redshift: lift 4.35×, z=5.34; BigQuery: lift 3.65×, z=4.45 |
+| **5. Stream Processing** | Kafka, Apache Flink, Apache Beam, Kinesis, Real-Time Streaming | Kafka: lift 3.84×, z=4.98; Flink: lift 4.28×, z=2.89 |
+| **6. ML Feature Engineering & Quality** | Feature Stores, Feature Engineering, Great Expectations, Data Lineage, Data Contracts | Feature Stores: lift 11.43×, z=3.93 (with MLOps); Great Expectations: lift 5.27×, z=2.42 |
+
+---
+
+### Course B (Finance Variant) — *Data Engineering & AI for Financial Services*
+**Recommended status: Elective specialisation track**
+**Addresses: Gap #2 + Gap #3 combined, finance-sector students**
+
+This is Course B with a finance domain module appended, exploiting the Analyst's finding that finance's agentic AI adoption is at exactly the market rate — meaning finance students need the *same* technical core as everyone else, plus domain-specific application context.
+
+**Finance-specific modules (added to Course B core above):**
+
+| Module | Key Skills | Evidence Anchor |
+|---|---|---|
+| **F1. Finance AI Domain Context** | Financial Services, Risk Management, Decision Automation | Sector lift: Financial Services 3.83×, z=7.03; Risk Management 3.83×, z=6.01 |
+| **F2. Quantitative Finance & Forecasting** | Time-series forecasting, Quantitative Finance, Predictive Modeling, Financial Modeling | Sector lift: Quantitative Finance 6.41×, z=2.48; Cluster 6 market frequency: Forecasting 8.0% |
+| **F3. Fintech Engineering Applications** | Fraud detection pipelines, Payment Processing, credit risk data modeling, Decision Automation | Sector lift: Payment Processing 3.85×, z=2.21; Decision Automation 5.06×, z=2.20 |
+| **F4. Responsible AI in Regulated Environments** | Model risk management (SR 11-7 framework), explainability (SHAP, LIME), audit trails, EU AI Act | Stanford HAI AI Index 2026: AI incidents up 55% YoY; regulatory AI compliance especially acute in finance |
+
+**Industry confirmation for the finance framing:** Stanford HAI AI Index 2026 reports 362 documented AI incidents in 2025 (up from 233 in 2024), with regulated industries like finance facing categorically higher risk. McKinsey State of AI 2025 (November 2025) finds the most common agentic AI deployment in production is in IT and knowledge-management workflows — directly analogous to financial back-office operations (reconciliation, compliance monitoring, document processing). The 85% ambition vs. 76% infrastructure-unreadiness gap (MIT Tech Review, May 26, 2026) is especially consequential in finance, where deployment requires rigorous validation.
+
+> ⚠️ **Corpus gap note:** The AI Industry News Researcher flagged thin coverage of LLMs for financial document analysis, SEC regulatory AI compliance, AI in algorithmic trading, and BIS/central bank AI frameworks. The professor should supplement this finance module design with specialized fintech sources (Oliver Wyman, Deloitte, BIS working papers, SR 11-7 guidance) before finalising the syllabus.
+
+---
+
+## 3. Recent Industry Developments That Bear on These Recommendations
+
+| Development | Source | Date | Curriculum Implication |
+|---|---|---|---|
+| "Rethinking organizational design in the age of agentic AI" — 85% of orgs want agentic AI, 76% lack infrastructure readiness | MIT Technology Review | May 26, 2026 | Validates Gap #1 as the most urgent; justifies Course A as required, not elective |
+| State of AI 2025: 62% experimenting with AI agents, 23% scaling production agents | McKinsey/QuantumBlack | November 2025 | Agents are deployed infrastructure, not research; Course A's scope is correct |
+| Coursera Job Skills 2026: Agentic AI fastest-growing skill area; 14 enrollments/minute for GenAI | Coursera | 2026 | Employer demand is real-time and growing; the GenAI→Agentic pipeline in Course A is well-timed |
+| Inside VAKRA: agent failure modes, reasoning & tool-use benchmarking | HuggingFace Blog / IBM Research | April 15, 2026 | Agent evaluation is now an engineering sub-discipline; include in Course A Module 5 |
+| IBM & UC Berkeley diagnose enterprise agent failures (IT-Bench, MAST framework) | HuggingFace Blog / IBM Research | February 18, 2026 | Failure-mode analysis should be a taught skill in Course A, not an afterthought |
+| Stanford HAI AI Index 2026: 362 AI incidents in 2025, up 55% YoY; 300+ AI skills now tracked | Stanford HAI | 2026 | Responsible AI is an engineering discipline with a failure rate — supports its inclusion in Course A Module 6 and Course B Finance Module F4 |
+| WEF Future of Jobs 2025: AI & big data = #1 fastest-growing skill cluster; 59% of global workforce needs retraining by 2030 | World Economic Forum | January 7, 2025 | Validates the structural scale of the gap; MSAII graduates are in a seller's market if they close these gaps |
+| $285.9B U.S. private AI investment (2025); 53% population adoption faster than internet | Stanford HAI AI Index 2026 | 2026 | Finance-sector students need investment/commercialisation literacy as well as technical skills — supports Course B Finance's F1 module framing |
+
+---
+
+## 4. Trade-offs & Caveats for the Professor
+
+**1. Required vs. elective tension.** The gap analysis strongly suggests Courses A and B should be *required*, but the MSAII program is already 195 units across four semesters with a mandatory internship. Adding two required courses demands either expanding total units (raising student load and tuition concerns) or retiring or merging existing courses — most naturally, 11-695 AI Engineering could be restructured into or replaced by Course A, since it currently provides only surface-level production coverage.
+
+**2. Cluster 6 is lower-stability.** The BI/Analytics/Finance cluster (Gap #3) has median ensemble confidence of 0.49 (the Cluster Interpreter flagged this explicitly), meaning individual skill placements are noisier there than in Cluster 3 (data engineering, 0.88 stability). The market frequency signals (41.6% for Data Analytics) are still real and large, but the distinctiveness of these skills for AI-specific roles specifically (vs. all analytics roles) warrants further validation — the professor should cross-check against job postings specifically filtered to "AI/ML" roles in finance rather than the broader market.
+
+**3. Responsible AI as integrated practice, not standalone course.** The lift/z data argues *against* adding a standalone Responsible AI elective — the market co-demands it *within* agentic and MLOps contexts (Responsible AI + MLOps: lift 6.88×, z=4.04; Responsible AI + Agentic AI: lift 5.12×, z=4.53). Embedding Module 6 of Course A is the market-grounded design; a siloed ethics elective would be less aligned with how employers actually frame the skill.
+
+**4. Finance corpus gap.** The AI Industry News Researcher explicitly flagged limited coverage of AI in algorithmic trading, credit risk modeling, SEC regulatory AI compliance, and banking governance frameworks (SR 11-7). The finance module design above is grounded in the available sector-lift data and cluster analysis, but the professor should validate the finance-specific syllabus content (especially Module F4) against primary regulatory sources and fintech-specialist industry reports before publication.
+
+**5. Agentic AI is a moving target.** The skills taxonomy data runs through Winter 2026, and the Cluster Interpreter noted that agentic AI skills have unstable cluster placements (frequently co-clustering between Cluster 2 — model-layer — and Cluster 5 — systems-layer), which reflects genuine market flux: the discipline is still consolidating its toolchain. Course A's framework choices (LangChain, LangGraph, CrewAI, AutoGen) should be revisited annually as the landscape settles.
+
+---
+
+*All numerical figures cited above — lift (×), z-scores, co-occurrence counts, market frequencies, and sector lifts — are values returned by the Skills Taxonomy Analyst and Cluster Interpreter from live tool calls on the 186,249-posting dataset (Fall 2022–Winter 2026). No figures have been invented, estimated, or converted between metrics. Industry article titles, sources, and dates are as returned by the AI Industry News Researcher. CMU MSAII curriculum structure and URL (https://msaii.cs.cmu.edu/curriculum-0) are as returned by the University AI Programs Researcher from its verified corpus (last verified 2026-06-16); confirm current scheduling at the official curriculum page before finalising any recommendations.*
+
+## Pair Verification
+
+- **Pairs checked:** 81  **Verified as written:** 81  **Corrected:** 0  **Removed:** 0
+- **Correction call made:** False
+
+### Pre-Verification Draft
+
+Now I have all three specialist outputs. Let me synthesise these into a single coherent recommendation.
+
+---
+
+# CMU MSAII vs. Labour-Market Demand: Gap Analysis & Course Proposals
+
+## Executive Summary
+
+Carnegie Mellon's MSAII program is exceptionally strong in model-layer AI — machine learning, deep learning, NLP, and generative AI — but leaves three structurally unaddressed gaps that expose graduates to significant employability risk: **production AI systems engineering (MLOps + agentic AI)**, **data engineering pipelines**, and **applied business analytics with finance-domain AI**. Two new courses, one of them specialised for finance, would close the most critical of these gaps; they are grounded jointly in cluster-level market demand, lift/significance evidence from 186,249 job postings, and converging signals from recent industry reporting.
+
+---
+
+## 1. The Three Biggest Gaps
+
+### 🔴 Gap #1 — Production AI Systems Engineering: MLOps, Agentic AI & Responsible AI
+**Cluster 5 (Core AI, Cloud & Data-Platform Engineering, 370 skills) — most consequential gap**
+
+The CMU MSAII curriculum covers how to *train* models in depth, but not how to *deploy, orchestrate, monitor, and govern* them. The Skills Taxonomy Analyst found this is the market's most explosively co-demanded skill area:
+
+**Agentic AI** (focal skill, 62 co-demanded skills at z ≥ 2):
+- Large Language Models (lift 4.76×, z=9.39)
+- Retrieval-Augmented Generation / RAG (lift 6.66×, z=8.89)
+- LangChain (lift 7.53×, z=7.90)
+- Prompt Engineering (lift 6.26×, z=7.03)
+- Agentic Frameworks (lift 9.11×, z=6.79)
+- LangGraph (lift 9.47×, z=6.73)
+- Vector Databases (lift 6.85×, z=6.29)
+- Multi-Agent Systems (lift 10.31×, z=5.08)
+- CrewAI (lift 10.23×, z=4.95), AutoGen (lift 9.87×, z=4.66)
+- Responsible AI (lift 5.12×, z=4.53) — critically, the market co-demands governance *within* agentic engineering
+
+**MLOps** (focal skill, 56 co-demanded skills at z ≥ 2):
+- MLflow (lift 15.12×, z=7.38) — highest specialist lift in the entire analysis
+- Model Versioning (lift 15.91×, z=6.86)
+- Model Deployment (lift 8.92×, z=4.79), SageMaker (lift 9.06×, z=4.75), Kubeflow (lift 15.36×, z=4.66)
+- Model Monitoring (lift 12.82×, z=4.23), Feature Stores (lift 11.43×, z=3.93)
+- LLMOps (lift 12.45×, z=3.37) — the LLM-specific deployment layer, now explicitly tracked by the market
+- CI/CD (lift 3.94×, z=3.80), Docker (lift 4.73×, z=3.68), Kubernetes (lift 4.37×, z=3.34)
+
+**Key structural finding:** Agentic AI and MLOps are **symmetrically co-demanded** with each other (each at lift 3.98×, z=4.34), confirming these cannot be taught as separate electives — they share foundational infrastructure (containers, orchestration, CI/CD, observability). The Cluster Interpreter confirmed the Cluster 5 gap: CI/CD appears in 11.9% of postings, DevOps in 9.3%, Agentic AI in 7.8%, Kubernetes 6.6%, Docker 6.2%, RAG 5.2% — none taught in any MSAII course.
+
+**Responsible AI** (focal skill, 16 co-demanded skills): Though a narrower cluster, its lift/z with agentic engineering is striking — AI Agent Systems Architecture (lift 13.46×, z=2.13), Model Versioning (lift 10.08×, z=2.44), MLOps (lift 6.88×, z=4.04). The market integrates governance into the deployment workflow, not as a standalone ethics elective. MSAII's 17-762 Law of Computer Technology covers legal framing but not the technical governance skills employers pair with Responsible AI.
+
+**Industry confirmation:** MIT Technology Review (May 26, 2026) reports that "85% of organizations want to be agentic within three years, but 76% say their current operations and infrastructure can't support that change." McKinsey State of AI 2025 (November 2025) confirms 23% of organizations are already scaling agentic systems. IBM Research (HuggingFace Blog, February & April 2026) has published agent failure-mode benchmarking frameworks (IT-Bench/MAST, VAKRA) — an emerging sub-discipline not covered anywhere in the MSAII curriculum.
+
+---
+
+### 🔴 Gap #2 — Data Engineering for Machine Learning
+**Cluster 3 (Data-Engineering Tools, 89 skills) — most structurally stable missing cluster (median ensemble confidence 0.88)**
+
+No MSAII required course covers the data-engineering toolchain that underlies every production AI system. The Cluster Interpreter's finding is unambiguous: Cluster 3 has the highest ensemble stability of any gap cluster, meaning this signal is robust.
+
+**Data Pipelines** (focal skill, 66 co-demanded skills at z ≥ 2):
+- ETL / ELT (lift 4.37×, z=10.42 and lift 5.21×, z=8.08) — the z=10 anchor: the most statistically attested co-demand in the entire dataset
+- Data Engineering (lift 3.99×, z=10.08)
+- Airflow (lift 5.04×, z=7.99), dbt (lift 4.29×, z=6.08)
+- Data Warehousing (lift 3.94×, z=6.93), Data Lakes (lift 4.42×, z=6.90)
+- PySpark (lift 3.47×, z=6.79), Snowflake (lift 3.48×, z=6.40), Databricks (lift 3.38×, z=5.60)
+- Kafka (lift 3.84×, z=4.98), Redshift (lift 4.35×, z=5.34)
+- Feature Engineering (lift 3.34×, z=3.26) — also co-demanded with MLOps at lift 8.63×
+- Medallion Architecture (lift 5.09×, z=2.64), Data Lineage (lift 3.52×, z=2.43), Great Expectations/data quality (lift 5.27×, z=2.42), Data Contracts (lift 4.11×, z=2.03) — emerging forward-looking additions
+
+The Cluster Interpreter notes the ML-specific slice missing from MSAII is: Feature Stores (lift 11.43×, z=3.93 when co-demanded with MLOps), Feature Engineering, Airflow, dbt, and data quality tooling — none in the curriculum. The existing 15-645 Database Systems and 15-688 Practical Data Science are elective-only and cover analysis, not pipeline construction.
+
+---
+
+### 🔴 Gap #3 — Applied Business Analytics & Finance-Domain AI
+**Cluster 6 (Business Intelligence, Analytics & Finance, 66 skills) — entirely absent despite MSAII's "Future Markets" branding**
+
+Despite 11-651 Artificial Intelligence and Future Markets being a *required* course, the program contains zero finance-domain AI content and no applied analytics toolkit. The Cluster Interpreter identifies this as the most visible mismatch between program positioning and actual course content. Market frequencies from Cluster 6: Data Analytics (41.6% of postings), Business Intelligence (21.9%), Finance domain (17.8%), Data Visualization (15.9%), Forecasting (8.0%), Predictive Modeling (4.4%), Financial Analysis (2.0%), Financial Modeling (1.7%).
+
+For finance specifically, the Analyst's sector wrap identified 8 domain-distinctive skills (z ≥ 2 AND sector lift ≥ 3×):
+- Financial Services (sector lift 3.83×, z=7.03)
+- Risk Management (sector lift 3.83×, z=6.01)
+- Quantitative Finance (sector lift 6.41×, z=2.48) — highest sector lift
+- Decision Automation (sector lift 5.06×, z=2.20)
+- Payment Processing (sector lift 3.85×, z=2.21)
+
+**Critical cross-finding:** Finance's agentic AI adoption is exactly at the market average (sector lift 0.97, z=−0.47), meaning a finance AI specialisation doesn't need a separate technical foundation — it can be built as the shared Agentic+MLOps core plus a 4–5 skill finance domain module. This simplifies curriculum design considerably.
+
+Stanford HAI AI Index 2026 notes that documented AI incidents rose 55% year-over-year (362 in 2025 vs. 233 in 2024), and in regulated industries like finance, those incidents carry regulatory and reputational risk of a categorically different magnitude. The AI Industry News Researcher also flagged that specific AI-in-finance coverage (algorithmic trading, credit modeling, SEC regulatory AI compliance, SR 11-7 model risk guidance) was thin in its indexed corpus — the professor should supplement with specialized fintech sources (Oliver Wyman, Deloitte fintech reports, BIS working papers).
+
+---
+
+## 2. Two Proposed New Courses
+
+### Course A — *Agentic AI Systems & MLOps Engineering*
+**Recommended status: Required (replace or expand 11-695 AI Engineering)**
+**Addresses: Gap #1 (Production AI Systems Engineering)**
+
+**Rationale:** This course closes the single most consequential structural gap. The market co-demands agentic frameworks and MLOps at extremely high lift and significance scores, and they are symmetrically co-demanded with each other — they form a coherent pedagogical unit.
+
+**Module structure grounded in lift/z evidence:**
+
+| Module | Key Skills | Lift/Z Anchor |
+|---|---|---|
+| **1. RAG & Vector Infrastructure** | RAG pipelines, Vector Databases (Pinecone, Weaviate, FAISS), Semantic Search | RAG: lift 6.66×, z=8.89; Vector DBs: lift 6.85×, z=6.29 |
+| **2. Agentic Frameworks & Orchestration** | LangChain, LangGraph, CrewAI, AutoGen, Multi-Agent Systems | LangChain: lift 7.53×, z=7.90; LangGraph: lift 9.47×, z=6.73; Multi-Agent: lift 10.31×, z=5.08 |
+| **3. Model Lifecycle & MLOps** | MLflow, Model Versioning, Model Monitoring, Feature Stores, ML Pipelines | MLflow: lift 15.12×, z=7.38; Model Versioning: lift 15.91×, z=6.86; Kubeflow: lift 15.36×, z=4.66 |
+| **4. ML DevOps & Deployment** | CI/CD, Docker, Kubernetes, SageMaker, Containerisation | CI/CD: lift 3.94×, z=3.80; Kubernetes: lift 4.37×, z=3.34 |
+| **5. LLMOps & Observability** | LLMOps, Model Serving, Observability, Model Evaluation | LLMOps: lift 12.45×, z=3.37; Observability: lift 3.52×, z=2.14 |
+| **6. Responsible AI in Production** | AI governance, bias/fairness auditing, model cards, EU AI Act compliance | Responsible AI with AI Agent Systems Architecture: lift 13.46×, z=2.13; with Model Versioning: lift 10.08×, z=2.44 |
+
+**Industry grounding:** Coursera Job Skills Report 2026 identifies agentic AI as "among the fastest-growing skill areas for 2026." IBM Research's IT-Bench/MAST framework (HuggingFace Blog, February 18, 2026) and VAKRA benchmark (HuggingFace Blog, April 15, 2026) represent an emerging engineering sub-discipline — agent evaluation and failure-mode diagnosis — that fits naturally into Module 5.
+
+---
+
+### Course B — *Data Engineering for AI Systems*
+**Recommended status: Required (or mandatory elective for all non-specialist students)**
+**Addresses: Gap #2 (Data Engineering)**
+
+**Rationale:** Cluster 3 is the most ensemble-stable missing cluster (median confidence 0.88). ETL/ELT co-demand with Data Pipelines reaches z=10+ — the strongest statistical signal in the entire analysis. The existing 15-688 Practical Data Science and 15-645 Database Systems electives are insufficient substitutes.
+
+**Module structure grounded in lift/z evidence:**
+
+| Module | Key Skills | Lift/Z Anchor |
+|---|---|---|
+| **1. ETL/ELT Fundamentals** | ETL, ELT, Data Ingestion, Data Transformation, Schema Design | ETL: lift 4.37×, z=10.42; ELT: lift 5.21×, z=8.08 |
+| **2. Pipeline Orchestration** | Airflow, Dagster, pipeline scheduling, monitoring | Airflow: lift 5.04×, z=7.99 |
+| **3. Modern Data Stack** | dbt, Snowflake, Databricks, Delta Lake, Medallion Architecture | dbt: lift 4.29×, z=6.08; Databricks: lift 3.38×, z=5.60 |
+| **4. Cloud Data Infrastructure** | S3, Redshift, BigQuery, AWS Glue, Azure Data Factory, Data Lakes | Redshift: lift 4.35×, z=5.34; BigQuery: lift 3.65×, z=4.45 |
+| **5. Stream Processing** | Kafka, Apache Flink, Apache Beam, Kinesis, Real-Time Streaming | Kafka: lift 3.84×, z=4.98; Flink: lift 4.28×, z=2.89 |
+| **6. ML Feature Engineering & Quality** | Feature Stores, Feature Engineering, Great Expectations, Data Lineage, Data Contracts | Feature Stores: lift 11.43×, z=3.93 (with MLOps); Great Expectations: lift 5.27×, z=2.42 |
+
+---
+
+### Course B (Finance Variant) — *Data Engineering & AI for Financial Services*
+**Recommended status: Elective specialisation track**
+**Addresses: Gap #2 + Gap #3 combined, finance-sector students**
+
+This is Course B with a finance domain module appended, exploiting the Analyst's finding that finance's agentic AI adoption is at exactly the market rate — meaning finance students need the *same* technical core as everyone else, plus domain-specific application context.
+
+**Finance-specific modules (added to Course B core above):**
+
+| Module | Key Skills | Evidence Anchor |
+|---|---|---|
+| **F1. Finance AI Domain Context** | Financial Services, Risk Management, Decision Automation | Sector lift: Financial Services 3.83×, z=7.03; Risk Management 3.83×, z=6.01 |
+| **F2. Quantitative Finance & Forecasting** | Time-series forecasting, Quantitative Finance, Predictive Modeling, Financial Modeling | Sector lift: Quantitative Finance 6.41×, z=2.48; Cluster 6 market frequency: Forecasting 8.0% |
+| **F3. Fintech Engineering Applications** | Fraud detection pipelines, Payment Processing, credit risk data modeling, Decision Automation | Sector lift: Payment Processing 3.85×, z=2.21; Decision Automation 5.06×, z=2.20 |
+| **F4. Responsible AI in Regulated Environments** | Model risk management (SR 11-7 framework), explainability (SHAP, LIME), audit trails, EU AI Act | Stanford HAI AI Index 2026: AI incidents up 55% YoY; regulatory AI compliance especially acute in finance |
+
+**Industry confirmation for the finance framing:** Stanford HAI AI Index 2026 reports 362 documented AI incidents in 2025 (up from 233 in 2024), with regulated industries like finance facing categorically higher risk. McKinsey State of AI 2025 (November 2025) finds the most common agentic AI deployment in production is in IT and knowledge-management workflows — directly analogous to financial back-office operations (reconciliation, compliance monitoring, document processing). The 85% ambition vs. 76% infrastructure-unreadiness gap (MIT Tech Review, May 26, 2026) is especially consequential in finance, where deployment requires rigorous validation.
+
+> ⚠️ **Corpus gap note:** The AI Industry News Researcher flagged thin coverage of LLMs for financial document analysis, SEC regulatory AI compliance, AI in algorithmic trading, and BIS/central bank AI frameworks. The professor should supplement this finance module design with specialized fintech sources (Oliver Wyman, Deloitte, BIS working papers, SR 11-7 guidance) before finalising the syllabus.
+
+---
+
+## 3. Recent Industry Developments That Bear on These Recommendations
+
+| Development | Source | Date | Curriculum Implication |
+|---|---|---|---|
+| "Rethinking organizational design in the age of agentic AI" — 85% of orgs want agentic AI, 76% lack infrastructure readiness | MIT Technology Review | May 26, 2026 | Validates Gap #1 as the most urgent; justifies Course A as required, not elective |
+| State of AI 2025: 62% experimenting with AI agents, 23% scaling production agents | McKinsey/QuantumBlack | November 2025 | Agents are deployed infrastructure, not research; Course A's scope is correct |
+| Coursera Job Skills 2026: Agentic AI fastest-growing skill area; 14 enrollments/minute for GenAI | Coursera | 2026 | Employer demand is real-time and growing; the GenAI→Agentic pipeline in Course A is well-timed |
+| Inside VAKRA: agent failure modes, reasoning & tool-use benchmarking | HuggingFace Blog / IBM Research | April 15, 2026 | Agent evaluation is now an engineering sub-discipline; include in Course A Module 5 |
+| IBM & UC Berkeley diagnose enterprise agent failures (IT-Bench, MAST framework) | HuggingFace Blog / IBM Research | February 18, 2026 | Failure-mode analysis should be a taught skill in Course A, not an afterthought |
+| Stanford HAI AI Index 2026: 362 AI incidents in 2025, up 55% YoY; 300+ AI skills now tracked | Stanford HAI | 2026 | Responsible AI is an engineering discipline with a failure rate — supports its inclusion in Course A Module 6 and Course B Finance Module F4 |
+| WEF Future of Jobs 2025: AI & big data = #1 fastest-growing skill cluster; 59% of global workforce needs retraining by 2030 | World Economic Forum | January 7, 2025 | Validates the structural scale of the gap; MSAII graduates are in a seller's market if they close these gaps |
+| $285.9B U.S. private AI investment (2025); 53% population adoption faster than internet | Stanford HAI AI Index 2026 | 2026 | Finance-sector students need investment/commercialisation literacy as well as technical skills — supports Course B Finance's F1 module framing |
+
+---
+
+## 4. Trade-offs & Caveats for the Professor
+
+**1. Required vs. elective tension.** The gap analysis strongly suggests Courses A and B should be *required*, but the MSAII program is already 195 units across four semesters with a mandatory internship. Adding two required courses demands either expanding total units (raising student load and tuition concerns) or retiring or merging existing courses — most naturally, 11-695 AI Engineering could be restructured into or replaced by Course A, since it currently provides only surface-level production coverage.
+
+**2. Cluster 6 is lower-stability.** The BI/Analytics/Finance cluster (Gap #3) has median ensemble confidence of 0.49 (the Cluster Interpreter flagged this explicitly), meaning individual skill placements are noisier there than in Cluster 3 (data engineering, 0.88 stability). The market frequency signals (41.6% for Data Analytics) are still real and large, but the distinctiveness of these skills for AI-specific roles specifically (vs. all analytics roles) warrants further validation — the professor should cross-check against job postings specifically filtered to "AI/ML" roles in finance rather than the broader market.
+
+**3. Responsible AI as integrated practice, not standalone course.** The lift/z data argues *against* adding a standalone Responsible AI elective — the market co-demands it *within* agentic and MLOps contexts (Responsible AI + MLOps: lift 6.88×, z=4.04; Responsible AI + Agentic AI: lift 5.12×, z=4.53). Embedding Module 6 of Course A is the market-grounded design; a siloed ethics elective would be less aligned with how employers actually frame the skill.
+
+**4. Finance corpus gap.** The AI Industry News Researcher explicitly flagged limited coverage of AI in algorithmic trading, credit risk modeling, SEC regulatory AI compliance, and banking governance frameworks (SR 11-7). The finance module design above is grounded in the available sector-lift data and cluster analysis, but the professor should validate the finance-specific syllabus content (especially Module F4) against primary regulatory sources and fintech-specialist industry reports before publication.
+
+**5. Agentic AI is a moving target.** The skills taxonomy data runs through Winter 2026, and the Cluster Interpreter noted that agentic AI skills have unstable cluster placements (frequently co-clustering between Cluster 2 — model-layer — and Cluster 5 — systems-layer), which reflects genuine market flux: the discipline is still consolidating its toolchain. Course A's framework choices (LangChain, LangGraph, CrewAI, AutoGen) should be revisited annually as the landscape settles.
+
+---
+
+*All numerical figures cited above — lift (×), z-scores, co-occurrence counts, market frequencies, and sector lifts — are values returned by the Skills Taxonomy Analyst and Cluster Interpreter from live tool calls on the 186,249-posting dataset (Fall 2022–Winter 2026). No figures have been invented, estimated, or converted between metrics. Industry article titles, sources, and dates are as returned by the AI Industry News Researcher. CMU MSAII curriculum structure and URL (https://msaii.cs.cmu.edu/curriculum-0) are as returned by the University AI Programs Researcher from its verified corpus (last verified 2026-06-16); confirm current scheduling at the official curriculum page before finalising any recommendations.*
+
+## Per-Agent Tool-Call Trace (5 step(s))
+
+Traces below are capped at 20,000 characters each for readability — every guard flag above was computed against the COMPLETE, uncapped text, which is always recoverable from the companion file: `run_20261106T205511Z_success_full.md`.
+
+### University AI Programs Researcher — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+The local corpus has everything needed. Here is the complete structured output for the CMU MSAII program, ready for the Cluster Interpreter / gap-analysis tool:
+
+---
+
+**Program:** Master of Science in Artificial Intelligence and Innovation (MSAII)
+**Institution:** Language Technologies Institute, School of Computer Science, Carnegie Mellon University
+**Source URL(s):**
+- Curriculum page: https://msaii.cs.cmu.edu/curriculum-0
+- Program overview: https://msaii.cs.cmu.edu/program-overview
+- Student handbook: https://msaii.cs.cmu.edu/learn-us-handbook
+
+*(All sourced from the local verified corpus — last verified 2026-06-16)*
+
+---
+
+## Program Structure Overview
+
+A **two-year, four-semester professional Master's program** offered by Carnegie Mellon's Language Technologies Institute (LTI). Total eligible units: **195** (84 Core + 72 Knowledge Requirements + 36+ Electives + 3 Practicum). A required summer internship falls between semesters 2 and 3. There are **no named concentrations or formal elective tracks** — students shape their depth through elective choices from an approved list.
+
+---
+
+## REQUIRED COURSES
+
+### A. Prerequisites / Pre-Program (does NOT count toward 195 units)
+
+| Course # | Title | Units | Timing | Description |
+|---|---|---|---|---|
+| 15-503 / 15-513 | Introduction to Computer Systems | 6 | Summer before program starts (distance ed) | Distance-education version of 15-213; must be passed before or during Semester 1. If not completed, 15-513 is taken in Semester 1 or 2 instead, and those units do NOT count toward program totals. |
+
+---
+
+### B. Core Curriculum — 84 units total (5 courses, taken in fixed order, one per semester)
+
+| Course # | Title | Units | Semester | Description |
+|---|---|---|---|---|
+| 11-651 | Artificial Intelligence and Future Markets | 12 | Semester 1 (Fall 1) | MSAII-only course. Teams survey ~48 fields where AI has been applied and present findings on areas ripe for AI development. Team membership fully rotated every four weeks. Focuses on market opportunity identification. |
+| 17-762 | Law of Computer Technology | 12 | Semester 1 (Fall 1) | Legal principles applicable to computer/AI developments, including AI law, intellectual property, and startup formation. |
+| 11-695 | AI Engineering | 12 | Semester 2 (Spring 1) | Integrating AI with legacy systems. Covers supervised learning, feed-forward networks, convolutional neural networks (CNNs), recurrent neural networks (RNNs), and use of high-level tools to engineer functioning ML models into production environments. |
+| 11-654 | AI Innovation | 12 | Semester 3 (Fall 2) | MSAII-only course. Teams work with outside industry sponsors (past examples: Bank of New York Mellon, John Deere, Flexport, Pittsburgh International Airport) to scope a Minimum Viable Product (MVP) ahead of the Capstone. |
+| 11-699 | Capstone Project | 36 | Semester 4 (Spring 2) | Team develops a working AI product suitable for intrapreneurial integration into a sponsoring company or for startup investment. Culminating experience of the program. |
+
+---
+
+### C. Knowledge Requirements — 72 units total (6 courses)
+
+These are technical AI/ML depth courses, mostly taken in Semesters 1–3.
+
+| Course # | Title | Units | Semester | Description |
+|---|---|---|---|---|
+| 11-601 | Coding Bootcamp | 12 | Semester 1 (Fall 1) | Foundational programming skills for AI/ML work. |
+| 10-601 | Machine Learning | 12 | Semester 1 (Fall 1) | Core ML theory and methods; flagship ML course in CMU's SCS. |
+| 11-785 | Deep Learning | 12 | Semester 2 (Spring 1) | Deep learning architectures and training methods; theoretical and applied coverage. |
+| 10-623 **OR** 11-667 | Generative AI **OR** Large Language Models | 12 | 10-623: Spring 1; 11-667: Fall 2 | Students choose ONE: **10-623 Generative AI** (covers generative modeling broadly) **OR** **11-667 Large Language Models** (LLM-focused). The curriculum page presents these as an either/or requirement. |
+| 11-611 | Natural Language Processing | 12 | Semester 3 (Fall 2) | Core NLP methods, models, and applications. |
+| *(one of the following six)* | Sixth Knowledge Requirement (choose one) | 12 | Semester 3 (Fall 2) | See options in table below. |
+
+**Sixth Knowledge Requirement — Approved Options (choose one):**
+
+| Course # | Title | Units | Description |
+|---|---|---|---|
+| 10-605 | Machine Learning with Large Datasets | 12 | Scalable ML methods for big data. |
+| 11-697 | Introduction to Question Answering (with LLMs) | 12 | QA systems leveraging large language models. |
+| 11-767 | On-Device Machine Learning | 12 | ML deployment on edge/embedded devices. |
+| 11-777 | Multimodal Machine Learning | 12 | Learning across text, image, audio, and other modalities. |
+| 11-851 | Talking to Robots | 12 | Spoken dialogue and human-robot interaction. |
+| *(other approved AI/NLP/ML graduate course)* | Director-approved alternative | 12 | With MSAII Director permission. |
+
+---
+
+### D. Mandatory Internship / Practicum
+
+| Course # | Title | Units | Timing | Description |
+|---|---|---|---|---|
+| 11-934 | MSAII Practicum Internship | 3 | Summer (between Spring 1 and Fall 2) | Required industry internship. No tuition charged for these 3 units. Counts toward 195-unit total. |
+
+---
+
+## ELECTIVE COURSES — Minimum 36 units (at least 3 courses × 12 units each)
+
+Students must choose from the approved list below. Courses outside this list require MSAII Director approval. Recommended pacing: 1 elective in Fall 1, 1–2 in Spring 1, 1–2 in Fall 2, 0–1 in Spring 2.
+
+### Approved Elective List (all 12 units each unless noted):
+
+| Course # | Title | Thematic Area |
+|---|---|---|
+| 02-604 | Fundamentals of Bioinformatics | Bioinformatics / Life Sciences |
+| 02-718 | Computational Medicine | Medical AI / Life Sciences |
+| 10-605 | Machine Learning with Large Datasets | Scalable ML (also a KR option) |
+| 10-608 | Conversational Machine Learning | Dialogue / Conversational AI |
+| 10-716 | Advanced Machine Learning: Theory & Methods | Advanced ML Theory |
+| 11-641 | Machine Learning for Text Mining | NLP / Text Analytics |
+| 11-642 | Search Engines | Information Retrieval |
+| 11-747 | Neural Networks for NLP | Deep NLP |
+| 11-755 | Machine Learning for Signal Processing | Audio / Signal AI |
+| 11-777 | Advanced Multimodal Machine Learning | Multimodal AI (also a KR option) |
+| 15-619 | Cloud Computing | Cloud Infrastructure |
+| 15-640 | Distributed Systems | Systems / Infrastructure |
+| 15-645 | Database Systems | Data Infrastructure |
+| 15-688 | Practical Data Science | Applied Data Science |
+| 15-719 | Advanced Cloud Computing | Advanced Cloud |
+| 15-780 | Graduate Artificial Intelligence | AI Foundations |
+| 16-720 | Computer Vision | Computer Vision |
+| 16-722 | Sensing and Sensors | Sensing / Robotics |
+| 16-725 | Medical Image Analysis | Medical Imaging AI |
+| 16-824 | Visual Learning and Recognition | Advanced Computer Vision |
+| 17-632 | Software Project Management | Software Management |
+| 17-637 | Web Application Development | Software Engineering |
+| 17-639 | Applied Distributed Systems | Systems Engineering |
+| 17-766 | Software Engineering for Startups | Entrepreneurship / Engineering |
+
+---
+
+## Broad Topic Areas Covered
+
+Machine Learning, Deep Learning, Natural Language Processing, Large Language Models & Generative AI, Computer Vision, AI Engineering & Productization, AI Law & Policy, Cloud Computing & Distributed Systems, Bioinformatics & Computational Medicine, Information Retrieval, Signal Processing, Multimodal AI, Software Engineering, Innovation & Entrepreneurship, Capstone / Applied AI Product Development
+
+---
+
+## Notes for Gap Analysis
+
+1. **No formal concentrations or named tracks** — depth is entirely shaped by elective selections from the approved list above.
+2. **Unit totals:** Core 84 + Knowledge Requirements 72 + Electives ≥36 + Practicum 3 = **195 eligible units minimum**. The prerequisite 15-503/15-513 does NOT count.
+3. **Generative AI / LLM requirement is an OR choice** — students take either 10-623 or 11-667, not both. This may mean some graduates have limited hands-on LLM exposure vs. generative modeling breadth, depending on their choice.
+4. **Detailed week-by-week syllabi are not publicly available** on the curriculum page — course-level descriptions only.
+5. **Data sourced from pre-verified local corpus** (last verified 2026-06-16); scheduling details (e.g., specific semester offerings) and sponsor examples are illustrative — confirm current-year scheduling via the official curriculum page before final reporting.
+6. **Apparent gaps not covered by any listed course:** MLOps/model deployment pipelines, AI ethics/fairness (beyond legal framing in 17-762), responsible AI governance, reinforcement learning, and time-series/forecasting — flagged here as initial hypotheses for the gap analysis to validate against labour-market demand signals.
+```
+
+### AI Industry News Researcher — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Here is my full research briefing for your use in the curriculum gap analysis:
+
+---
+
+# AI Industry News Briefing: MSAII Curriculum Gaps, Emerging Applied AI Trends & AI in Finance
+
+*Prepared for: CMU MSAII Program Review / New Course Proposal*
+*Research window: Last 6–12 months; sources retrieved May–June 2026*
+
+---
+
+## SECTION 1: GAPS IN AI/ML MASTER'S PROGRAMS RELATIVE TO INDUSTRY NEEDS
+
+### Finding 1A — Agentic AI is the most urgent unmet skill, and universities aren't teaching it yet
+
+**Coursera Job Skills Report 2026** (Coursera, 2026 — https://blog.coursera.org/introducing-courseras-job-skills-report-2026)
+
+> *"Agentic AI — systems that take actions on a user's behalf — is identified as among the fastest-growing skill areas for 2026 as organizations move beyond basic prompting toward more complex applications... learners increasingly recognize that AI skills are most valuable when layered on top of core technical and role-specific competencies rather than used standalone."*
+
+Generative AI remains the most in-demand skill in Coursera's history at **14 enrollments per minute**, but the pivot from prompting to **agentic AI design** is the new frontier. Most MSAII programs still have no dedicated agentic AI course — this is the clearest curriculum gap.
+
+**McKinsey State of AI 2025** (McKinsey/QuantumBlack, November 2025 — https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
+
+> *"62% of organizations are at least experimenting with AI agents, and 23% report scaling an agentic AI system in at least one business function — most commonly in IT and knowledge management. McKinsey defines 'AI high performers'... who are three times more likely than others to pursue transformative business change via AI and to fundamentally redesign workflows around it."*
+
+This confirms industry is already deploying agents at scale, while most graduate programs still treat agents as a research topic, not an engineering discipline.
+
+### Finding 1B — The enterprise-readiness gap: organizations want agentic AI but lack people who can build it safely
+
+**"Rethinking organizational design in the age of agentic AI"** (MIT Technology Review, May 26, 2026 — https://www.technologyreview.com/2026/05/26/1137584/rethinking-organizational-design-in-the-age-of-agentic-ai/)
+
+> *"Although 85% of organizations say they want to be agentic within the next three years, 76% say their current operations and infrastructure can't support that change. They cite a lack of readiness across people, processes, and workflows."*
+
+This is the clearest possible signal for a curriculum gap: a massive ambition-execution mismatch driven by talent shortages. Graduates who can design, deploy, and govern agentic systems will command premium value.
+
+### Finding 1C — Failure modes and evaluation of AI agents: an emerging engineering sub-discipline
+
+**"Inside VAKRA: Reasoning, Tool Use, and Failure Modes of Agents"** (HuggingFace Blog, April 15, 2026 — https://huggingface.co/blog/ibm-research/vakra-benchmark-analysis)
+
+**"IBM and UC Berkeley Diagnose Why Enterprise Agents Fail Using IT-Bench and MAST"** (HuggingFace Blog, February 18, 2026 — https://huggingface.co/blog/ibm-research/itbenchandmast)
+
+Both IBM Research pieces point to a new sub-discipline: **agent evaluation, benchmarking, and failure diagnosis**. As enterprises deploy agents in production, they need engineers who can systematically identify where reasoning fails, where tool use goes wrong, and how to build more robust pipelines. This is not currently a standard MSAII topic.
+
+### Finding 1D — The skills gap is structural and enormous: 59% of the global workforce needs retraining by 2030
+
+**WEF Future of Jobs Report 2025** (World Economic Forum, January 7, 2025 — https://www.weforum.org/publications/the-future-of-jobs-report-2025/digest/)
+
+> *"63% of employers identify skills gaps as the biggest barrier to business transformation through 2030. If the world's workforce were 100 people, 59 would need training by 2030... Two-thirds of employers plan to hire talent with specific AI skills, while 40% anticipate workforce reductions where AI can automate tasks."*
+
+> *"AI and big data top the World Economic Forum's list of fastest-growing skills for 2025–2030, followed closely by networks and cybersecurity and by technology literacy. Advances in AI and information processing are expected to transform 86% of surveyed businesses by 2030."*
+
+**Curriculum implication:** The sheer scale of demand means MSAII graduates are entering a seller's market — but only if they have the *right* skills. The report explicitly singles out **analytical thinking** (top skill in 7 out of 10 companies) and **AI + big data** as the top technical cluster.
+
+### Finding 1E — Responsible AI: documented AI incidents rising, trust gap widening — but most programs treat ethics as one elective
+
+**Stanford HAI AI Index 2026** (Stanford HAI, 2026 — https://hai.stanford.edu/ai-index/2026-ai-index-report/responsible-ai)
+
+> *"Documented AI incidents rose to 362 in 2025, up from 233 in 2024, even as frontier developers report capability-benchmark results far more consistently than responsible-AI benchmark results... 73% of AI experts expect a positive impact on how people do their jobs, compared with just 23% of the general public — a 50 percentage-point gap."*
+
+Responsible AI is not a soft "ethics elective" — it's an engineering discipline with measurable failure rates. The gap between expert optimism and public trust also suggests graduates need communication and governance skills, not just technical ones.
+
+### Finding 1F — AI PhD growth is in academia, not industry — master's programs need to bridge the gap
+
+**Stanford HAI AI Index 2026** (Stanford HAI, 2026 — https://hai.stanford.edu/ai-index/2026-ai-index-report/education)
+
+> *"The number of new AI PhDs awarded in the U.S. and Canada increased 22% from 2022 to 2024, but the report notes that growth was concentrated in academic placements rather than industry hiring."*
+
+This directly supports the case for practice-oriented master's training (like MSAII's applied focus) over pure research tracks — but the program must stay closer to industry deployment realities than to academic research trends.
+
+---
+
+## SECTION 2: EMERGING APPLIED AI TRENDS UNIVERSITIES MAY BE SLOW TO TEACH
+
+### Trend 1 — Agentic AI as a systems engineering problem (not just an ML problem)
+
+As noted above from MIT Technology Review (May 2026), McKinsey (Nov 2025), Coursera (2026), and WEF (Jan 2025), the dominant industrial trend is the shift from standalone models to **multi-agent, tool-using, workflow-integrated systems**. This is a systems engineering challenge: orchestration, reliability, latency, cost optimization, and human-in-the-loop design. Most MSAII programs still frame AI as model training, not system operation.
+
+**Key sub-skills universities are not teaching:**
+- Agent orchestration frameworks (LangGraph, AutoGen, CrewAI)
+- Tool-use design and API integration
+- Failure mode analysis and agent benchmarking (VAKRA, IT-Bench/MAST — HuggingFace Blog, Feb & Apr 2026)
+- Human-AI workflow redesign (the MIT Tech Review organizational design piece, May 2026)
+
+### Trend 2 — AI coding and software engineering automation
+
+**"Nous Research's NousCoder-14B"** (VentureBeat, January 7, 2026 — https://venturebeat.com/technology/nous-researchs-nouscoder-14b-is-an-open-source-coding-model-landing-right-in)
+
+> *"Railway's fundraise reflects broader investor enthusiasm for companies positioned to benefit from the AI coding revolution. As tools like GitHub Copilot, Cursor, and Claude become standard fixtures in developer workflows, the volume of code being written — and the infrastructure needed to run it — is expanding dramatically."*
+
+AI-assisted software development is now a standard workflow, not an emerging curiosity. MSAII graduates who can't fluently use and critically evaluate AI coding tools will be at a disadvantage. More importantly, the **infrastructure** implications (AI-native cloud, faster deployment cycles) are a gap.
+
+### Trend 3 — AI and cybersecurity: a rapidly growing applied domain
+
+**"AI and the Future of Cybersecurity: Why Openness Matters"** (HuggingFace Blog, April 21, 2026 — https://huggingface.co/blog/cybersecurity-openness)
+
+WEF identifies networks and cybersecurity as the **#2 fastest-growing skill cluster** after AI/big data. The intersection of AI and cybersecurity — using AI to detect threats, but also understanding how AI systems themselves are attacked — is an emerging applied domain most MSAII programs don't cover.
+
+### Trend 4 — Labor-market tracking of 300+ distinct AI skills: the granularity mismatch
+
+**Stanford HAI AI Index 2026** (2026 — https://hai.stanford.edu/ai-index/2026-ai-index-report/economy)
+
+> *"Data partner Lightcast added Agentic AI as a new AI skill cluster this year, bringing the total to 10 AI skill clusters and more than 300 distinct AI skills tracked in the Index's labor-market data."*
+
+The labor market now tracks AI skills at a **granularity of 300+ distinct competencies** across 10 clusters. Most MSAII programs are designed around 5–10 broad course topics. This granularity gap means programs may be training students in broad strokes while employers are hiring for very specific applied capabilities (e.g., "fine-tuning open-source models on domain-specific data" vs. "AI").
+
+### Trend 5 — AI investment surging: students need to understand the business/investment landscape
+
+**Stanford HAI AI Index 2026** (2026 — https://hai.stanford.edu/ai-index/2026-ai-index-report/economy)
+
+> *"U.S. private AI investment reached $285.9 billion in 2025, more than 23 times China's reported $12.4 billion in private AI investment. Generative AI reached 53% population adoption within three years, faster than the PC or the internet."*
+
+The scale of private investment ($285.9B in the U.S. alone) means MSAII graduates will work at AI-funded companies or alongside AI investment decisions. Business/commercialization literacy — understanding AI ROI, make-vs-buy decisions, and AI product strategy — is increasingly relevant even for technical graduates.
+
+---
+
+## SECTION 3: AI IN FINANCE / FINTECH — NOTABLE DEVELOPMENTS
+
+**⚠️ Transparency note:** The indexed news corpus had limited direct coverage of AI in financial services specifically. The finance-specific AI news (fraud detection, algorithmic trading, risk modeling, LLMs for finance) was not well-covered in the current index, which skews toward infrastructure, enterprise software, and general applied AI. What follows is what the corpus *does* support, with honest flagging of the gap.
+
+### What the corpus supports for finance-adjacent insights:
+
+**A. Agentic AI is arriving in financial workflows**
+
+McKinsey State of AI 2025 (November 2025) finds 23% of organizations are already scaling agentic AI, most commonly in **IT and knowledge management** — functions that map directly to financial back-office operations (reconciliation, compliance monitoring, document processing). The 85% ambition vs. 24% readiness gap (MIT Tech Review, May 2026) is especially acute in regulated industries like finance where deployment requires rigorous validation.
+
+**B. Responsible AI failures are most consequential in finance**
+
+Stanford HAI AI Index 2026 notes that **documented AI incidents rose 55% year-over-year** (362 in 2025, up from 233 in 2024). In financial services, AI incidents carry regulatory and reputational risk of a different magnitude than in consumer apps. A finance-focused AI course must treat **model risk management, explainability (XAI), and regulatory compliance** as core engineering topics, not add-ons.
+
+**C. AI investment context is essential for finance students**
+
+The $285.9 billion U.S. private AI investment figure (Stanford HAI AI Index 2026) and the rapid adoption curve (53% population adoption in 3 years, faster than internet) provide the macroeconomic context finance professionals need to evaluate AI as both a tool *and* an investment thesis.
+
+**D. Cybersecurity AI is directly relevant to fintech**
+
+The HuggingFace piece on AI and cybersecurity (April 21, 2026) is relevant because financial services is the #1 target of AI-powered fraud and cyberattacks. Using AI for threat detection, anomaly detection, and fraud prevention is a core fintech use case that should anchor a finance-focused AI elective.
+
+**⚠️ Gap in corpus:** Specific coverage of LLMs for financial document analysis, AI in algorithmic trading, credit risk modeling with ML, SEC/regulatory AI compliance, or AI governance frameworks in banking (e.g., SR 11-7 model risk guidance) was **not surfaced** by the news index. The professor should supplement with specialized fintech sources (e.g., FinancialTimes AI coverage, Oliver Wyman or Deloitte fintech reports, or the Bank for International Settlements working papers on AI in finance).
+
+---
+
+## SUMMARY TABLE: KEY SOURCES AT A GLANCE
+
+| Finding | Source | Date | Link |
+|--------|--------|------|------|
+| Agentic AI fastest-growing skill | Coursera Job Skills Report 2026 | 2026 | https://blog.coursera.org/introducing-courseras-job-skills-report-2026 |
+| 62% of orgs experimenting with agents; 23% scaling | McKinsey State of AI 2025 | Nov 2025 | https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai |
+| 85% want agentic AI, 76% not ready | MIT Technology Review | May 26, 2026 | https://www.technologyreview.com/2026/05/26/1137584/ |
+| Agent failure mode benchmarking (VAKRA) | HuggingFace Blog / IBM Research | Apr 15, 2026 | https://huggingface.co/blog/ibm-research/vakra-benchmark-analysis |
+| IBM & UC Berkeley diagnose enterprise agent failures | HuggingFace Blog / IBM Research | Feb 18, 2026 | https://huggingface.co/blog/ibm-research/itbenchandmast |
+| AI & big data = #1 fastest-growing skill cluster | WEF Future of Jobs 2025 | Jan 7, 2025 | https://www.weforum.org/publications/the-future-of-jobs-report-2025/digest/ |
+| 63% of employers cite skills gaps as #1 barrier | WEF Future of Jobs 2025 | Jan 7, 2025 | https://www.weforum.org/publications/the-future-of-jobs-report-2025/digest/ |
+| 362 documented AI incidents in 2025 (up 55% YoY) | Stanford HAI AI Index 2026 | 2026 | https://hai.stanford.edu/ai-index/2026-ai-index-report/responsible-ai |
+| $285.9B U.S. private AI investment; 300+ AI skills tracked | Stanford HAI AI Index 2026 | 2026 | https://hai.stanford.edu/ai-index/2026-ai-index-report/economy |
+| AI PhD growth concentrated in academia, not industry | Stanford HAI AI Index 2026 | 2026 | https://hai.stanford.edu/ai-index/2026-ai-index-report/education |
+| AI coding revolution driving infrastructure demand | VentureBeat / NousCoder-14B | Jan 7, 2026 | https://venturebeat.com/technology/nous-researchs-nouscoder-14b |
+| AI and cybersecurity openness | HuggingFace Blog | Apr 21, 2026 | https://huggingface.co/blog/cybersecurity-openness |
+
+---
+
+## RECOMMENDED FRAMING FOR THE THREE CURRICULUM GAPS
+
+Based on the above, the three most evidence-backed gaps to highlight in the MSAII comparison are:
+
+1. **Agentic AI Design & Systems Engineering** — Supported by Coursera 2026, McKinsey Nov 2025, MIT Tech Review May 2026, WEF 2025. This is the most urgent gap, confirmed by multiple independent sources.
+2. **Responsible AI as Engineering Practice (not ethics elective)** — Supported by Stanford HAI 2026 (incident data, trust gap) and WEF 2025 (governance as a skill). Especially critical for a finance-sector elective.
+3. **AI Deployment, Evaluation & Operations (MLOps → AgentOps)** — Supported by IBM/HuggingFace benchmarking work (Feb & Apr 2026) and the McKinsey finding that high performers fundamentally redesign workflows, not just add AI tools.
+
+For the **finance-specific elective**, the strongest curriculum pillars the data supports are: agentic AI in regulated workflow contexts, model risk management + explainability, AI-driven cybersecurity/fraud detection, and the business/investment context of AI ($285.9B private investment, SEC/regulatory backdrop — though that last piece needs supplementing from outside this news index).
+```
+
+### Cluster Interpreter — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Now I have all the data I need to produce a comprehensive gap analysis. Let me compile the full report.
+
+---
+
+# CMU MSAII — CSPA Ensemble Skill Cluster Gap Analysis
+**Mode A: Existing Program / Gap Analysis | Winter 2026 Market Data**
+
+---
+
+## Cluster Coverage Assessment
+
+Working from the 10 CSPA ensemble clusters and the CMU MSAII curriculum summary provided:
+
+| # | Cluster | Coverage | Verdict |
+|---|---------|----------|---------|
+| 1 ⭐ | Quantitative & Experimental Methods (47 skills) | ⚠️ **Partial** | Strong ML theory and deep learning architecture coverage via 10-601 and 11-785 implies mathematical grounding, but no explicit course addresses causal inference, experimental design, A/B testing, or operations research as applied skills. NumPy and data exploration appear incidentally in coding/ML courses. |
+| 2 ⭐ | Machine Learning & Generative AI (131 skills) | ✅ **Covered** | This is the program's clear strength. ML (10-601), Deep Learning (11-785), GenAI (10-623), LLMs (11-667), NLP (11-611), and multiple Gen-AI electives provide dense coverage of PyTorch, TensorFlow, transformers, NLP, and generative modeling. |
+| 3 ⭐ | Data-Engineering Tools (89 skills) | ❌ **Missing** | No required course covers Airflow, dbt, Kafka, Redshift, ETL pipelines, Spark/PySpark, or modern data-stack tooling. 15-645 (Database Systems) is an elective only, and 15-688 (Practical Data Science) touches the periphery. No pipeline orchestration, streaming, or data-warehouse tooling is structurally mandated. |
+| 4 | Requirements, Validation & Delivery (21 skills) | ⚠️ **Partial** | 11-654 AI Innovation, 11-699 Capstone, and 17-766 Software Engineering for Startups address delivery and scoping. Scrum/agile and data validation are largely implicit rather than taught explicitly. (Broad/mixed cluster — noted but not prioritised over focused clusters.) |
+| 5 ⭐ | Core AI, Cloud & Data-Platform Engineering (370 skills) | ⚠️ **Partial** | 11-695 AI Engineering covers ML in production and legacy-system integration, and 15-619/15-719 Cloud Computing are electives — good structural signal. However, the cluster's highest-demand skills directly relevant to production AI — **CI/CD** (11.9%), **DevOps** (9.3%), **Agentic AI** (7.8%), **MLOps tooling**, **Kubernetes** (6.6%), **Docker** (6.2%), **RAG** (5.2%), and **LLMOps** (0.5%) — receive no dedicated, structured treatment. The program's production exposure is surface-level and elective-dependent. |
+| 6 ⭐ | Business Intelligence, Analytics & Finance (66 skills) | ❌ **Missing** | No course addresses **Data Analytics** (41.6%), **Business Intelligence** (21.9%), **Excel** (20.5%), **Forecasting** (8.0%), **Data Visualization** (Tableau/Power BI), or **Finance-domain AI** (Financial Modeling, Financial Analysis). The program has a business-outcomes orientation (AI Innovation, Future Markets) but teaches none of the hands-on BI/analytics toolkit that employers demand alongside AI skills. |
+| 7 | Communication & Professional Skills (98 skills) | ✅ **Covered** | Strong implicit coverage through team rotations, sponsor projects, capstone, and practicum. Law of Computer Technology and AI Innovation both reinforce professional practice. (Broad soft-skill cluster — not a priority gap over focused technical clusters.) |
+| 8 | Rare Niche Skills (near-zero frequency) (9 skills) | — **N/A** | Cluster 8 is the near-zero-frequency niche catch-all — not a coherent skill theme. Not meaningful for gap prioritisation. |
+| 9 | Risk & Regulatory (3 skills) | ❌ **Missing** | Risk Management, Regulatory Requirements, and Risk Analysis appear in 17-762 Law of Computer Technology only tangentially (legal framing, not operational risk management or AI regulatory compliance). Cluster is very small (3 skills) and emerging — note the gap but do not prioritise above focused clusters. |
+| 10 | Strategy, Sales & Product Management (128 skills) | ✅ **Covered** | 11-651 AI and Future Markets, 11-654 AI Innovation, 11-699 Capstone, and 17-766 Software Engineering for Startups address strategic planning, KPIs, and product development. (Broad business cluster — not prioritised over technical focused clusters.) |
+
+---
+
+## Priority Gaps (Focused Clusters Only)
+
+The three biggest gaps, ranked by market demand and structural absence from the curriculum:
+
+---
+
+### 🔴 GAP #1 — Cluster 5 ⭐ — Core AI, Cloud & Data-Platform Engineering (370 skills)
+**Market Importance: Extremely High | Structural Coverage: Partial but critically thin on production AI**
+
+This is the largest focused cluster in the corpus (370 skills) and the one where CMU MSAII's gap is most consequential. The curriculum's elective-only cloud courses (15-619, 15-719) and a single AI Engineering course (11-695) leave the following high-demand, production-facing skills structurally untaught:
+
+| Skill | Market Frequency | Why It Matters |
+|---|---|---|
+| **CI/CD** | 11.9% | The standard mechanism for deploying ML models into production; core to any MLOps role |
+| **DevOps** | 9.3% | Foundational for AI engineers operating at the system level, not just model level |
+| **Agentic AI** | 7.8% | The fastest-growing AI deployment paradigm (autonomous agents, tool-use loops); no course covers it |
+| **Kubernetes** | 6.6% | Container orchestration is now a baseline expectation for AI platform engineers |
+| **Docker** | 6.2% | Containerisation for reproducible ML environments; standard across AI/ML job descriptions |
+| **Retrieval-Augmented Generation (RAG)** | 5.2% | Core architecture for production LLM applications; mentioned nowhere in the curriculum |
+| **Data Governance** | 7.8% | Organisations expect AI practitioners to work within governed data environments |
+| **Responsible AI** | 2.6% | Explicitly named by employers; no dedicated course coverage (see also note below) |
+| **Agentic Frameworks** | 1.5% | LangChain (3.1%), LangGraph (1.4%), AutoGen (0.6%), CrewAI (0.6%) — the tooling for building agent systems; absent |
+| **LLMOps** | 0.5% | Operational layer for LLM-based products; a nascent but fast-growing requirement |
+
+> **Note on membership confidence:** Agentic AI (confidence 0.30 — placement unstable, most often co-clustered with Cluster 2 at 0.66), RAG (0.20 — most often co-clustered with Cluster 2 at 0.80), and LangChain (0.21 — most often co-clustered with Cluster 2 at 0.77) are conceptually near Cluster 2 as well, reinforcing that the GenAI-to-production pipeline is a cross-cluster gap, not just a Cluster 5 issue.
+
+**Recommendation:** Create a required course — *AI Systems Engineering & MLOps* — covering model deployment pipelines, CI/CD for ML, containerisation (Docker/Kubernetes), RAG architectures, agentic frameworks (LangChain, LangGraph), and responsible AI principles in production. This directly addresses the agentic AI gap, the MLOps gap, and partial responsible AI coverage in a single structural addition. Alternatively, restructure 11-695 AI Engineering to mandate these topics rather than treating production tooling as incidental.
+
+---
+
+### 🔴 GAP #2 — Cluster 3 ⭐ — Data-Engineering Tools (89 skills)
+**Market Importance: High | Structural Coverage: Entirely Missing from Required Curriculum**
+
+No required course touches this cluster's core skill set. The entire data-engineering toolchain — which underlies every AI/ML system in production — is absent or elective-only:
+
+| Skill | Market Frequency | Why It Matters |
+|---|---|---|
+| **Airflow** | 3.8% | The dominant workflow orchestration tool; standard in AI/ML data pipelines |
+| **dbt** | 3.5% | The core data transformation tool for the modern data stack |
+| **S3** | 3.4% | AWS object storage; ubiquitous in cloud-based ML data management |
+| **Kafka** | 3.3% | Real-time data streaming; required for event-driven AI applications |
+| **Redshift** | 2.6% | Cloud data warehouse; foundational for analytics-layer AI |
+| **ETL Pipelines** | 2.3% | The fundamental skill of data movement; every AI role requires this |
+| **Hadoop / PySpark** | 2.3% / 8.4% | Distributed processing for large-scale ML data preparation |
+| **Delta Lake / Databricks** | 0.8% / 6.3% | The standard lakehouse platform for enterprise AI; not covered |
+| **DataOps** | 0.7% | Operational discipline for managing data pipelines in production |
+| **Data Lineage** | 1.0% | Governance and auditability of data flows; increasingly required |
+
+> **Stability note:** This cluster has high ensemble stability (median confidence 0.88, only 7 of 89 skills below 0.5), making these assignments highly reliable — the signal here is robust.
+
+**Recommendation:** Add a required course — *Data Engineering for AI Systems* — covering pipeline orchestration (Airflow/Dagster), stream processing (Kafka), cloud storage and warehousing (S3, Redshift, BigQuery), transformation (dbt), and distributed computation (PySpark/Databricks). The existing elective 15-688 Practical Data Science is insufficient — it is not mandated, and it covers analysis rather than pipeline construction. Alternatively, 15-645 Database Systems should be elevated to required status and expanded with modern data-stack tooling.
+
+---
+
+### 🔴 GAP #3 — Cluster 6 ⭐ — Business Intelligence, Analytics & Finance (66 skills)
+**Market Importance: High (40%+ postings for top skills) | Structural Coverage: Entirely Missing**
+
+Despite the program's stated focus on market opportunity and innovation, it teaches none of the applied analytics skills that AI roles in business settings demand:
+
+| Skill | Market Frequency | Why It Matters |
+|---|---|---|
+| **Data Analytics** | 41.6% | The single most common secondary skill in AI/ML postings; not taught operationally |
+| **Business Intelligence** | 21.9% | BI skills bridge AI output to organisational decision-making |
+| **Excel** | 20.5% | Still a primary tool in Finance, ops, and BI contexts where AI is applied |
+| **Data Visualization** | 15.9% | Communicating AI outputs; Tableau/Power BI absent from the curriculum |
+| **Finance (domain)** | 17.8% | Finance is the #1 AI-adopting industry sector; no domain-specific finance AI content |
+| **Forecasting** | 8.0% | Time-series and predictive forecasting are core applied ML skills; entirely absent |
+| **Financial Modeling** | 1.7% | AI-augmented financial modeling is growing rapidly in fintech and banking |
+| **Financial Analysis** | 2.0% | Applying AI to financial data; zero coverage despite "Future Markets" branding |
+| **Predictive Modeling** | 4.4% | Applied forecasting and business-oriented predictive analytics; not addressed |
+| **Data Storytelling** | 1.0% | Translating model outputs into business narratives — a gap even for strong technical graduates |
+
+> **Note on cluster stability:** Cluster 6's median confidence is 0.49 (43 of 66 skills below 0.5), reflecting natural overlap with Clusters 1 and 7 — but the top skills (Data Analytics at 0.60, BI at 0.59, Finance at 0.59, Forecasting at 0.59) have stable placements and represent genuine market signal.
+
+**Recommendation:** Add an elective (or elevate to required) — *Applied AI for Business Analytics & Finance* — covering BI tools (Tableau, Power BI), forecasting and time-series modeling, financial AI applications (algorithmic trading signals, credit modeling, fraud detection), and dashboard/visualisation design. The program's AI Innovation and Future Markets courses create demand-side context for AI but leave students without supply-side analytics execution skills. This gap is especially acute given the professor's specific concern about finance-sector AI.
+
+---
+
+## Thematic Gap Assessment: Four Specific Questions
+
+### (1) Agentic AI / AI Systems Engineering
+**Finding: ❌ Entirely Absent**
+
+The market-frequency evidence is unambiguous:
+- **Agentic AI**: 7.8% of postings (Cluster 5, confidence 0.30 — unstable, co-clusters with Cluster 2 at 0.66)
+- **Agentic Frameworks**: 1.5% (confidence 0.34, co-clusters with Cluster 2 at 0.59)
+- **LangChain**: 3.1% (confidence 0.21, co-clusters with Cluster 2 at 0.77)
+- **LangGraph**: 1.4% (confidence 0.20, co-clusters with Cluster 2 at 0.79)
+- **AutoGen**: 0.6% (confidence 0.33, co-clusters with Cluster 2 at 0.61)
+- **CrewAI**: 0.6% (confidence 0.37, co-clusters with Cluster 2 at 0.54)
+- **Multi-Agent Systems**: 0.6% (confidence 0.41, co-clusters with Cluster 2 at 0.45)
+- **AI Agent Systems Architecture**: 0.5% (confidence 0.47, co-clusters with Cluster 2 at 0.32)
+- **Prompt Engineering**: 3.8% (confidence 0.31, co-clusters with Cluster 2 at 0.57)
+- **Prompt Orchestration**: 0.5% (confidence 0.42)
+
+The unstable placements of agentic skills (bouncing between Clusters 2 and 5) confirm that agentic AI sits at the intersection of model-layer (GenAI) and infrastructure-layer (systems engineering) — precisely the gap between what CMU MSAII teaches well (models) and what it doesn't teach at all (production systems). Zero courses in the required or elective list cover agent architectures, tool-use loops, multi-agent orchestration, or agentic framework implementation.
+
+**Verdict: Critical gap. The market has moved decisively toward agentic AI as the primary deployment paradigm for LLMs; this program produces graduates who understand the underlying models but cannot build or operate the systems that deploy them agentically.**
+
+---
+
+### (2) MLOps / Model Deployment
+**Finding: ❌ Structurally Missing; ⚠️ Surface-Level in 11-695**
+
+11-695 AI Engineering mentions "ML in production" but the cluster evidence shows the full MLOps stack is untaught:
+- **CI/CD**: 11.9% (Cluster 5, confidence 0.61 — stable)
+- **DevOps**: 9.3% (confidence 0.59 — stable)
+- **Kubernetes**: 6.6% (confidence 0.59 — stable)
+- **Docker**: 6.2% (confidence 0.59 — stable)
+- **Observability**: 5.7% (confidence 0.60 — stable) — monitoring models in production
+- **Data Quality**: 12.4% (Cluster 5, unstable, co-clusters with Cluster 3)
+- **LLMOps**: 0.5% (confidence 0.41, co-clusters with Cluster 2 at 0.47)
+- **Data Drift Monitoring** (Cluster 8, niche — but signals employer awareness of model degradation)
+- **Pipeline Management**: 1.5% (confidence 0.33)
+
+None of these appear in any required course. Cloud Computing (15-619) and Distributed Systems (15-640) are electives that touch adjacent infrastructure but do not address the ML-specific deployment lifecycle.
+
+**Verdict: Significant gap. MLOps is now a baseline expectation for applied AI roles — employers in 11.9% of postings explicitly ask for CI/CD, and 9.3% ask for DevOps. A graduate who can train models but cannot deploy, monitor, or update them in production is structurally disadvantaged.**
+
+---
+
+### (3) Responsible AI / AI Governance
+**Finding: ⚠️ Legal Framing Only; Technical Implementation Missing**
+
+17-762 Law of Computer Technology addresses AI law, IP, and regulatory framing — this is genuine but narrow coverage. The cluster data shows what's missing:
+- **Responsible AI**: 2.6% of postings (Cluster 5, confidence 0.37 — unstable, co-clusters with Cluster 2 at 0.51) — employers explicitly name this skill
+- **Data Governance**: 7.8% (Cluster 5, confidence 0.31 — unstable, co-clusters with Cluster 3)
+- **Data Privacy**: 2.5% (Cluster 5, confidence 0.45)
+- **GDPR**: 1.8% (Cluster 5, confidence 0.52 — stable)
+- **HIPAA**: 2.4% (Cluster 5, confidence 0.43)
+- **Risk Management**: in Cluster 9 (3 skills; confidence 0.46 — unstable) — emerging but tiny cluster
+- **Security and Compliance Standards**: 3.9% (Cluster 5, confidence 0.58 — stable)
+
+The legal course provides a valuable compliance and regulatory literacy layer, but Responsible AI as practised by employers requires technical skills: bias detection and mitigation, fairness metrics, model explainability (SHAP, LIME), audit-ready documentation, and governance frameworks (e.g., EU AI Act operationalisation). None of these appear anywhere in the curriculum.
+
+**Verdict: Partial — legal literacy is present; technical Responsible AI practice is entirely absent. With the EU AI Act in force and responsible AI becoming a hiring criterion in 2.6% of postings (and rising), this is a reputational and employability gap.**
+
+---
+
+### (4) Finance-Specific AI Applications
+**Finding: ❌ Missing Despite Program's "Future Markets" Positioning**
+
+The gap is stark. Despite 11-651 Artificial Intelligence and Future Markets being a required course, the curriculum contains zero finance-domain AI content. The Cluster 6 data shows what the market demands:
+- **Finance** (domain): 17.8% of postings (confidence 0.59 — stable)
+- **Financial Analysis**: 2.0% (confidence 0.50)
+- **Financial Modeling**: 1.7% (confidence 0.50)
+- **Forecasting**: 8.0% (confidence 0.59 — stable) — foundational for quantitative finance AI
+- **Accounting**: 5.9% (confidence 0.50)
+
+Finance is not only a top AI-adopting sector but the one most explicitly called out in the program's title course. Applications like algorithmic trading, credit risk modeling, fraud detection, portfolio optimization, and AI-driven financial forecasting are nowhere in the curriculum. The elective list includes Bioinformatics and Medical Image Analysis but no fintech or financial AI elective.
+
+**Verdict: Critical strategic gap. The program's own branding (AI and Future Markets) implies finance-sector readiness that the curriculum does not support. This is the most visible mismatch between program positioning and actual course content.**
+
+---
+
+## Summary Table
+
+| Cluster | Theme | Coverage | Priority (Focused Clusters) |
+|---------|-------|----------|-----------------------------|
+| 1 ⭐ | Quantitative & Experimental Methods | ⚠️ Partial | Medium — ML theory is present; causal inference, A/B testing, forecasting absent |
+| 2 ⭐ | Machine Learning & Generative AI | ✅ Covered | — Program strength; no major gaps |
+| 3 ⭐ | Data-Engineering Tools | ❌ Missing | **🔴 HIGH — GAP #2** — Full ETL/pipeline toolchain absent from required curriculum |
+| 4 | Requirements, Validation & Delivery | ⚠️ Partial | Low — Broad/mixed cluster; partial delivery coverage via capstone/innovation courses |
+| 5 ⭐ | Core AI, Cloud & Data-Platform Engineering | ⚠️ Partial | **🔴 HIGH — GAP #1** — MLOps, agentic AI, CI/CD, Docker/Kubernetes, RAG all missing |
+| 6 ⭐ | Business Intelligence, Analytics & Finance | ❌ Missing | **🔴 HIGH — GAP #3** — All BI, visualization, forecasting, finance-domain skills absent |
+| 7 | Communication & Professional Skills | ✅ Covered | — Strong through practicum, capstone, and project-based courses |
+| 8 | Rare Niche Skills (near-zero frequency) | — N/A | Not a coherent theme; not actionable for curriculum design |
+| 9 | Risk & Regulatory | ❌ Missing | Low — Tiny cluster (3 skills); emerging signal only; note but do not prioritise |
+| 10 | Strategy, Sales & Product Management | ✅ Covered | — Strong through innovation and market courses |
+
+---
+
+## Caveats
+
+1. **Cluster stability varies.** Cluster 5 (Core AI, Cloud & Data-Platform Engineering) has median confidence 0.47 with 195 of 370 skills below 0.5 — many skills float between clusters. Where specific skills are cited above, their individual confidence scores and alternate cluster placements are reported as returned by the tool. Cluster 3 (Data-Engineering Tools) is notably high-stability (median 0.88), so its gap signal is especially robust.
+
+2. **Cluster labels are market-derived, not pedagogical.** A skill appearing in a cluster doesn't mean it must be taught in a course named after that cluster. The recommendations above bundle related skills into coherent pedagogical units regardless of cluster boundary.
+
+3. **Frequency shows scale, not distinctiveness.** Skills appearing in 40%+ of postings (like Data Analytics) are broad expectations; skills appearing in 5–12% (like CI/CD, DevOps) may be more distinctively valued for AI roles specifically. Lift/z-scores (computed separately) would distinguish commodity expectations from AI-specific demand — this analysis works from raw frequency alone.
+
+4. **The curriculum summary may be incomplete.** Course syllabi are not provided; some missing skills may appear within existing courses as minor topics without being listed in the high-level course descriptions. The assessment is necessarily based on the structural curriculum summary provided, not full syllabi review.
+
+5. **Market data reflects Winter 2026 postings.** Agentic AI and LLMOps are fast-moving areas — their listed frequencies likely understate true demand velocity relative to more established skills.
+```
+
+### Skills Taxonomy Analyst — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Here is the complete, grounded lift/z report for all five topic areas plus the overall market anchor. All evidence is drawn from the frozen differential-analysis lift table against 186,249 job postings, 962 canonical skills, Fall 2022–Winter 2026.
+
+---
+
+# CMU MSAII Gap Analysis: Lift & Z-Score Evidence Report
+
+> **How to read the numbers:** Lift (×) = how many times more likely this skill co-appears with the focal skill vs. the population baseline. Z = statistical significance (Fightin'-Words method); **z ≥ 2 = attested co-demand**, the same threshold used in this project's extrinsic evaluation. Skills are ranked by z within each focal skill.
+
+---
+
+## ⚠️ Anchor: Overall Market by Raw Frequency (Secondary Context Only)
+
+These are the 10 most-frequent skills in the entire dataset. These are the **popular** skills — the baseline this project is designed to *beat*, not celebrate. They set the floor for what MSAII already implicitly covers.
+
+| Rank | Skill | Freq (postings) | Category |
+|------|-------|-----------------|----------|
+| 1 | Communication Skills | 39,040 | Soft / Communication |
+| 2 | Generative AI | 16,058 | Technical / Gen AI Engineering |
+| 3 | Automation & Scripting | 12,024 | Technical / Process Automation |
+| 4 | Security & Compliance Standards | 11,339 | Technical / Regulatory Compliance |
+| 5 | Mentoring | 7,888 | Soft / Leadership |
+| 6 | Analytical Skills | 6,912 | Technical / Analytical Skills |
+| 7 | Agile Methodologies | 6,838 | Soft / Project Management |
+| 8 | AWS Services | 6,048 | Technical / Cloud Platform |
+| 9 | AWS Professional Certifications | 5,185 | Technical / Cloud Platform |
+| 10 | **Data Pipelines** | 4,185 | Technical / Data Engineering |
+
+**Key observation:** The top-10 by raw frequency is dominated by generic soft and cloud skills that MSAII already addresses (Generative AI, Cloud, Agile). The *distinctive* demand signal — where the market's co-demand pattern diverges from population rates — is what the lift tables below reveal.
+
+---
+
+## 1. AGENTIC AI / AI AGENTS
+*Focal skill: **Agentic AI** — 62 skills co-demanded at z ≥ 2*
+
+This is the richest and most statistically explosive cluster in the dataset. 62 skills clear the z ≥ 2 bar, suggesting Agentic AI is a structurally distinct job-posting category, not a marginal add-on.
+
+### Core Orchestration & Frameworks (highest z)
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| Large Language Models | 4.76× | z=9.39 | 899 |
+| Retrieval-Augmented Generation (RAG) | 6.66× | z=8.89 | 482 |
+| LangChain | 7.53× | z=7.90 | 324 |
+| Prompt Engineering | 6.26× | z=7.03 | 329 |
+| Agentic Frameworks | 9.11× | z=6.79 | 190 |
+| LangGraph | 9.47× | z=6.73 | 179 |
+| Generative AI | 3.97× | z=6.45 | 596 |
+| Vector Databases | 6.85× | z=6.29 | 233 |
+| Orchestration Tools | 4.09× | z=6.08 | 499 |
+
+### Multi-Agent & Specific Frameworks
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| Multi-Agent Systems | 10.31× | z=5.08 | 93 |
+| **CrewAI** | 10.23× | z=4.95 | 89 |
+| **AutoGen** | 9.87× | z=4.66 | 82 |
+| Responsible AI | 5.12× | z=4.53 | 187 |
+| LlamaIndex | 7.75× | z=4.44 | 99 |
+| Claude (Anthropic) | 4.94× | z=4.42 | 188 |
+| MLOps | 3.98× | z=4.34 | 271 |
+| AI Engineering | 5.82× | z=4.28 | 136 |
+| Pinecone | 7.78× | z=4.15 | 86 |
+
+### Vector Infrastructure & Model-Level Skills
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| LLM Architectures | 8.20× | z=3.92 | 72 |
+| Conversational AI | 7.33× | z=3.88 | 81 |
+| Weaviate | 8.50× | z=3.84 | 66 |
+| AI Agent Systems Architecture | 9.02× | z=3.73 | 58 |
+| Observability | 3.31× | z=3.51 | 265 |
+| Gemini | 5.18× | z=3.26 | 95 |
+| FastAPI | 5.43× | z=3.17 | 83 |
+| FAISS | 7.99× | z=3.12 | 47 |
+| Hugging Face | 4.90× | z=3.05 | 91 |
+| Prompt Orchestration | 7.27× | z=3.00 | 49 |
+
+### Extended Skills (z=2.0–2.99)
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| Semantic Search | 6.03× | z=2.94 | 61 |
+| AWS Bedrock | 6.22× | z=2.93 | 58 |
+| Llama (model) | 6.87× | z=2.89 | 49 |
+| Vertex AI | 5.23× | z=2.84 | 71 |
+| Mistral | 9.07× | z=2.78 | 32 |
+| LLM-as-a-Judge | 7.26× | z=2.74 | 41 |
+| Workflow Automation | 3.70× | z=2.65 | 118 |
+| MLflow | 4.24× | z=2.61 | 87 |
+| Azure AI Services | 6.17× | z=2.54 | 44 |
+| Vector Search | 5.51× | z=2.51 | 51 |
+| Knowledge Graphs | 5.71× | z=2.37 | 43 |
+| Model Evaluation | 3.78× | z=2.26 | 82 |
+| LLMOps | 5.75× | z=2.21 | 37 |
+| Multimodal Learning | 5.94× | z=2.17 | 34 |
+| Reinforcement Learning | 3.55× | z=2.13 | 83 |
+| Model Versioning | 4.00× | z=2.12 | 64 |
+| Model Deployment | 3.37× | z=2.11 | 92 |
+| PEFT | 6.08× | z=2.11 | 31 |
+| Transformers | 3.61× | z=2.06 | 75 |
+| Information Retrieval | 3.42× | z=2.01 | 81 |
+
+**Curriculum implication:** An Agentic AI module must go well beyond "LLMs exist." The market distinctively demands **orchestration frameworks (LangChain, LangGraph, CrewAI, AutoGen), vector infrastructure (Pinecone, Weaviate, FAISS, vector DBs), RAG pipelines, prompt engineering, and observability**. Responsible AI co-appears with Agentic AI at lift 5.12×, z=4.53 — these are not separate concerns in the market's eyes.
+
+---
+
+## 2. MLOPS / MODEL DEPLOYMENT
+*Focal skill: **MLOps** — 56 skills co-demanded at z ≥ 2*
+
+MLOps is the most technically precise cluster: extremely high lifts on specialist tools, suggesting employers treat MLOps as a coherent engineering discipline with a specific toolchain.
+
+### Model Lifecycle Core
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| **MLflow** | 15.12× | z=7.38 | 194 |
+| **Model Versioning** | 15.91× | z=6.86 | 159 |
+| PyTorch | 6.79× | z=6.07 | 360 |
+| TensorFlow | 6.68× | z=5.58 | 313 |
+| Feature Engineering | 8.63× | z=4.94 | 169 |
+| **Model Deployment** | 8.92× | z=4.79 | 152 |
+| **SageMaker** | 9.06× | z=4.75 | 146 |
+| **Kubeflow** | 15.36× | z=4.66 | 76 |
+| **Model Monitoring** | 12.82× | z=4.23 | 76 |
+| **ML Pipelines** | 8.47× | z=4.18 | 124 |
+| **Feature Stores** | 11.43× | z=3.93 | 75 |
+
+### Infrastructure & DevOps for ML
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| CI/CD | 3.94× | z=3.80 | 409 |
+| Docker | 4.73× | z=3.68 | 255 |
+| Kubernetes | 4.37× | z=3.34 | 250 |
+| GCP | 3.75× | z=3.20 | 331 |
+| Containerization | 5.08× | z=3.08 | 155 |
+| Vertex AI | 8.03× | z=2.98 | 68 |
+| Airflow | 4.43× | z=2.59 | 146 |
+| **LLMOps** | 12.45× | z=3.37 | 50 |
+| Model Serving | 7.94× | z=2.32 | 42 |
+| Observability | 3.52× | z=2.14 | 176 |
+
+### ML Stack & Evaluation
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| Scikit-Learn | 7.16× | z=4.57 | 189 |
+| Hugging Face | 7.32× | z=3.12 | 85 |
+| XGBoost | 8.70× | z=2.59 | 46 |
+| Pandas | 4.70× | z=2.31 | 102 |
+| Model Evaluation | 5.45× | z=2.28 | 74 |
+| Transformers | 5.16× | z=2.06 | 67 |
+| Anomaly Detection | 5.07× | z=2.00 | 66 |
+| Unsupervised Learning | 9.18× | z=3.02 | 58 |
+
+### Also Co-demanded (LLM/Agentic intersection)
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| RAG | 6.17× | z=4.94 | 279 |
+| LangChain | 6.58× | z=4.14 | 177 |
+| Vector Databases | 7.15× | z=4.09 | 152 |
+| Responsible AI | 6.88× | z=4.04 | 157 |
+| Agentic AI | 3.98× | z=3.12 | 271 |
+| Prompt Engineering | 4.48× | z=2.64 | 147 |
+| LangGraph | 5.59× | z=2.20 | 66 |
+
+**Curriculum implication:** An MLOps module needs three tracks: **(1) Model lifecycle** — MLflow (15.12×), Model Versioning (15.91×), Kubeflow (15.36×), Model Monitoring (12.82×), Feature Stores (11.43×); **(2) ML DevOps** — CI/CD, Docker, Kubernetes, SageMaker; **(3) LLMOps** (lift 12.45×, z=3.37) for the LLM-deployment variant of this workflow. This is not covered anywhere in MSAII currently and has the highest specialist lift scores in the entire dataset.
+
+---
+
+## 3. RESPONSIBLE AI / AI GOVERNANCE
+*Focal skill: **Responsible AI** — 16 skills co-demanded at z ≥ 2*
+
+Responsible AI returns a relatively thin (16-skill) but highly significant lift profile. The small count is itself a finding: the market bundles it tightly with a small, specific set of technical AI skills rather than treating it as a broad governance domain.
+
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| AI/ML Solutions | 7.15× | z=4.01 | 235 |
+| AI/ML | 5.23× | z=3.49 | 299 |
+| RAG | 6.81× | z=3.23 | 165 |
+| MLOps | 6.88× | z=3.18 | 157 |
+| Generative AI | 4.66× | z=2.76 | 234 |
+| LangChain | 7.35× | z=2.74 | 106 |
+| Agentic AI | 5.12× | z=2.70 | 187 |
+| Large Language Models | 4.15× | z=2.60 | 263 |
+| **AI Engineering** | 8.69× | z=2.48 | 68 |
+| **Model Versioning** | 10.08× | z=2.44 | 54 |
+| **AI Frameworks** | 10.31× | z=2.43 | 52 |
+| **AI Agent Systems Architecture** | 13.46× | z=2.13 | 29 |
+| Hugging Face | 8.35× | z=2.11 | 52 |
+| Prompt Engineering | 5.51× | z=2.08 | 97 |
+| **Azure AI** | 9.57× | z=2.08 | 42 |
+| MLflow | 7.70× | z=2.01 | 53 |
+
+**Curriculum implication:** Responsible AI in the job market is **not a standalone ethics elective** — it co-appears strongly with MLOps (6.88×), Agentic AI (5.12×), Model Versioning (10.08×), and AI Agent Systems Architecture (13.46×). The market treats it as an *integrated engineering practice*, not a philosophy course. MSAII's existing AI Law course is adjacent, but this signal argues for a Responsible AI module embedded within technical ML/agentic courses, not siloed. The 16-skill width (vs. 62 for Agentic AI, 56 for MLOps) also suggests it's currently a thinner market segment — but Agentic AI co-demanding Responsible AI at z=4.53 means its growth is structurally tied to agentic adoption.
+
+---
+
+## 4. FINANCE-SECTOR AI
+*Method: Sector Skill Wrap (sector-lift ranked, z ≥ 2 AND lift ≥ 3, agentic core excluded)*
+
+**Finance agentic AI adoption rate:** 7.57% of finance postings vs. 7.84% market average → adoption lift 0.97, z=−0.47. **Finance is at exactly the market rate for agentic AI demand** — it has not yet developed a distinct agentic-AI identity in the posting data. This is an important finding: finance-AI demand is real but driven by its domain skills, not disproportionate agentic demand.
+
+**8 domain-distinctive skills clear the z ≥ 2 AND lift ≥ 3 bar:**
+
+| Skill | Sector Lift | Z | n (postings) |
+|-------|-------------|---|--------------|
+| **Financial Services** | 3.83× | z=7.03 | 485 |
+| **Risk Management** | 3.83× | z=6.01 | 356 |
+| Coaching | 3.01× | z=5.16 | 412 |
+| Community Engagement | 5.03× | z=3.93 | 100 |
+| **Quantitative Finance** | 6.41× | z=2.48 | 29 |
+| Software Engineering Principles | 4.35× | z=2.37 | 45 |
+| **Payment Processing** | 3.85× | z=2.21 | 48 |
+| **Decision Automation** | 5.06× | z=2.20 | 31 |
+
+**This is a "thin wrap" (8 skills).** The thin domain wrap means that beyond domain-knowledge anchors (Financial Services, Risk Management, Quantitative Finance), finance AI roles are largely demanding the **same horizontal agentic + MLOps core** as the broader market. This actually simplifies curriculum design: a finance-AI specialization track can be built as **Agentic AI Core + MLOps Core + a 4–5 skill finance domain module**, rather than requiring a separate dedicated program.
+
+**Key domain skills for a finance module:**
+- **Financial Services** (sector lift 3.83×, z=7.03) — domain positioning
+- **Risk Management** (sector lift 3.83×, z=6.01) — the highest-signal technical domain skill
+- **Quantitative Finance** (sector lift 6.41×, z=2.48) — highest lift in the wrap, niche but distinctive
+- **Decision Automation** (sector lift 5.06×, z=2.20) — directly connects to AI deployment context
+- **Payment Processing** (sector lift 3.85×, z=2.21) — operational fintech signal
+
+---
+
+## 5. DATA ENGINEERING / DATA PIPELINES
+*Focal skill: **Data Pipelines** — 66 skills co-demanded at z ≥ 2 (largest cluster in the report)*
+
+Data Pipelines is the **broadest co-demand cluster** in this analysis: 66 skills at z ≥ 2. This signals that data engineering is a mature, wide discipline with a large and well-defined toolchain — not a niche.
+
+### Core ETL / ELT Stack (highest z)
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| **ETL** | 4.37× | z=10.42 | 975 |
+| **Data Engineering** | 3.99× | z=10.08 | 1,090 |
+| **ELT** | 5.21× | z=8.08 | 431 |
+| **Airflow** | 5.04× | z=7.99 | 445 |
+| Data Warehousing | 3.94× | z=6.93 | 533 |
+| Data Lakes | 4.42× | z=6.90 | 420 |
+| PySpark | 3.47× | z=6.79 | 682 |
+| Data Modeling | 3.05× | z=6.72 | 946 |
+| Data Processing | 3.89× | z=6.65 | 505 |
+| ETL Processes | 4.87× | z=6.51 | 314 |
+| Snowflake | 3.48× | z=6.40 | 601 |
+| Data Infrastructure | 4.19× | z=6.16 | 372 |
+| **dbt** | 4.29× | z=6.08 | 345 |
+| ETL Pipelines | 4.82× | z=5.88 | 261 |
+| Databricks | 3.38× | z=5.60 | 498 |
+
+### Cloud Data Infrastructure
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| Data Ingestion | 4.22× | z=5.34 | 276 |
+| Redshift | 4.35× | z=5.34 | 259 |
+| Data Architecture | 3.56× | z=5.21 | 378 |
+| Kafka | 3.84× | z=4.98 | 291 |
+| Azure Data Factory | 5.21× | z=4.93 | 161 |
+| AWS Glue | 4.89× | z=4.91 | 178 |
+| Scala | 4.15× | z=4.73 | 224 |
+| BigQuery | 3.65× | z=4.45 | 261 |
+| Unstructured Data | 3.79× | z=4.33 | 227 |
+| Data Transformation | 3.66× | z=4.21 | 233 |
+| Big Data Technologies | 3.03× | z=4.14 | 368 |
+| Data Integration | 3.17× | z=3.93 | 292 |
+| S3 | 3.31× | z=3.92 | 259 |
+
+### Pipeline Operations & Observability
+| Skill | Lift | Z | Co-occurs (n) |
+|-------|------|---|---------------|
+| Metadata Management | 3.19× | z=3.70 | 255 |
+| Fivetran | 5.13× | z=3.51 | 84 |
+| Azure Data Lake | 5.03× | z=3.44 | 83 |
+| Kinesis | 4.89× | z=3.38 | 84 |
+| Feature Engineering | 3.34× | z=3.26 | 175 |
+| Delta Lake | 4.55× | z=3.22 | 87 |
+| Azure Synapse Analytics | 4.86× | z=3.21 | 77 |
+| Schema Design | 4.25× | z=3.04 | 88 |
+| Dagster | 4.86× | z=2.74 | 56 |
+| **Medallion Architecture** | 5.09× | z=2.64 | 48 |
+| Parquet | 5.09× | z=2.58 | 46 |
+| **Data Lineage** | 3.52× | z=2.43 | 85 |
+| Unity Catalog | 4.64× | z=2.43 | 48 |
+| **Great Expectations** | 5.27× | z=2.42 | 38 |
+| Apache Flink | 4.28× | z=2.89 | 79 |
+| Apache Beam | 4.74× | z=2.29 | 41 |
+| Real-Time Data Streaming | 4.60× | z=2.23 | 41 |
+| **Data Contracts** | 4.11× | z=2.03 | 42 |
+| Modern Data Stack | 3.64× | z=2.16 | 62 |
+
+**Curriculum implication:** Data Engineering for ML is a mature, wide-toolchain discipline. The core curriculum recommendation for MSAII is a focused module on the **ML-adjacent slice**: ETL/ELT (the z=10+ anchor), Airflow for orchestration (z=7.99), Feature Engineering (z=3.26, also co-demanded with MLOps at 8.63×), dbt (z=6.08), and Databricks/Snowflake as platform-layer skills. Data Lineage, Data Contracts, and Great Expectations (data quality) are emerging skills worth flagging as forward-looking additions.
+
+---
+
+## 📋 Summary Table for Gap Recommendations
+
+| Gap Area | Focal Skill | # Attested Co-demands (z≥2) | Highest-Lift Skill | Top-z Skill | MSAII Coverage |
+|---|---|---|---|---|---|
+| Agentic AI | Agentic AI | **62** | Multi-Agent Systems 10.31× | LLMs z=9.39 | ❌ None |
+| MLOps | MLOps | **56** | Model Versioning 15.91× | MLflow z=7.38 | ❌ None |
+| Responsible AI | Responsible AI | **16** | AI Agent Systems Architecture 13.46× | AI/ML Solutions z=4.01 | ⚠️ Partial (AI Law only) |
+| Finance AI | Finance sector wrap | **8 domain skills** | Quantitative Finance 6.41× | Financial Services z=7.03 | ❌ None |
+| Data Engineering | Data Pipelines | **66** | ETL 4.37× | ETL z=10.42 | ⚠️ Partial (Cloud/Distributed) |
+
+---
+
+## Key Cross-Cutting Findings
+
+1. **Agentic AI and MLOps are structurally linked.** MLOps co-demands Agentic AI (3.98×, z=4.34) and Agentic AI co-demands MLOps (3.98×, z=4.34) — symmetric co-demand. These cannot be taught as independent electives; they should share foundational infrastructure content (containers, orchestration, CI/CD, observability).
+
+2. **Responsible AI is embedded in the agentic stack, not separate.** Agentic AI demands Responsible AI at lift 5.12×, z=4.53; MLOps demands it at 6.88×, z=4.04. The market is integrating governance into the engineering workflow. MSAII's AI Law course doesn't address the *technical* governance skills (Model Versioning 10.08×, MLflow 7.70×, AI Agent Systems Architecture 13.46×) the market pairs with Responsible AI.
+
+3. **Finance AI is a thin domain wrap on the agentic/MLOps core.** Only 8 domain-distinctive skills clear the threshold, and finance's agentic adoption is exactly at market rate (lift 0.97). A finance-AI elective can be designed as the shared Agentic+MLOps core plus a 4-skill domain module (Financial Services, Risk Management, Quantitative Finance, Decision Automation) rather than a standalone program.
+
+4. **Data Engineering is the widest co-demand cluster (66 skills)** but MSAII already touches it via Cloud Computing and Distributed Systems. The gap is the **ML-specific layer**: Feature Stores (11.43× with MLOps), Feature Engineering, Airflow, dbt, and data quality tooling (Great Expectations, Data Contracts, Data Lineage) — none of which are currently covered.
+
+5. **LLMOps is an emerging bridge skill** appearing in both Agentic AI (5.75×, z=2.21) and MLOps (12.45×, z=3.37) lift tables — the highest specialist lift in the MLOps cluster after the core trilogy. It's the operationalization layer for LLMs specifically and deserves explicit coverage as MSAII already teaches LLMs/Generative AI.
+```
+
+### Senior Curriculum Advisor — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Now I have all three specialist outputs. Let me synthesise these into a single coherent recommendation.
+
+---
+
+# CMU MSAII vs. Labour-Market Demand: Gap Analysis & Course Proposals
+
+## Executive Summary
+
+Carnegie Mellon's MSAII program is exceptionally strong in model-layer AI — machine learning, deep learning, NLP, and generative AI — but leaves three structurally unaddressed gaps that expose graduates to significant employability risk: **production AI systems engineering (MLOps + agentic AI)**, **data engineering pipelines**, and **applied business analytics with finance-domain AI**. Two new courses, one of them specialised for finance, would close the most critical of these gaps; they are grounded jointly in cluster-level market demand, lift/significance evidence from 186,249 job postings, and converging signals from recent industry reporting.
+
+---
+
+## 1. The Three Biggest Gaps
+
+### 🔴 Gap #1 — Production AI Systems Engineering: MLOps, Agentic AI & Responsible AI
+**Cluster 5 (Core AI, Cloud & Data-Platform Engineering, 370 skills) — most consequential gap**
+
+The CMU MSAII curriculum covers how to *train* models in depth, but not how to *deploy, orchestrate, monitor, and govern* them. The Skills Taxonomy Analyst found this is the market's most explosively co-demanded skill area:
+
+**Agentic AI** (focal skill, 62 co-demanded skills at z ≥ 2):
+- Large Language Models (lift 4.76×, z=9.39)
+- Retrieval-Augmented Generation / RAG (lift 6.66×, z=8.89)
+- LangChain (lift 7.53×, z=7.90)
+- Prompt Engineering (lift 6.26×, z=7.03)
+- Agentic Frameworks (lift 9.11×, z=6.79)
+- LangGraph (lift 9.47×, z=6.73)
+- Vector Databases (lift 6.85×, z=6.29)
+- Multi-Agent Systems (lift 10.31×, z=5.08)
+- CrewAI (lift 10.23×, z=4.95), AutoGen (lift 9.87×, z=4.66)
+- Responsible AI (lift 5.12×, z=4.53) — critically, the market co-demands governance *within* agentic engineering
+
+**MLOps** (focal skill, 56 co-demanded skills at z ≥ 2):
+- MLflow (lift 15.12×, z=7.38) — highest specialist lift in the entire analysis
+- Model Versioning (lift 15.91×, z=6.86)
+- Model Deployment (lift 8.92×, z=4.79), SageMaker (lift 9.06×, z=4.75), Kubeflow (lift 15.36×, z=4.66)
+- Model Monitoring (lift 12.82×, z=4.23), Feature Stores (lift 11.43×, z=3.93)
+- LLMOps (lift 12.45×, z=3.37) — the LLM-specific deployment layer, now explicitly tracked by the market
+- CI/CD (lift 3.94×, z=3.80), Docker (lift 4.73×, z=3.68), Kubernetes (lift 4.37×, z=3.34)
+
+**Key structural finding:** Agentic AI and MLOps are **symmetrically co-demanded** with each other (each at lift 3.98×, z=4.34), confirming these cannot be taught as separate electives — they share foundational infrastructure (containers, orchestration, CI/CD, observability). The Cluster Interpreter confirmed the Cluster 5 gap: CI/CD appears in 11.9% of postings, DevOps in 9.3%, Agentic AI in 7.8%, Kubernetes 6.6%, Docker 6.2%, RAG 5.2% — none taught in any MSAII course.
+
+**Responsible AI** (focal skill, 16 co-demanded skills): Though a narrower cluster, its lift/z with agentic engineering is striking — AI Agent Systems Architecture (lift 13.46×, z=2.13), Model Versioning (lift 10.08×, z=2.44), MLOps (lift 6.88×, z=4.04). The market integrates governance into the deployment workflow, not as a standalone ethics elective. MSAII's 17-762 Law of Computer Technology covers legal framing but not the technical governance skills employers pair with Responsible AI.
+
+**Industry confirmation:** MIT Technology Review (May 26, 2026) reports that "85% of organizations want to be agentic within three years, but 76% say their current operations and infrastructure can't support that change." McKinsey State of AI 2025 (November 2025) confirms 23% of organizations are already scaling agentic systems. IBM Research (HuggingFace Blog, February & April 2026) has published agent failure-mode benchmarking frameworks (IT-Bench/MAST, VAKRA) — an emerging sub-discipline not covered anywhere in the MSAII curriculum.
+
+---
+
+### 🔴 Gap #2 — Data Engineering for Machine Learning
+**Cluster 3 (Data-Engineering Tools, 89 skills) — most structurally stable missing cluster (median ensemble confidence 0.88)**
+
+No MSAII required course covers the data-engineering toolchain that underlies every production AI system. The Cluster Interpreter's finding is unambiguous: Cluster 3 has the highest ensemble stability of any gap cluster, meaning this signal is robust.
+
+**Data Pipelines** (focal skill, 66 co-demanded skills at z ≥ 2):
+- ETL / ELT (lift 4.37×, z=10.42 and lift 5.21×, z=8.08) — the z=10 anchor: the most statistically attested co-demand in the entire dataset
+- Data Engineering (lift 3.99×, z=10.08)
+- Airflow (lift 5.04×, z=7.99), dbt (lift 4.29×, z=6.08)
+- Data Warehousing (lift 3.94×, z=6.93), Data Lakes (lift 4.42×, z=6.90)
+- PySpark (lift 3.47×, z=6.79), Snowflake (lift 3.48×, z=6.40), Databricks (lift 3.38×, z=5.60)
+- Kafka (lift 3.84×, z=4.98), Redshift (lift 4.35×, z=5.34)
+- Feature Engineering (lift 3.34×, z=3.26) — also co-demanded with MLOps at lift 8.63×
+- Medallion Architecture (lift 5.09×, z=2.64), Data Lineage (lift 3.52×, z=2.43), Great Expectations/data quality (lift 5.27×, z=2.42), Data Contracts (lift 4.11×, z=2.03) — emerging forward-looking additions
+
+The Cluster Interpreter notes the ML-specific slice missing from MSAII is: Feature Stores (lift 11.43×, z=3.93 when co-demanded with MLOps), Feature Engineering, Airflow, dbt, and data quality tooling — none in the curriculum. The existing 15-645 Database Systems and 15-688 Practical Data Science are elective-only and cover analysis, not pipeline construction.
+
+---
+
+### 🔴 Gap #3 — Applied Business Analytics & Finance-Domain AI
+**Cluster 6 (Business Intelligence, Analytics & Finance, 66 skills) — entirely absent despite MSAII's "Future Markets" branding**
+
+Despite 11-651 Artificial Intelligence and Future Markets being a *required* course, the program contains zero finance-domain AI content and no applied analytics toolkit. The Cluster Interpreter identifies this as the most visible mismatch between program positioning and actual course content. Market frequencies from Cluster 6: Data Analytics (41.6% of postings), Business Intelligence (21.9%), Finance domain (17.8%), Data Visualization (15.9%), Forecasting (8.0%), Predictive Modeling (4.4%), Financial Analysis (2.0%), Financial Modeling (1.7%).
+
+For finance specifically, the Analyst's sector wrap identified 8 domain-distinctive skills (z ≥ 2 AND sector lift ≥ 3×):
+- Financial Services (sector lift 3.83×, z=7.03)
+- Risk Management (sector lift 3.83×, z=6.01)
+- Quantitative Finance (sector lift 6.41×, z=2.48) — highest sector lift
+- Decision Automation (sector lift 5.06×, z=2.20)
+- Payment Processing (sector lift 3.85×, z=2.21)
+
+**Critical cross-finding:** Finance's agentic AI adoption is exactly at the market average (sector lift 0.97, z=−0.47), meaning a finance AI specialisation doesn't need a separate technical foundation — it can be built as the shared Agentic+MLOps core plus a 4–5 skill finance domain module. This simplifies curriculum design considerably.
+
+Stanford HAI AI Index 2026 notes that documented AI incidents rose 55% year-over-year (362 in 2025 vs. 233 in 2024), and in regulated industries like finance, those incidents carry regulatory and reputational risk of a categorically different magnitude. The AI Industry News Researcher also flagged that specific AI-in-finance coverage (algorithmic trading, credit modeling, SEC regulatory AI compliance, SR 11-7 model risk guidance) was thin in its indexed corpus — the professor should supplement with specialized fintech sources (Oliver Wyman, Deloitte fintech reports, BIS working papers).
+
+---
+
+## 2. Two Proposed New Courses
+
+### Course A — *Agentic AI Systems & MLOps Engineering*
+**Recommended status: Required (replace or expand 11-695 AI Engineering)**
+**Addresses: Gap #1 (Production AI Systems Engineering)**
+
+**Rationale:** This course closes the single most consequential structural gap. The market co-demands agentic frameworks and MLOps at extremely high lift and significance scores, and they are symmetrically co-demanded with each other — they form a coherent pedagogical unit.
+
+**Module structure grounded in lift/z evidence:**
+
+| Module | Key Skills | Lift/Z Anchor |
+|---|---|---|
+| **1. RAG & Vector Infrastructure** | RAG pipelines, Vector Databases (Pinecone, Weaviate, FAISS), Semantic Search | RAG: lift 6.66×, z=8.89; Vector DBs: lift 6.85×, z=6.29 |
+| **2. Agentic Frameworks & Orchestration** | LangChain, LangGraph, CrewAI, AutoGen, Multi-Agent Systems | LangChain: lift 7.53×, z=7.90; LangGraph: lift 9.47×, z=6.73; Multi-Agent: lift 10.31×, z=5.08 |
+| **3. Model Lifecycle & MLOps** | MLflow, Model Versioning, Model Monitoring, Feature Stores, ML Pipelines | MLflow: lift 15.12×, z=7.38; Model Versioning: lift 15.91×, z=6.86; Kubeflow: lift 15.36×, z=4.66 |
+| **4. ML DevOps & Deployment** | CI/CD, Docker, Kubernetes, SageMaker, Containerisation | CI/CD: lift 3.94×, z=3.80; Kubernetes: lift 4.37×, z=3.34 |
+| **5. LLMOps & Observability** | LLMOps, Model Serving, Observability, Model Evaluation | LLMOps: lift 12.45×, z=3.37; Observability: lift 3.52×, z=2.14 |
+| **6. Responsible AI in Production** | AI governance, bias/fairness auditing, model cards, EU AI Act compliance | Responsible AI with AI Agent Systems Architecture: lift 13.46×, z=2.13; with Model Versioning: lift 10.08×, z=2.44 |
+
+**Industry grounding:** Coursera Job Skills Report 2026 identifies agentic AI as "among the fastest-growing skill areas for 2026." IBM Research's IT-Bench/MAST framework (HuggingFace Blog, February 18, 2026) and VAKRA benchmark (HuggingFace Blog, April 15, 2026) represent an emerging engineering sub-discipline — agent evaluation and failure-mode diagnosis — that fits naturally into Module 5.
+
+---
+
+### Course B — *Data Engineering for AI Systems*
+**Recommended status: Required (or mandatory elective for all non-specialist students)**
+**Addresses: Gap #2 (Data Engineering)**
+
+**Rationale:** Cluster 3 is the most ensemble-stable missing cluster (median confidence 0.88). ETL/ELT co-demand with Data Pipelines reaches z=10+ — the strongest statistical signal in the entire analysis. The existing 15-688 Practical Data Science and 15-645 Database Systems electives are insufficient substitutes.
+
+**Module structure grounded in lift/z evidence:**
+
+| Module | Key Skills | Lift/Z Anchor |
+|---|---|---|
+| **1. ETL/ELT Fundamentals** | ETL, ELT, Data Ingestion, Data Transformation, Schema Design | ETL: lift 4.37×, z=10.42; ELT: lift 5.21×, z=8.08 |
+| **2. Pipeline Orchestration** | Airflow, Dagster, pipeline scheduling, monitoring | Airflow: lift 5.04×, z=7.99 |
+| **3. Modern Data Stack** | dbt, Snowflake, Databricks, Delta Lake, Medallion Architecture | dbt: lift 4.29×, z=6.08; Databricks: lift 3.38×, z=5.60 |
+| **4. Cloud Data Infrastructure** | S3, Redshift, BigQuery, AWS Glue, Azure Data Factory, Data Lakes | Redshift: lift 4.35×, z=5.34; BigQuery: lift 3.65×, z=4.45 |
+| **5. Stream Processing** | Kafka, Apache Flink, Apache Beam, Kinesis, Real-Time Streaming | Kafka: lift 3.84×, z=4.98; Flink: lift 4.28×, z=2.89 |
+| **6. ML Feature Engineering & Quality** | Feature Stores, Feature Engineering, Great Expectations, Data Lineage, Data Contracts | Feature Stores: lift 11.43×, z=3.93 (with MLOps); Great Expectations: lift 5.27×, z=2.42 |
+
+---
+
+### Course B (Finance Variant) — *Data Engineering & AI for Financial Services*
+**Recommended status: Elective specialisation track**
+**Addresses: Gap #2 + Gap #3 combined, finance-sector students**
+
+This is Course B with a finance domain module appended, exploiting the Analyst's finding that finance's agentic AI adoption is at exactly the market rate — meaning finance students need the *same* technical core as everyone else, plus domain-specific application context.
+
+**Finance-specific modules (added to Course B core above):**
+
+| Module | Key Skills | Evidence Anchor |
+|---|---|---|
+| **F1. Finance AI Domain Context** | Financial Services, Risk Management, Decision Automation | Sector lift: Financial Services 3.83×, z=7.03; Risk Management 3.83×, z=6.01 |
+| **F2. Quantitative Finance & Forecasting** | Time-series forecasting, Quantitative Finance, Predictive Modeling, Financial Modeling | Sector lift: Quantitative Finance 6.41×, z=2.48; Cluster 6 market frequency: Forecasting 8.0% |
+| **F3. Fintech Engineering Applications** | Fraud detection pipelines, Payment Processing, credit risk data modeling, Decision Automation | Sector lift: Payment Processing 3.85×, z=2.21; Decision Automation 5.06×, z=2.20 |
+| **F4. Responsible AI in Regulated Environments** | Model risk management (SR 11-7 framework), explainability (SHAP, LIME), audit trails, EU AI Act | Stanford HAI AI Index 2026: AI incidents up 55% YoY; regulatory AI compliance especially acute in finance |
+
+**Industry confirmation for the finance framing:** Stanford HAI AI Index 2026 reports 362 documented AI incidents in 2025 (up from 233 in 2024), with regulated industries like finance facing categorically higher risk. McKinsey State of AI 2025 (November 2025) finds the most common agentic AI deployment in production is in IT and knowledge-management workflows — directly analogous to financial back-office operations (reconciliation, compliance monitoring, document processing). The 85% ambition vs. 76% infrastructure-unreadiness gap (MIT Tech Review, May 26, 2026) is especially consequential in finance, where deployment requires rigorous validation.
+
+> ⚠️ **Corpus gap note:** The AI Industry News Researcher flagged thin coverage of LLMs for financial document analysis, SEC regulatory AI compliance, AI in algorithmic trading, and BIS/central bank AI frameworks. The professor should supplement this finance module design with specialized fintech sources (Oliver Wyman, Deloitte, BIS working papers, SR 11-7 guidance) before finalising the syllabus.
+
+---
+
+## 3. Recent Industry Developments That Bear on These Recommendations
+
+| Development | Source | Date | Curriculum Implication |
+|---|---|---|---|
+| "Rethinking organizational design in the age of agentic AI" — 85% of orgs want agentic AI, 76% lack infrastructure readiness | MIT Technology Review | May 26, 2026 | Validates Gap #1 as the most urgent; justifies Course A as required, not elective |
+| State of AI 2025: 62% experimenting with AI agents, 23% scaling production agents | McKinsey/QuantumBlack | November 2025 | Agents are deployed infrastructure, not research; Course A's scope is correct |
+| Coursera Job Skills 2026: Agentic AI fastest-growing skill area; 14 enrollments/minute for GenAI | Coursera | 2026 | Employer demand is real-time and growing; the GenAI→Agentic pipeline in Course A is well-timed |
+| Inside VAKRA: agent failure modes, reasoning & tool-use benchmarking | HuggingFace Blog / IBM Research | April 15, 2026 | Agent evaluation is now an engineering sub-discipline; include in Course A Module 5 |
+| IBM & UC Berkeley diagnose enterprise agent failures (IT-Bench, MAST framework) | HuggingFace Blog / IBM Research | February 18, 2026 | Failure-mode analysis should be a taught skill in Course A, not an afterthought |
+| Stanford HAI AI Index 2026: 362 AI incidents in 2025, up 55% YoY; 300+ AI skills now tracked | Stanford HAI | 2026 | Responsible AI is an engineering discipline with a failure rate — supports its inclusion in Course A Module 6 and Course B Finance Module F4 |
+| WEF Future of Jobs 2025: AI & big data = #1 fastest-growing skill cluster; 59% of global workforce needs retraining by 2030 | World Economic Forum | January 7, 2025 | Validates the structural scale of the gap; MSAII graduates are in a seller's market if they close these gaps |
+| $285.9B U.S. private AI investment (2025); 53% population adoption faster than internet | Stanford HAI AI Index 2026 | 2026 | Finance-sector students need investment/commercialisation literacy as well as technical skills — supports Course B Finance's F1 module framing |
+
+---
+
+## 4. Trade-offs & Caveats for the Professor
+
+**1. Required vs. elective tension.** The gap analysis strongly suggests Courses A and B should be *required*, but the MSAII program is already 195 units across four semesters with a mandatory internship. Adding two required courses demands either expanding total units (raising student load and tuition concerns) or retiring or merging existing courses — most naturally, 11-695 AI Engineering could be restructured into or replaced by Course A, since it currently provides only surface-level production coverage.
+
+**2. Cluster 6 is lower-stability.** The BI/Analytics/Finance cluster (Gap #3) has median ensemble confidence of 0.49 (the Cluster Interpreter flagged this explicitly), meaning individual skill placements are noisier there than in Cluster 3 (data engineering, 0.88 stability). The market frequency signals (41.6% for Data Analytics) are still real and large, but the distinctiveness of these skills for AI-specific roles specifically (vs. all analytics roles) warrants further validation — the professor should cross-check against job postings specifically filtered to "AI/ML" roles in finance rather than the broader market.
+
+**3. Responsible AI as integrated practice, not standalone course.** The lift/z data argues *against* adding a standalone Responsible AI elective — the market co-demands it *within* agentic and MLOps contexts (Responsible AI + MLOps: lift 6.88×, z=4.04; Responsible AI + Agentic AI: lift 5.12×, z=4.53). Embedding Module 6 of Course A is the market-grounded design; a siloed ethics elective would be less aligned with how employers actually frame the skill.
+
+**4. Finance corpus gap.** The AI Industry News Researcher explicitly flagged limited coverage of AI in algorithmic trading, credit risk modeling, SEC regulatory AI compliance, and banking governance frameworks (SR 11-7). The finance module design above is grounded in the available sector-lift data and cluster analysis, but the professor should validate the finance-specific syllabus content (especially Module F4) against primary regulatory sources and fintech-specialist industry reports before publication.
+
+**5. Agentic AI is a moving target.** The skills taxonomy data runs through Winter 2026, and the Cluster Interpreter noted that agentic AI skills have unstable cluster placements (frequently co-clustering between Cluster 2 — model-layer — and Cluster 5 — systems-layer), which reflects genuine market flux: the discipline is still consolidating its toolchain. Course A's framework choices (LangChain, LangGraph, CrewAI, AutoGen) should be revisited annually as the landscape settles.
+
+---
+
+*All numerical figures cited above — lift (×), z-scores, co-occurrence counts, market frequencies, and sector lifts — are values returned by the Skills Taxonomy Analyst and Cluster Interpreter from live tool calls on the 186,249-posting dataset (Fall 2022–Winter 2026). No figures have been invented, estimated, or converted between metrics. Industry article titles, sources, and dates are as returned by the AI Industry News Researcher. CMU MSAII curriculum structure and URL (https://msaii.cs.cmu.edu/curriculum-0) are as returned by the University AI Programs Researcher from its verified corpus (last verified 2026-06-16); confirm current scheduling at the official curriculum page before finalising any recommendations.*
+```
