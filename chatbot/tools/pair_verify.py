@@ -48,8 +48,8 @@ def _tol(val_str: str) -> float:
     return 0.5 * (10 ** -d)
 
 
-def _near(a: float, b: float, tol: float) -> bool:
-    return abs(a - b) <= tol
+def _near(a: float, b: float, tol: float) -> bool:  # v62 pilot4 amend2:
+    return abs(a - b) <= tol + 1e-9
 
 
 def _parse_lift(s: str) -> float:

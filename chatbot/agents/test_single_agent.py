@@ -435,7 +435,15 @@ def test_pair_verify_passes_colocated_pair():  # v62 pilot4:
         f"Expected 0 failing pairs, got {len(result['failing'])}: {result['failing']}"
     )
     assert len(result["verified_indices"]) == 2
-    print("  PASS — real data-table pairs verified; sector 3.83×/z=7.03 verifies")
+
+    # Rounding-tie: table value at exact tolerance boundary must verify  # v62 pilot4 amend2:
+    assert _is_pair_in_tables("12.38", "3.34"), (
+        "12.38/3.34 must verify — rounding tie at tolerance boundary (epsilon fix)"
+    )
+    assert _is_pair_in_tables("9.12", "2.39"), (
+        "9.12/2.39 must verify — rounding tie at tolerance boundary (epsilon fix)"
+    )
+    print("  PASS — real data-table pairs verified; sector 3.83×/z=7.03 verifies; rounding ties pass")
 
 
 def test_orch_general_backstory_hash():  # v62 pilot2 amend1:
