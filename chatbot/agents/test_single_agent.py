@@ -329,13 +329,20 @@ def test_pair_verify_disabled_returns_identity():  # v62 pilot4:
 
 
 def test_pair_verify_extracts_inline_pairs():  # v62 pilot4:
-    """extract_pairs must find pairs in all required inline formats."""
+    """extract_pairs must find pairs in all required inline formats.
+
+    v62 pilot4 amend: sector tool outputs lowercase 'x' — must be accepted.
+    Composed-score table ('Finance Lift' / 'Composed Score' headers) must NOT
+    extract 1.6× / 15.74 as a pair.
+    """
     from tools.pair_verify import extract_pairs
     cases = [
         ("lift 6.66×, z=8.89 for a skill", "6.66", "8.89"),
         ("6.66× (z=8.89)", "6.66", "8.89"),
         ("**6.66×** z=8.89", "6.66", "8.89"),
         ("result 4.76×, z=9.39 noted", "4.76", "9.39"),
+        # SA sector line with lowercase x  # v62 pilot4 amend:
+        ("Financial Services  (sector lift 3.83x, z=7.03, n=485)", "3.83", "7.03"),
     ]
     for text, exp_lift, exp_z in cases:
         pairs = extract_pairs(text)
@@ -346,96 +353,89 @@ def test_pair_verify_extracts_inline_pairs():  # v62 pilot4:
         assert pairs[0]["z_str"] == exp_z, (
             f"z_str={pairs[0]['z_str']!r} != {exp_z!r} in: {text!r}"
         )
-    # Table format
+    # Table format: z= prefix in next cell → extracted  # v62 pilot4 amend:
     table = "| Skill | 6.66× | z=8.89 | notes |"
     table_pairs = extract_pairs(table)
     assert len(table_pairs) >= 1, f"No pairs found in table row: {table!r}"
     assert table_pairs[0]["lift_str"] == "6.66"
     assert table_pairs[0]["z_str"] == "8.89"
-    print("  PASS — extract_pairs finds all required inline and table formats")
+    # Composed-score table: Finance Lift + Composed Score headers → 1.6×/15.74 NOT extracted  # v62 pilot4 amend:
+    composed_table = (
+        "| Skill | Agentic Lift | Finance Lift | Composed Score |\n"
+        "|---|---|---|---|\n"
+        "| **AutoGen** | 9.87× (z=4.66) | 1.6× | 15.74 |\n"
+    )
+    all_comp_pairs = extract_pairs(composed_table)
+    bad = [p for p in all_comp_pairs if p["lift_str"] == "1.6" and p["z_str"] == "15.74"]
+    assert not bad, (
+        f"composed-score 1.6×/15.74 must NOT be extracted, but got: {bad}"
+    )
+    # 9.87×/4.66 (inline within the cell) is still found by INLINE regex  # v62 pilot4 amend:
+    agentic = [p for p in all_comp_pairs if p["lift_str"] == "9.87"]
+    assert agentic, "9.87×/4.66 (inline in table cell) should still be extracted by inline regex"
+    print("  PASS — extract_pairs finds all required inline and table formats;"
+          " sector x-form extracted; composed-score 1.6×/15.74 not extracted")
 
 
 def test_pair_verify_detects_cross_entry_splice():  # v62 pilot4:
-    """The pilot-3 bug: '6.66×, z=13.13' must FAIL in two scenarios:
-      (a) cross-entry: lift and z on different evidence lines.
-      (b) same-line: lift and z on the same line but bound to different pairs
-          (the actual v62p3-ma-1 structure — line 668 of the specialist output).
-      (c) specialist-summary-table: | 6.66× | 13.13 | with no z= prefix
-          (line 844 of the specialist output).
-    Evidence uses × markers as found in real tool outputs.
+    """The pilot-3 splice '6.66×, z=13.13' must FAIL via data-table lookup.
+
+    v62 pilot4 amend: verification uses frozen data tables, not run evidence.
+    _is_pair_in_tables("6.66", "13.13") must return False (not in any table row).
+    _is_pair_in_tables("6.66", "8.89") must return True (real pair in tables).
+    _is_pair_in_tables("6.23", "13.13") must return True (real pair in tables).
+    verify_all on a spliced answer must have exactly 1 failing pair.
     """
-    from tools.pair_verify import is_pair_in_evidence, verify_all
+    from tools.pair_verify import _is_pair_in_tables, verify_all  # v62 pilot4 amend:
 
-    # (a) Cross-entry: lift 6.66 on line 1; z 13.13 on a DIFFERENT line
-    evidence_cross = [
-        "Agentic AI: lift 6.66×, z=8.89, freq=1234",
-        "LLMs: lift 6.23×, z=13.13, freq=5678",
-    ]
-    assert not is_pair_in_evidence("6.66", "13.13", evidence_cross), (
-        "6.66×/z=13.13 must NOT verify — values on different evidence lines"
+    # Data-table checks (arm-independent)  # v62 pilot4 amend:
+    assert not _is_pair_in_tables("6.66", "13.13"), (
+        "splice 6.66×/z=13.13 must NOT verify — not in any data-table row"
     )
-    assert is_pair_in_evidence("6.66", "8.89", evidence_cross), (
-        "6.66×/z=8.89 must verify — bound inline pair on evidence line"
+    assert _is_pair_in_tables("6.66", "8.89"), (
+        "6.66×/z=8.89 must verify — real pair in data tables"
     )
-    assert is_pair_in_evidence("6.23", "13.13", evidence_cross), (
-        "6.23×/z=13.13 must verify — bound inline pair on evidence line"
+    assert _is_pair_in_tables("6.23", "13.13"), (
+        "6.23×/z=13.13 must verify — real pair in data tables"
     )
 
-    # (b) Same-line: both values present but bound to SEPARATE inline pairs
-    # mirrors line 668 of run_20261106T183430Z_v62p3-ma-1_success_full.md
-    evidence_same_line = [
-        "| RAG | 6.66×, z=8.89 | 6.23×, z=13.13 | Must-teach |",
-    ]
-    assert not is_pair_in_evidence("6.66", "13.13", evidence_same_line), (
-        "6.66×/z=13.13 must NOT verify — same line but bound to different inline pairs"
-    )
-    assert is_pair_in_evidence("6.66", "8.89", evidence_same_line), (
-        "6.66×/z=8.89 must verify — it is a bound inline pair on that line"
-    )
-    assert is_pair_in_evidence("6.23", "13.13", evidence_same_line), (
-        "6.23×/z=13.13 must verify — it is a bound inline pair on that line"
-    )
-
-    # (c) Specialist summary table: | 6.66× | 13.13 | — z has no z= prefix
-    # mirrors line 844 of run_20261106T183430Z_v62p3-ma-1_success_full.md
-    evidence_summary = [
-        "| Agentic AI / LLM Eng. | RAG | 6.66× | 13.13 | LLM anchor |",
-    ]
-    assert not is_pair_in_evidence("6.66", "13.13", evidence_summary), (
-        "6.66×/13.13 in specialist summary table (no z= prefix) must NOT verify"
-    )
-
-    # verify_all on the spliced pair text must produce a failing entry
+    # verify_all on the spliced pair text must produce a failing entry  # v62 pilot4 amend:
     text = "RAG 6.66×, z=13.13 is the best skill."
-    result = verify_all(text, evidence_cross)
+    result = verify_all(text, [])
     assert len(result["failing"]) == 1, (
         f"Expected 1 failing pair, got {len(result['failing'])}: {result['failing']}"
     )
     assert result["failing"][0]["lift_str"] == "6.66"
     assert result["failing"][0]["z_str"] == "13.13"
-    print("  PASS — cross-entry splice (6.66×/z=13.13) correctly detected as FAIL")
+    print("  PASS — splice 6.66×/z=13.13 correctly FAILS via data-table lookup")
 
 
 def test_pair_verify_passes_colocated_pair():  # v62 pilot4:
-    """A correct pair (explicit z= binding on the evidence line) must pass.
-    Evidence uses × markers matching real tool output format.
+    """Real data-table pairs must verify; sector line in x form must verify.
+
+    v62 pilot4 amend: verification uses frozen data tables (not evidence).
+    SA sector line 'sector lift 3.83x, z=7.03' must verify via _is_pair_in_tables.
+    Real pairs 6.66/8.89 and 4.76/9.39 must also verify.
     """
-    from tools.pair_verify import verify_all
-    evidence = [
-        "Agentic AI: 6.66×, z=8.89, 1234 postings",
-        "Cloud Engineering: 4.76×, z=9.39, 890 postings",
-    ]
+    from tools.pair_verify import _is_pair_in_tables, verify_all  # v62 pilot4 amend:
+
+    # SA sector line in x form verifies via data tables  # v62 pilot4 amend:
+    assert _is_pair_in_tables("3.83", "7.03"), (
+        "sector lift 3.83×/z=7.03 must verify — real pair in data tables"
+    )
+
+    # Two real pairs in answer text both pass verify_all with no evidence  # v62 pilot4 amend:
     text = (
         "Top skill: Agentic AI 6.66×, z=8.89. "
         "Second: Cloud Engineering 4.76×, z=9.39."
     )
-    result = verify_all(text, evidence)
+    result = verify_all(text, [])
     assert len(result["pairs"]) == 2, f"Expected 2 pairs, got {len(result['pairs'])}"
     assert len(result["failing"]) == 0, (
         f"Expected 0 failing pairs, got {len(result['failing'])}: {result['failing']}"
     )
     assert len(result["verified_indices"]) == 2
-    print("  PASS — colocated pairs both verified correctly")
+    print("  PASS — real data-table pairs verified; sector 3.83×/z=7.03 verifies")
 
 
 def test_orch_general_backstory_hash():  # v62 pilot2 amend1:
