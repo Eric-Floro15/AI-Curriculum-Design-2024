@@ -38,6 +38,7 @@ from agents.cluster_interpreter import make_cluster_interpreter  # noqa: E402
 from agents.news import make_news_agent  # noqa: E402
 from agents.university_programs import make_university_programs_agent  # noqa: E402
 from llm import describe_llm_config, get_llm  # noqa: E402
+from tools.pair_verify import format_pair_verify_section, run_pair_verify  # v62 pilot4:
 
 # v62 pilot2 amend1:
 _ORCH_PROCEDURE = os.environ.get("ORCH_PROCEDURE", "plain").lower()
@@ -2476,6 +2477,7 @@ def _write_run_record(
     answer: str | None,
     error: Exception | None,
     usage_metrics: object | None = None,
+    pair_verify_summary: dict | None = None,  # v62 pilot4:
 ) -> str:
     """Write a full durable record of one orchestrator run — success or
     failure — to chatbot/run_records/. Returns the path written.
@@ -2607,6 +2609,9 @@ def _write_run_record(
         "",
         answer if answer else "_(none — failed before any answer was produced)_",
         "",
+    ]
+    lines += format_pair_verify_section(pair_verify_summary)  # v62 pilot4: ([] when summary is None)
+    lines += [
         f"## Per-Agent Tool-Call Trace ({len(step_log)} step(s))",
         "",
     ]
@@ -2777,7 +2782,8 @@ def run_query(query: str) -> str:
         # unavailable"), not raised here.
         usage_metrics = getattr(crew, "usage_metrics", None)
         path = _write_run_record(
-            query, step_log, wall_time, answer=None, error=e, usage_metrics=usage_metrics
+            query, step_log, wall_time, answer=None, error=e, usage_metrics=usage_metrics,
+            pair_verify_summary=None,  # v62 pilot4:
         )
         raise RuntimeError(
             f"{type(e).__name__}: {e}\n\n"
@@ -2787,8 +2793,18 @@ def run_query(query: str) -> str:
     else:
         wall_time = time.time() - t0
         usage_metrics = getattr(crew, "usage_metrics", None)
+        # v62 pilot4: opt-in pair verification (no-op when PAIR_VERIFY=0)
+        _pv_evidence = [
+            line
+            for step in step_log
+            if step["role"] in _SPECIALIST_ROLES
+            for line in str(getattr(step["output"], "output", "")).split("\n")
+            if line.strip()
+        ]
+        answer, _pv_summary = run_pair_verify(answer, _pv_evidence, llm=get_llm())
         path = _write_run_record(
-            query, step_log, wall_time, answer=answer, error=None, usage_metrics=usage_metrics
+            query, step_log, wall_time, answer=answer, error=None, usage_metrics=usage_metrics,
+            pair_verify_summary=_pv_summary,  # v62 pilot4:
         )
         # STRICT_DELEGATION (Part B2 deterministic backstop, 2026-09-10):
         # the run record above is ALWAYS written first — even in strict

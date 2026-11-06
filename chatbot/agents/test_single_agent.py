@@ -2,19 +2,24 @@
 test_single_agent.py — Unit tests for the SA ablation module (single_agent.py).
 
 Tests (no LLM calls — all static / import-time checks):
-  1. tool_set_union  — SA agent's tools == exact union of all four specialists.
-  2. ma_unchanged    — build_crew() still returns 5 agents; orchestrator max_iter
-                       unchanged at 8.
-  3. guard1_catches  — guard #1 (_detect_fabrication_flags) flags a specialist
-                       name cited as a source in an SA answer (delegated_to=[]).
-  4. guard4_catches  — guard #4 (_detect_delegation_claim_flags) flags an
-                       affirmative "consulted" claim in an SA answer.
-  5. guard2_catches  — guard #2 (_detect_numeric_fabrication_flags) flags a
-                       lift/z value absent from _build_sa_step_log tool outputs.
-  6. guard3_catches  — guard #3 (_detect_content_attribution_flags) flags a URL
-                       absent from _build_sa_step_log tool outputs.
-  7. plain_backstory_unchanged  — (v62 pilot) SA_BACKSTORY is byte-identical to
-                       the pinned hash when SA_PROCEDURE is unset / "plain".
+  1.  tool_set_union  — SA agent's tools == exact union of all four specialists.
+  2.  ma_unchanged    — build_crew() still returns 5 agents; orchestrator max_iter
+                        unchanged at 8.
+  3.  guard1_catches  — guard #1 (_detect_fabrication_flags) flags a specialist
+                        name cited as a source in an SA answer (delegated_to=[]).
+  4.  guard4_catches  — guard #4 (_detect_delegation_claim_flags) flags an
+                        affirmative "consulted" claim in an SA answer.
+  5.  guard2_catches  — guard #2 (_detect_numeric_fabrication_flags) flags a
+                        lift/z value absent from _build_sa_step_log tool outputs.
+  6.  guard3_catches  — guard #3 (_detect_content_attribution_flags) flags a URL
+                        absent from _build_sa_step_log tool outputs.
+  7.  plain_backstory_unchanged  — (v62 pilot) SA_BACKSTORY is byte-identical to
+                        the pinned hash when SA_PROCEDURE is unset / "plain".
+  8.–11. structured/general backstory hashes (v62 pilot2, v62 pilot2 amend1).
+  12. pair_verify_disabled  — (v62 pilot4) PAIR_VERIFY=0 returns identity + None.
+  13. pair_verify_extracts  — (v62 pilot4) extract_pairs finds all required formats.
+  14. pair_verify_splice     — (v62 pilot4) cross-entry splice correctly fails.
+  15. pair_verify_colocated  — (v62 pilot4) colocated pair passes.
 
 Run:
   KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/agents/test_single_agent.py
@@ -299,6 +304,140 @@ def test_orch_plain_backstory_hash():  # v62 pilot2 amend1:
     print(f"  PASS — _ORCHESTRATOR_PLAIN_BACKSTORY hash matches pinned value (len={len(_ORCHESTRATOR_PLAIN_BACKSTORY)})")
 
 
+# ── Pair-verification tests (v62 pilot4) ──────────────────────────────────────
+
+def test_pair_verify_disabled_returns_identity():  # v62 pilot4:
+    """With PAIR_VERIFY=0 (the default), run_pair_verify must return the
+    original answer byte-identical and None as the summary.
+    """
+    import tools.pair_verify as pv
+    original_flag = pv.PAIR_VERIFY
+    try:
+        pv.PAIR_VERIFY = False
+        answer = "lift 6.66×, z=8.89 for Agentic AI"
+        evidence = ["Agentic AI 6.66 lift 8.89 z"]
+        result_answer, summary = pv.run_pair_verify(answer, evidence, llm=None)
+        assert result_answer is answer, (
+            "run_pair_verify must return the SAME object (byte-identical) when PAIR_VERIFY=0"
+        )
+        assert summary is None, f"summary must be None when PAIR_VERIFY=0, got {summary!r}"
+        section = pv.format_pair_verify_section(None)
+        assert section == [], f"format_pair_verify_section(None) must return [], got {section!r}"
+    finally:
+        pv.PAIR_VERIFY = original_flag
+    print("  PASS — PAIR_VERIFY=0 returns identity + None summary + empty section")
+
+
+def test_pair_verify_extracts_inline_pairs():  # v62 pilot4:
+    """extract_pairs must find pairs in all required inline formats."""
+    from tools.pair_verify import extract_pairs
+    cases = [
+        ("lift 6.66×, z=8.89 for a skill", "6.66", "8.89"),
+        ("6.66× (z=8.89)", "6.66", "8.89"),
+        ("**6.66×** z=8.89", "6.66", "8.89"),
+        ("result 4.76×, z=9.39 noted", "4.76", "9.39"),
+    ]
+    for text, exp_lift, exp_z in cases:
+        pairs = extract_pairs(text)
+        assert len(pairs) >= 1, f"No pairs found in: {text!r}"
+        assert pairs[0]["lift_str"] == exp_lift, (
+            f"lift_str={pairs[0]['lift_str']!r} != {exp_lift!r} in: {text!r}"
+        )
+        assert pairs[0]["z_str"] == exp_z, (
+            f"z_str={pairs[0]['z_str']!r} != {exp_z!r} in: {text!r}"
+        )
+    # Table format
+    table = "| Skill | 6.66× | z=8.89 | notes |"
+    table_pairs = extract_pairs(table)
+    assert len(table_pairs) >= 1, f"No pairs found in table row: {table!r}"
+    assert table_pairs[0]["lift_str"] == "6.66"
+    assert table_pairs[0]["z_str"] == "8.89"
+    print("  PASS — extract_pairs finds all required inline and table formats")
+
+
+def test_pair_verify_detects_cross_entry_splice():  # v62 pilot4:
+    """The pilot-3 bug: '6.66×, z=13.13' must FAIL in two scenarios:
+      (a) cross-entry: lift and z on different evidence lines.
+      (b) same-line: lift and z on the same line but bound to different pairs
+          (the actual v62p3-ma-1 structure — line 668 of the specialist output).
+      (c) specialist-summary-table: | 6.66× | 13.13 | with no z= prefix
+          (line 844 of the specialist output).
+    Evidence uses × markers as found in real tool outputs.
+    """
+    from tools.pair_verify import is_pair_in_evidence, verify_all
+
+    # (a) Cross-entry: lift 6.66 on line 1; z 13.13 on a DIFFERENT line
+    evidence_cross = [
+        "Agentic AI: lift 6.66×, z=8.89, freq=1234",
+        "LLMs: lift 6.23×, z=13.13, freq=5678",
+    ]
+    assert not is_pair_in_evidence("6.66", "13.13", evidence_cross), (
+        "6.66×/z=13.13 must NOT verify — values on different evidence lines"
+    )
+    assert is_pair_in_evidence("6.66", "8.89", evidence_cross), (
+        "6.66×/z=8.89 must verify — bound inline pair on evidence line"
+    )
+    assert is_pair_in_evidence("6.23", "13.13", evidence_cross), (
+        "6.23×/z=13.13 must verify — bound inline pair on evidence line"
+    )
+
+    # (b) Same-line: both values present but bound to SEPARATE inline pairs
+    # mirrors line 668 of run_20261106T183430Z_v62p3-ma-1_success_full.md
+    evidence_same_line = [
+        "| RAG | 6.66×, z=8.89 | 6.23×, z=13.13 | Must-teach |",
+    ]
+    assert not is_pair_in_evidence("6.66", "13.13", evidence_same_line), (
+        "6.66×/z=13.13 must NOT verify — same line but bound to different inline pairs"
+    )
+    assert is_pair_in_evidence("6.66", "8.89", evidence_same_line), (
+        "6.66×/z=8.89 must verify — it is a bound inline pair on that line"
+    )
+    assert is_pair_in_evidence("6.23", "13.13", evidence_same_line), (
+        "6.23×/z=13.13 must verify — it is a bound inline pair on that line"
+    )
+
+    # (c) Specialist summary table: | 6.66× | 13.13 | — z has no z= prefix
+    # mirrors line 844 of run_20261106T183430Z_v62p3-ma-1_success_full.md
+    evidence_summary = [
+        "| Agentic AI / LLM Eng. | RAG | 6.66× | 13.13 | LLM anchor |",
+    ]
+    assert not is_pair_in_evidence("6.66", "13.13", evidence_summary), (
+        "6.66×/13.13 in specialist summary table (no z= prefix) must NOT verify"
+    )
+
+    # verify_all on the spliced pair text must produce a failing entry
+    text = "RAG 6.66×, z=13.13 is the best skill."
+    result = verify_all(text, evidence_cross)
+    assert len(result["failing"]) == 1, (
+        f"Expected 1 failing pair, got {len(result['failing'])}: {result['failing']}"
+    )
+    assert result["failing"][0]["lift_str"] == "6.66"
+    assert result["failing"][0]["z_str"] == "13.13"
+    print("  PASS — cross-entry splice (6.66×/z=13.13) correctly detected as FAIL")
+
+
+def test_pair_verify_passes_colocated_pair():  # v62 pilot4:
+    """A correct pair (explicit z= binding on the evidence line) must pass.
+    Evidence uses × markers matching real tool output format.
+    """
+    from tools.pair_verify import verify_all
+    evidence = [
+        "Agentic AI: 6.66×, z=8.89, 1234 postings",
+        "Cloud Engineering: 4.76×, z=9.39, 890 postings",
+    ]
+    text = (
+        "Top skill: Agentic AI 6.66×, z=8.89. "
+        "Second: Cloud Engineering 4.76×, z=9.39."
+    )
+    result = verify_all(text, evidence)
+    assert len(result["pairs"]) == 2, f"Expected 2 pairs, got {len(result['pairs'])}"
+    assert len(result["failing"]) == 0, (
+        f"Expected 0 failing pairs, got {len(result['failing'])}: {result['failing']}"
+    )
+    assert len(result["verified_indices"]) == 2
+    print("  PASS — colocated pairs both verified correctly")
+
+
 def test_orch_general_backstory_hash():  # v62 pilot2 amend1:
     """_ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT must match
     the pinned general hash. If this fails, one of those was edited without
@@ -330,6 +469,10 @@ if __name__ == "__main__":
         test_general_backstory_hash,          # v62 pilot2:
         test_orch_plain_backstory_hash,       # v62 pilot2 amend1:
         test_orch_general_backstory_hash,     # v62 pilot2 amend1:
+        test_pair_verify_disabled_returns_identity,  # v62 pilot4:
+        test_pair_verify_extracts_inline_pairs,      # v62 pilot4:
+        test_pair_verify_detects_cross_entry_splice, # v62 pilot4:
+        test_pair_verify_passes_colocated_pair,      # v62 pilot4:
     ]
     failures = []
     for fn in tests:

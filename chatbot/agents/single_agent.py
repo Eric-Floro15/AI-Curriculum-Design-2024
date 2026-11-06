@@ -76,6 +76,7 @@ from tools.news_tool import news_rag_tool  # noqa: E402
 from tools.program_rag_tool import program_rag_tool  # noqa: E402
 from tools.rag_tool import skills_rag_tool  # noqa: E402
 from tools.web_search_tool import web_search_tool  # noqa: E402
+from tools.pair_verify import format_pair_verify_section, run_pair_verify  # v62 pilot4:
 
 
 # ── Synthetic step_log adapter for SA guards #2/#3 ────────────────────────────
@@ -416,6 +417,7 @@ def _write_sa_run_record(
     usage_metrics: object | None = None,
     tool_call_log: list[dict] | None = None,
     label: str = "",  # v62 pilot:
+    pair_verify_summary: dict | None = None,  # v62 pilot4:
 ) -> str:
     """Write a durable run record for a SA ablation run.
 
@@ -561,6 +563,9 @@ def _write_sa_run_record(
         "",
         answer if answer else "_(none — failed before any answer was produced)_",
         "",
+    ]
+    tail += format_pair_verify_section(pair_verify_summary)  # v62 pilot4: ([] when summary is None)
+    tail += [
         f"## Per-Agent Tool-Call Trace ({len(step_log)} step(s))",
         "",
     ]
@@ -654,6 +659,7 @@ def run_query_single(query: str, label: str = "") -> str:  # v62 pilot: label
                 query, step_log, wall_time,
                 answer=None, error=e, usage_metrics=usage_metrics,
                 tool_call_log=cap.calls, label=label,
+                pair_verify_summary=None,  # v62 pilot4:
             )
             raise RuntimeError(
                 f"{type(e).__name__}: {e}\n\n"
@@ -662,10 +668,19 @@ def run_query_single(query: str, label: str = "") -> str:  # v62 pilot: label
             ) from e
     wall_time = time.time() - t0
     usage_metrics = getattr(crew, "usage_metrics", None)
+    # v62 pilot4: opt-in pair verification (no-op when PAIR_VERIFY=0)
+    _pv_evidence = [
+        line
+        for call in cap.calls
+        for line in str(call.get("output", "")).split("\n")
+        if line.strip()
+    ]
+    answer, _pv_summary = run_pair_verify(answer, _pv_evidence, llm=get_llm())
     path = _write_sa_run_record(
         query, step_log, wall_time,
         answer=answer, error=None, usage_metrics=usage_metrics,
         tool_call_log=cap.calls, label=label,
+        pair_verify_summary=_pv_summary,  # v62 pilot4:
     )
     return answer
 
