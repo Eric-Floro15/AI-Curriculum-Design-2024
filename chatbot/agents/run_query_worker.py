@@ -168,6 +168,64 @@ def _run_preflight(wave: str) -> bool:
                 if not match_mc:
                     ok = False
 
+    # ── check 5: pair_verify.py frozen SHA-256 (v62 pilot5) ───────────────────
+    _PV_FROZEN_HASH = "c0c66fa02a51b512ce52ec1f82e0f7fe07a56117b29f503acea064ea1672e2fb"
+    try:
+        import hashlib as _hl
+        _pv_path = os.path.join(_CHATBOT_DIR, "tools", "pair_verify.py")
+        with open(_pv_path, "rb") as _pv_f:
+            _pv_hash = _hl.sha256(_pv_f.read()).hexdigest()
+        match_pv = _pv_hash == _PV_FROZEN_HASH
+        print(f"\n  [{'✓' if match_pv else '✗'}] pair_verify.py SHA-256: {_pv_hash}")
+        if not match_pv:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [✗] pair_verify.py hash check failed: {_e}")
+        ok = False
+
+    # ── check 6: Georgia Tech MSCS AI in program index (v62 pilot5) ───────────
+    try:
+        from tools.program_rag_tool import retrieve as _prog_retrieve
+        _gt_hits = _prog_retrieve("Georgia Tech MS CS Artificial Intelligence specialization")
+        _gt_chunks = sum(
+            1 for h in _gt_hits
+            if "georgia" in (h.get("file", "") + h.get("program", "")).lower()
+        )
+        match_gt = _gt_chunks >= 1
+        print(f"\n  [{'✓' if match_gt else '✗'}] Georgia Tech in program index: "
+              f"{_gt_chunks} chunk(s) in top results")
+        if not match_gt:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [✗] Georgia Tech program index check failed: {_e}")
+        ok = False
+
+    # ── check 7: healthcare sector_wrap returns rows (v62 pilot5) ─────────────
+    try:
+        from tools.compose_tool import sector_wrap as _sector_wrap
+        _hw_rows = _sector_wrap("healthcare")
+        match_hw = len(_hw_rows) >= 1
+        print(f"\n  [{'✓' if match_hw else '✗'}] sector_wrap_tool(healthcare) rows: "
+              f"got {len(_hw_rows)}  expected >=1")
+        if not match_hw:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [✗] sector_wrap healthcare check failed: {_e}")
+        ok = False
+
+    # ── check 8: healthcare composed_curriculum returns rows (v62 pilot5) ─────
+    try:
+        from tools.compose_tool import composed_curriculum as _composed
+        _hc_rows = _composed("healthcare")
+        match_hc = len(_hc_rows) >= 1
+        print(f"\n  [{'✓' if match_hc else '✗'}] composed_sector_tool(healthcare) rows: "
+              f"got {len(_hc_rows)}  expected >=1")
+        if not match_hc:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [✗] composed_curriculum healthcare check failed: {_e}")
+        ok = False
+
     print(f"\n  {'PREFLIGHT PASS ✓' if ok else 'PREFLIGHT FAIL ✗ — aborting'}")
     print(f"{'─'*64}\n")
     return ok

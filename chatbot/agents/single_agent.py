@@ -241,16 +241,29 @@ _SA_GENERAL_PROCEDURE_TEXT: str = (
     "5. Answer every part under its own heading, in the order the request gave them."
 )
 
+# v62 pilot5: step appended when SA_PROCEDURE=sequenced (after general steps 1-5)
+_SA_SEQUENCED_STEP_TEXT: str = (
+    "\n6. Order: first call University Program RAG and the cluster tools, and settle "
+    "the gaps and the two courses you will propose. Only then call Skill Lift / "
+    "Differential Analysis, once for each proposed course's own focal skill, and the "
+    "sector tools. Do not call Skill Lift / Differential Analysis before the gaps and "
+    "proposed courses are settled."
+)  # v62 pilot5:
+
 # v62 pilot: SA_BACKSTORY is extended with the relevant procedure text when
 # SA_PROCEDURE=structured or SA_PROCEDURE=general; byte-identical to
-# _SA_PLAIN_BACKSTORY otherwise.  # v62 pilot2: added general branch
+# _SA_PLAIN_BACKSTORY otherwise.  # v62 pilot2: added general branch; v62 pilot5: added sequenced
 SA_BACKSTORY: str = (
-    _SA_PLAIN_BACKSTORY + _SA_PROCEDURE_TEXT
-    if _SA_PROCEDURE == "structured"
+    _SA_PLAIN_BACKSTORY + _SA_GENERAL_PROCEDURE_TEXT + _SA_SEQUENCED_STEP_TEXT
+    if _SA_PROCEDURE == "sequenced"  # v62 pilot5:
     else (
-        _SA_PLAIN_BACKSTORY + _SA_GENERAL_PROCEDURE_TEXT
-        if _SA_PROCEDURE == "general"  # v62 pilot2:
-        else _SA_PLAIN_BACKSTORY
+        _SA_PLAIN_BACKSTORY + _SA_PROCEDURE_TEXT
+        if _SA_PROCEDURE == "structured"
+        else (
+            _SA_PLAIN_BACKSTORY + _SA_GENERAL_PROCEDURE_TEXT
+            if _SA_PROCEDURE == "general"  # v62 pilot2:
+            else _SA_PLAIN_BACKSTORY
+        )
     )
 )
 
@@ -259,6 +272,7 @@ SA_BACKSTORY: str = (
 # Update when the corresponding procedure text changes.
 _SA_STRUCTURED_BACKSTORY_HASH: str = "eca9b063b9b5bd569aac19a998288b184e82bd069e2212d3ab3748f9f240570d"  # v62 pilot2:
 _SA_GENERAL_BACKSTORY_HASH: str = "db06f4850506ed02099f9db9ab61656cc2e7f39f944aacb84bd744aea9c7a23e"    # v62 pilot2:
+_SA_SEQUENCED_BACKSTORY_HASH: str = "126954bc48469a009b137a3374369ed0fd88ba673dcdf7a591bbcbc89dc0ac95"  # v62 pilot5:
 
 # Exact union of all four specialists' tool lists, same tool objects.
 _SA_TOOLS = [
@@ -378,6 +392,64 @@ def _run_sa_preflight() -> bool:  # v62 pilot:
             ok = False
     except Exception as _e:
         print(f"\n  [X] Finance sector compose check failed: {_e}")
+        ok = False
+
+    # ── check 6: pair_verify.py frozen SHA-256 (v62 pilot5) ───────────────────
+    _PV_FROZEN_HASH = "c0c66fa02a51b512ce52ec1f82e0f7fe07a56117b29f503acea064ea1672e2fb"
+    try:
+        import hashlib as _hl
+        _pv_path = os.path.join(_CHATBOT_DIR, "tools", "pair_verify.py")
+        with open(_pv_path, "rb") as _pv_f:
+            _pv_hash = _hl.sha256(_pv_f.read()).hexdigest()
+        match_pv = _pv_hash == _PV_FROZEN_HASH
+        print(f"\n  [{'OK' if match_pv else 'X'}] pair_verify.py SHA-256: {_pv_hash}")
+        if not match_pv:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] pair_verify.py hash check failed: {_e}")
+        ok = False
+
+    # ── check 7: Georgia Tech MSCS AI in program index (v62 pilot5) ───────────
+    try:
+        from tools.program_rag_tool import retrieve as _prog_retrieve2
+        _gt_hits = _prog_retrieve2("Georgia Tech MS CS Artificial Intelligence specialization")
+        _gt_chunks = sum(
+            1 for h in _gt_hits
+            if "georgia" in (h.get("file", "") + h.get("program", "")).lower()
+        )
+        match_gt = _gt_chunks >= 1
+        print(f"\n  [{'OK' if match_gt else 'X'}] Georgia Tech in program index: "
+              f"{_gt_chunks} chunk(s) in top results")
+        if not match_gt:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] Georgia Tech program index check failed: {_e}")
+        ok = False
+
+    # ── check 8: healthcare sector_wrap returns rows (v62 pilot5) ─────────────
+    try:
+        from tools.compose_tool import sector_wrap as _sector_wrap
+        _hw_rows = _sector_wrap("healthcare")
+        match_hw = len(_hw_rows) >= 1
+        print(f"\n  [{'OK' if match_hw else 'X'}] sector_wrap_tool(healthcare) rows: "
+              f"got {len(_hw_rows)}  expected >=1")
+        if not match_hw:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] sector_wrap healthcare check failed: {_e}")
+        ok = False
+
+    # ── check 9: healthcare composed_curriculum returns rows (v62 pilot5) ─────
+    try:
+        from tools.compose_tool import composed_curriculum as _compose_hc
+        _hc_rows = _compose_hc("healthcare")
+        match_hc = len(_hc_rows) >= 1
+        print(f"\n  [{'OK' if match_hc else 'X'}] composed_sector_tool(healthcare) rows: "
+              f"got {len(_hc_rows)}  expected >=1")
+        if not match_hc:
+            ok = False
+    except Exception as _e:
+        print(f"\n  [X] composed_curriculum healthcare check failed: {_e}")
         ok = False
 
     print(f"\n  {'PREFLIGHT PASS' if ok else 'PREFLIGHT FAIL -- aborting'}")

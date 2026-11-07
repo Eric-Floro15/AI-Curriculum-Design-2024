@@ -53,6 +53,16 @@ WORKING PROCEDURE FOR MULTI-PART REQUESTS (follow in order):
 5. Answer every part under its own heading, in the order the request gave them.
 6. Budget for this procedure: it replaces the 3-delegation maximum stated earlier. Delegate at most ONCE to each of the four specialists (at most 4 delegations in total), and put everything you need from a specialist into that one delegation. For example, ask the Skills Taxonomy Analyst in a single request for the lift values behind the gaps, the lift profile of each proposed course's focal skill, AND the requested sector's Sector Skill Wrap and Composed Sector Curriculum."""  # v62 pilot2 amend1b:
 
+# v62 pilot5: step appended when ORCH_PROCEDURE=sequenced (after general steps 1-6)
+_ORCH_SEQUENCED_STEP_TEXT = (
+    "\n7. Order: first delegate to the University AI Programs Researcher and the "
+    "Cluster Interpreter, and settle the gaps and the two courses you will propose. "
+    "Only then delegate to the Skills Taxonomy Analyst, listing every proposed "
+    "course's own focal skill and the requested sector in that single delegation. "
+    "Do not delegate to the Skills Taxonomy Analyst before the gaps and proposed "
+    "courses are settled."
+)  # v62 pilot5:
+
 
 _ORCHESTRATOR_PLAIN_BACKSTORY = """\
 You are a senior curriculum advisor coordinating four specialist
@@ -426,17 +436,22 @@ OUTPUT FORMAT for your final answer:
 - Close with the trade-off or caveat the professor should consider.
 """
 
-# v62 pilot2 amend1: dynamic backstory assembly
+# v62 pilot2 amend1: dynamic backstory assembly; v62 pilot5: added sequenced branch
 ORCHESTRATOR_BACKSTORY = (
-    _ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT
-    if _ORCH_PROCEDURE == "general"
-    else _ORCHESTRATOR_PLAIN_BACKSTORY
+    _ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT + _ORCH_SEQUENCED_STEP_TEXT
+    if _ORCH_PROCEDURE == "sequenced"  # v62 pilot5:
+    else (
+        _ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT
+        if _ORCH_PROCEDURE == "general"
+        else _ORCHESTRATOR_PLAIN_BACKSTORY
+    )
 )
 
 # v62 pilot2 amend1: hash pins — recompute with:
 #   python -c "import hashlib; from agents.orchestrator import _ORCHESTRATOR_PLAIN_BACKSTORY, _ORCH_GENERAL_PROCEDURE_TEXT; plain=_ORCHESTRATOR_PLAIN_BACKSTORY; print('plain:', hashlib.sha256(plain.encode()).hexdigest()); print('general:', hashlib.sha256((plain+_ORCH_GENERAL_PROCEDURE_TEXT).encode()).hexdigest())"
 _ORCH_PLAIN_BACKSTORY_HASH = "24bbfe5b63e70cd1b441620493a94ab8e14baaa1442580d9b356fc37c84b5f67"  # v62 pilot2 amend1:
 _ORCH_GENERAL_BACKSTORY_HASH = "773ea6e1ccfe767f5da958b338ea15b4275a03637e6ab8e7ec282ffd481ae057"  # v62 pilot2 amend1b:
+_ORCH_SEQUENCED_BACKSTORY_HASH = "b643cae2409e1a4ea5f629f08e1585686711fd37305b1829bbe106ee935ddb1b"  # v62 pilot5:
 
 
 def make_orchestrator() -> Agent:

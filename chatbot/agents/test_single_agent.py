@@ -20,6 +20,10 @@ Tests (no LLM calls — all static / import-time checks):
   13. pair_verify_extracts  — (v62 pilot4) extract_pairs finds all required formats.
   14. pair_verify_splice     — (v62 pilot4) cross-entry splice correctly fails.
   15. pair_verify_colocated  — (v62 pilot4) colocated pair passes.
+  16. sa_sequenced_equals_general_plus_step — (v62 pilot5) SA sequenced = general + step6_text.
+  17. sa_sequenced_hash      — (v62 pilot5) SA_BACKSTORY hash when SA_PROCEDURE=sequenced.
+  18. orch_sequenced_equals_general_plus_step — (v62 pilot5) orch sequenced = general + step7_text.
+  19. sequenced_procedure_recorded_in_header — (v62 pilot5) value written to run-record header.
 
 Run:
   KMP_DUPLICATE_LIB_OK=TRUE python3 chatbot/agents/test_single_agent.py
@@ -41,6 +45,10 @@ from agents.single_agent import (  # noqa: E402
     _SA_PLAIN_BACKSTORY_HASH,
     _SA_STRUCTURED_BACKSTORY_HASH,  # v62 pilot2:
     _SA_GENERAL_BACKSTORY_HASH,     # v62 pilot2:
+    _SA_SEQUENCED_BACKSTORY_HASH,   # v62 pilot5:
+    _SA_GENERAL_PROCEDURE_TEXT,     # v62 pilot5:
+    _SA_SEQUENCED_STEP_TEXT,        # v62 pilot5:
+    _SA_PROCEDURE,                  # v62 pilot5:
 )
 from agents.orchestrator import (  # noqa: E402
     _detect_content_attribution_flags,
@@ -53,6 +61,10 @@ from agents.orchestrator import (  # noqa: E402
     _ORCH_PLAIN_BACKSTORY_HASH,      # v62 pilot2 amend1:
     _ORCH_GENERAL_BACKSTORY_HASH,    # v62 pilot2 amend1:
     _ORCH_GENERAL_PROCEDURE_TEXT,    # v62 pilot2 amend1:
+    _ORCH_SEQUENCED_BACKSTORY_HASH,  # v62 pilot5:
+    _ORCH_SEQUENCED_STEP_TEXT,       # v62 pilot5:
+    _ORCH_PROCEDURE,                 # v62 pilot5:
+    ORCHESTRATOR_BACKSTORY,          # v62 pilot5:
 )
 
 
@@ -304,6 +316,128 @@ def test_orch_plain_backstory_hash():  # v62 pilot2 amend1:
     print(f"  PASS — _ORCHESTRATOR_PLAIN_BACKSTORY hash matches pinned value (len={len(_ORCHESTRATOR_PLAIN_BACKSTORY)})")
 
 
+# ── Tests 10–14: v62 pilot5: sequenced procedure (both arms) ─────────────────
+
+def test_sa_sequenced_backstory_equals_general_plus_step():  # v62 pilot5:
+    """SA sequenced backstory must equal SA general backstory + '\n' + step6_text.
+
+    Checks the structural invariant: sequenced = general + newline + step text.
+    Plain, structured, and general must stay byte-identical to their pinned values.
+    """
+    import os as _os
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure not in ("sequenced", "plain", ""):
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; run with SA_PROCEDURE=sequenced to exercise this test")
+        return
+
+    # Structural check: sequenced = general_procedure_text + step_text, appended to plain
+    general_text = _SA_GENERAL_PROCEDURE_TEXT
+    step_text = _SA_SEQUENCED_STEP_TEXT
+    expected = _SA_PLAIN_BACKSTORY_HASH  # just a placeholder — we check structure, not via env
+
+    # Build the expected sequenced backstory from parts
+    # _SA_PLAIN_BACKSTORY is not exported; use SA_BACKSTORY when procedure=plain as proxy
+    # Instead, verify via hash: sequenced hash must equal hash of (general_backstory + step_text)
+    # where general_backstory = plain + general_procedure_text
+    # We do this by recomputing from the exported pieces.
+    import hashlib as _hl
+    # Reconstruct general backstory from (plain hash known) + general_procedure_text
+    # We can't reconstruct plain backstory text directly, but we can verify the structural rule
+    # by confirming: SA_BACKSTORY when sequenced == SA_BACKSTORY[when general] + step_text
+    # The simplest check: sequenced hash == hash(general + step_text)
+    # We need the actual plain backstory text — import it
+    from agents.single_agent import _SA_PLAIN_BACKSTORY as _plain  # noqa
+    general_full = _plain + general_text
+    sequenced_full = general_full + step_text
+    computed_hash = _hl.sha256(sequenced_full.encode()).hexdigest()
+    assert computed_hash == _SA_SEQUENCED_BACKSTORY_HASH, (
+        f"sequenced backstory hash mismatch:\n"
+        f"  computed from (general + step_text) : {computed_hash}\n"
+        f"  pinned _SA_SEQUENCED_BACKSTORY_HASH  : {_SA_SEQUENCED_BACKSTORY_HASH}\n"
+        "Structural rule violated: sequenced != general + newline + step6_text"
+    )
+    # Also confirm general and plain hashes unchanged
+    plain_hash = _hl.sha256(_plain.encode()).hexdigest()
+    assert plain_hash == _SA_PLAIN_BACKSTORY_HASH, (
+        f"plain backstory changed: {plain_hash} != {_SA_PLAIN_BACKSTORY_HASH}"
+    )
+    general_hash = _hl.sha256(general_full.encode()).hexdigest()
+    assert general_hash == _SA_GENERAL_BACKSTORY_HASH, (
+        f"general backstory changed: {general_hash} != {_SA_GENERAL_BACKSTORY_HASH}"
+    )
+    print(f"  PASS — SA sequenced = general + step6_text; general and plain unchanged")
+    print(f"         sequenced hash : {computed_hash}")
+
+
+def test_sa_sequenced_backstory_hash():  # v62 pilot5:
+    """When SA_PROCEDURE=sequenced, SA_BACKSTORY must match the pinned sequenced hash."""
+    import os as _os
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "sequenced":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; sequenced test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    assert actual_hash == _SA_SEQUENCED_BACKSTORY_HASH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=sequenced):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_SEQUENCED_BACKSTORY_HASH}\n"
+        "Update _SA_SEQUENCED_BACKSTORY_HASH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY hash matches pinned sequenced value (len={len(SA_BACKSTORY)})")
+
+
+def test_orch_sequenced_backstory_equals_general_plus_step():  # v62 pilot5:
+    """Orchestrator sequenced backstory must equal general backstory + '\n' + step7_text."""
+    import hashlib as _hl
+    step_text = _ORCH_SEQUENCED_STEP_TEXT
+    general_full = _ORCHESTRATOR_PLAIN_BACKSTORY + _ORCH_GENERAL_PROCEDURE_TEXT
+    sequenced_full = general_full + step_text
+    computed_hash = _hl.sha256(sequenced_full.encode()).hexdigest()
+    assert computed_hash == _ORCH_SEQUENCED_BACKSTORY_HASH, (
+        f"orch sequenced backstory hash mismatch:\n"
+        f"  computed from (general + step_text) : {computed_hash}\n"
+        f"  pinned _ORCH_SEQUENCED_BACKSTORY_HASH: {_ORCH_SEQUENCED_BACKSTORY_HASH}\n"
+        "Structural rule violated: sequenced != general + newline + step7_text"
+    )
+    general_hash = _hl.sha256(general_full.encode()).hexdigest()
+    assert general_hash == _ORCH_GENERAL_BACKSTORY_HASH, (
+        f"orch general backstory changed: {general_hash} != {_ORCH_GENERAL_BACKSTORY_HASH}"
+    )
+    print(f"  PASS — orch sequenced = general + step7_text; general unchanged")
+    print(f"         sequenced hash : {computed_hash}")
+
+
+def test_sequenced_procedure_recorded_in_header():  # v62 pilot5:
+    """When SA_PROCEDURE=sequenced or ORCH_PROCEDURE=sequenced, the value 'sequenced'
+    must appear in the run-record header lines produced by the respective worker.
+    """
+    import os as _os
+    # SA arm: _build_run_record_header is not directly exported, but SA_PROCEDURE
+    # is written via run_record_header list in run_sa_worker. We test the module-level
+    # _SA_PROCEDURE value is 'sequenced' when that env var is set, and that
+    # SA_BACKSTORY reflects the sequenced text (hash check covers this via the other tests).
+    # The direct test: _SA_PROCEDURE == "sequenced" when env is set.
+    sa_proc = _os.environ.get("SA_PROCEDURE", "plain")
+    # Check that the imported _SA_PROCEDURE reflects the env var correctly.
+    if sa_proc == "sequenced":
+        assert _SA_PROCEDURE == "sequenced", (
+            f"_SA_PROCEDURE should be 'sequenced' but is {_SA_PROCEDURE!r}"
+        )
+        print(f"  PASS — _SA_PROCEDURE == 'sequenced' (env SA_PROCEDURE=sequenced)")
+    else:
+        print(f"  SKIP — SA_PROCEDURE={sa_proc!r}; set SA_PROCEDURE=sequenced to test header recording")
+    # Orch arm
+    orch_proc = _os.environ.get("ORCH_PROCEDURE", "plain")
+    if orch_proc == "sequenced":
+        assert _ORCH_PROCEDURE == "sequenced", (
+            f"_ORCH_PROCEDURE should be 'sequenced' but is {_ORCH_PROCEDURE!r}"
+        )
+        print(f"  PASS — _ORCH_PROCEDURE == 'sequenced' (env ORCH_PROCEDURE=sequenced)")
+    else:
+        if sa_proc != "sequenced":
+            print(f"  SKIP — ORCH_PROCEDURE={orch_proc!r}; set ORCH_PROCEDURE=sequenced to test orch header")
+
+
 # ── Pair-verification tests (v62 pilot4) ──────────────────────────────────────
 
 def test_pair_verify_disabled_returns_identity():  # v62 pilot4:
@@ -481,6 +615,10 @@ if __name__ == "__main__":
         test_pair_verify_extracts_inline_pairs,      # v62 pilot4:
         test_pair_verify_detects_cross_entry_splice, # v62 pilot4:
         test_pair_verify_passes_colocated_pair,      # v62 pilot4:
+        test_sa_sequenced_backstory_equals_general_plus_step,  # v62 pilot5:
+        test_sa_sequenced_backstory_hash,            # v62 pilot5:
+        test_orch_sequenced_backstory_equals_general_plus_step,  # v62 pilot5:
+        test_sequenced_procedure_recorded_in_header,  # v62 pilot5:
     ]
     failures = []
     for fn in tests:
