@@ -2534,6 +2534,7 @@ def _write_run_record(
         "",
         f"**Model:** {describe_llm_config()}",
         f"**ORCH_PROCEDURE:** {_ORCH_PROCEDURE}",  # v62 pilot2 amend1:
+        f"**PAIR_VERIFY:** {os.environ.get('PAIR_VERIFY', '1')}",  # v63:
         "",
         "## Metrics",
         # required_specialist_missing is placed first/at the top of

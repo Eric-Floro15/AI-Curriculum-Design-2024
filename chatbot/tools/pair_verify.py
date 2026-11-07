@@ -1,10 +1,10 @@
 """chatbot/tools/pair_verify.py
-# v62 pilot4: opt-in pair-verification layer.
+# v62 pilot4: opt-in pair-verification layer.  # v63: on by default.
 
-PAIR_VERIFY=1 activates; default=0 returns (answer, None) byte-identical to
-the pre-layer behaviour. With PAIR_VERIFY=1, the layer runs on the final
-answer of both arms after the answer is produced and before the existing
-guards and the run record are written.
+PAIR_VERIFY=1 activates (default as of v63); PAIR_VERIFY=0 returns
+(answer, None) byte-identical to the pre-layer behaviour. With PAIR_VERIFY=1,
+the layer runs on the final answer of both arms after the answer is produced
+and before the existing guards and the run record are written.
 
 Design: extract lift/z pairs → verify each against the frozen data tables →
 correct failing pairs with one LLM call → remove any that still fail →
@@ -22,7 +22,7 @@ import json
 import os
 import re
 
-PAIR_VERIFY = os.environ.get("PAIR_VERIFY", "0") == "1"  # v62 pilot4:
+PAIR_VERIFY = os.environ.get("PAIR_VERIFY", "1") == "1"  # v62 pilot4: | v63: default on
 
 # Data directory (resolved relative to this file)  # v62 pilot4 amend:
 _DATA_DIR = os.path.normpath(  # v62 pilot4 amend:
@@ -131,6 +131,42 @@ _INLINE_PAIR_RE = re.compile(
     r"z\s*=\s*\*{0,2}(\d+\.?\d*)\*{0,2}",
     re.IGNORECASE,
 )
+
+
+# ---------------------------------------------------------------------------
+# Range-detection helpers  # v63:
+# ---------------------------------------------------------------------------
+
+def _is_range_match(text: str, m: "re.Match") -> bool:  # v63:
+    """Return True if the lift or z in m is part of a range expression.
+
+    Covers:
+    - lift preceded by a dash (optionally with ×/x/X/* between dash and start)
+    - lift followed by a dash after the × marker
+    - z followed by a dash and a digit
+    - z preceded by a dash (second half of a range)
+    """  # v63:
+    # Case 1: lift preceded by dash (e.g. –15.91× or ×–15.91× or 3.29–4.12×)
+    before_match = text[max(0, m.start() - 5) : m.start()]
+    if re.search(r"[–—\-][×xX*\s]*$", before_match):
+        return True  # v63:
+    # Case 2: lift followed by dash after the × marker (e.g. 15.12×–)
+    end_lift = m.end(1)
+    while end_lift < len(text) and text[end_lift] in "*×xX":
+        end_lift += 1
+    if end_lift < len(text) and re.match(r"[–—\-]", text[end_lift : end_lift + 1]):
+        return True  # v63:
+    # Case 3: z followed by dash+digit (e.g. z=4.66–7.38)
+    end_z = m.end(2)
+    while end_z < len(text) and text[end_z] == "*":
+        end_z += 1
+    if re.match(r"[–—\-]\s*\d", text[end_z : end_z + 5]):
+        return True  # v63:
+    # Case 4: z preceded by dash (second half, e.g. ...12.80–13.62)
+    before_z = text[max(0, m.start(2) - 3) : m.start(2)]
+    if re.search(r"[–—\-]\s*$", before_z):
+        return True  # v63:
+    return False  # v63:
 
 
 def _label_before(text: str, pos: int) -> str:
@@ -276,32 +312,44 @@ def _extract_table_pairs_from_text(text: str) -> "list[dict]":  # v62 pilot4 ame
     return results
 
 
+def _extract_pairs_internal(text: str) -> "tuple[list[dict], int]":  # v63:
+    """Return (pairs, ranges_skipped). ranges_skipped counts inline range detections."""  # v63:
+    results: list[dict] = []
+    seen: set[int] = set()
+    ranges_skipped = 0  # v63:
+    for m in _INLINE_PAIR_RE.finditer(text):
+        if m.start() in seen:
+            continue
+        if _is_range_match(text, m):  # v63:
+            ranges_skipped += 1  # v63:
+            continue  # v63: skip without counting as checked or failing
+        seen.add(m.start())
+        results.append({
+            "label": _label_before(text, m.start()),
+            "lift_str": m.group(1),
+            "z_str": m.group(2),
+            "full_match": m.group(0),
+            "start": m.start(),
+            "end": m.end(),
+        })
+    for p in _extract_table_pairs_from_text(text):  # v62 pilot4 amend:
+        if p["start"] not in seen:
+            seen.add(p["start"])
+            results.append(p)
+    results.sort(key=lambda r: r["start"])
+    return results, ranges_skipped  # v63:
+
+
 def extract_pairs(text: str) -> "list[dict]":
     """Return list of extracted pairs.
 
     Each element: {label, lift_str, z_str, full_match, start, end}.
     Pairs with no z are ignored. Accepts × / x / X as lift marker.
     Table pairs require z= prefix or z-word column header.
-    """  # v62 pilot4 amend:
-    results: list[dict] = []
-    seen: set[int] = set()
-    for m in _INLINE_PAIR_RE.finditer(text):
-        if m.start() not in seen:
-            seen.add(m.start())
-            results.append({
-                "label": _label_before(text, m.start()),
-                "lift_str": m.group(1),
-                "z_str": m.group(2),
-                "full_match": m.group(0),
-                "start": m.start(),
-                "end": m.end(),
-            })
-    for p in _extract_table_pairs_from_text(text):  # v62 pilot4 amend:
-        if p["start"] not in seen:
-            seen.add(p["start"])
-            results.append(p)
-    results.sort(key=lambda r: r["start"])
-    return results
+    Range expressions are skipped (not counted). See _extract_pairs_internal.
+    """  # v62 pilot4 amend: | v63: range skip via _extract_pairs_internal
+    pairs, _ = _extract_pairs_internal(text)  # v63:
+    return pairs
 
 
 # ---------------------------------------------------------------------------
@@ -344,9 +392,9 @@ def verify_all(text: str, evidence_entries: "list[str]") -> dict:
     evidence_entries is accepted for backward compat but not used for
     pass/fail decisions (v62 pilot4 amend).
 
-    Returns: {pairs, verified_indices, failing}
-    """  # v62 pilot4 amend:
-    pairs = extract_pairs(text)
+    Returns: {pairs, verified_indices, failing, ranges_skipped}
+    """  # v62 pilot4 amend: | v63: added ranges_skipped
+    pairs, ranges_skipped = _extract_pairs_internal(text)  # v63:
     verified_indices: list[int] = []
     failing: list[dict] = []
     for i, p in enumerate(pairs):
@@ -354,7 +402,12 @@ def verify_all(text: str, evidence_entries: "list[str]") -> dict:
             verified_indices.append(i)
         else:
             failing.append(p)
-    return {"pairs": pairs, "verified_indices": verified_indices, "failing": failing}
+    return {  # v63: added ranges_skipped
+        "pairs": pairs,
+        "verified_indices": verified_indices,
+        "failing": failing,
+        "ranges_skipped": ranges_skipped,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -505,6 +558,7 @@ def run_pair_verify(
     failing = result["failing"]
     n_checked = len(pairs)
     n_verified = len(result["verified_indices"])
+    ranges_skipped = result["ranges_skipped"]  # v63:
 
     corrections: dict[str, str] = {}
     correction_call_made = False
@@ -559,6 +613,7 @@ def run_pair_verify(
         "n_verified": n_verified,
         "n_corrected": n_corrected,
         "n_removed": n_removed,
+        "ranges_skipped": ranges_skipped,  # v63:
         "corrections": corrected_records,
         "removed": removed_records,
         "pre_verification_draft": pre_verification_draft,
@@ -586,7 +641,8 @@ def format_pair_verify_section(summary: "dict | None") -> "list[str]":
         f"- **Pairs checked:** {summary['n_checked']}  "
         f"**Verified as written:** {summary['n_verified']}  "
         f"**Corrected:** {summary['n_corrected']}  "
-        f"**Removed:** {summary['n_removed']}"
+        f"**Removed:** {summary['n_removed']}  "
+        f"**Ranges skipped:** {summary.get('ranges_skipped', 0)}"  # v63:
     )
     lines.append(
         f"- **Correction call made:** {summary['correction_call_made']}{cost_part}"

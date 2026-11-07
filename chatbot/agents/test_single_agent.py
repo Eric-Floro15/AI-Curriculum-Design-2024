@@ -441,8 +441,9 @@ def test_sequenced_procedure_recorded_in_header():  # v62 pilot5:
 # ── Pair-verification tests (v62 pilot4) ──────────────────────────────────────
 
 def test_pair_verify_disabled_returns_identity():  # v62 pilot4:
-    """With PAIR_VERIFY=0 (the default), run_pair_verify must return the
-    original answer byte-identical and None as the summary.
+    """With PAIR_VERIFY=0, run_pair_verify must return the original answer
+    byte-identical and None as the summary.  (PAIR_VERIFY=0 is now explicit
+    opt-out; default changed to 1 in v63.)
     """
     import tools.pair_verify as pv
     original_flag = pv.PAIR_VERIFY
@@ -596,6 +597,99 @@ def test_orch_general_backstory_hash():  # v62 pilot2 amend1:
     print(f"  PASS — Orchestrator general backstory hash matches pinned value (len={len(general_text)})")
 
 
+def test_pair_verify_default_on():  # v63:
+    """PAIR_VERIFY must default to True (layer on) when env var PAIR_VERIFY is unset.
+
+    v63: default changed from '0' to '1'.
+    """
+    import os
+    import tools.pair_verify as pv
+    if os.environ.get("PAIR_VERIFY"):
+        print(f"  SKIP — PAIR_VERIFY={os.environ['PAIR_VERIFY']!r} set in env, skipping default check")
+        return
+    assert pv.PAIR_VERIFY, (
+        "PAIR_VERIFY must be True when PAIR_VERIFY env var is not set "
+        "(default changed to '1' in v63)"
+    )
+    print("  PASS — PAIR_VERIFY defaults to True (layer on) when env var is unset")
+
+
+def test_pair_verify_range_skipped():  # v63:
+    """Range expressions must be skipped (not checked, not failed, not removed).
+
+    - Inline range '15.12x-15.91x, z=4.66-7.38' -> ranges_skipped >= 1, 0 pairs, 0 failing.
+    - Table range '| Tableau | 3.35-3.89x | z=12.80-13.62 |' -> 0 pairs, 0 failing.
+    - RAG splice '6.66x, z=13.13' and table splice '| ... | 6.66x | z=13.13 |' still fail.
+    - run_pair_verify with range text: answer unchanged, n_removed=0, ranges_skipped >= 1.
+    """
+    import tools.pair_verify as pv
+
+    # 1. Inline range: en-dash variants
+    for range_text in [
+        "Top skills: 15.12×–4.66×, z=4.66–7.38 across cohort.",  # U+2013
+        "Top skills: 15.12×—15.91×, z=4.66–7.38 across cohort.",  # U+2014
+        "Top skills: 15.12×-15.91×, z=4.66-7.38 across cohort.",            # hyphen
+    ]:
+        result = pv.verify_all(range_text, [])
+        assert result["pairs"] == [], (
+            f"Inline range must produce 0 pairs in {range_text!r}: {result['pairs']}"
+        )
+        assert result["failing"] == [], (
+            f"Inline range must have 0 failing in {range_text!r}: {result['failing']}"
+        )
+        assert result["ranges_skipped"] >= 1, (
+            f"Inline range must increment ranges_skipped in {range_text!r}: "
+            f"ranges_skipped={result['ranges_skipped']}"
+        )
+
+    # 2. Table row with range cells — not extracted, not failed
+    table_range = "| Tableau | 3.35–3.89× | z=12.80–13.62 |"
+    result2 = pv.verify_all(table_range, [])
+    assert result2["pairs"] == [], (
+        f"Table range row must produce 0 pairs, got {result2['pairs']}"
+    )
+    assert result2["failing"] == [], (
+        f"Table range row must have 0 failing, got {result2['failing']}"
+    )
+
+    # 3. RAG splice 6.66x/z=13.13 still fails (not a range)
+    splice_text = "RAG 6.66×, z=13.13 is the best skill."
+    result3 = pv.verify_all(splice_text, [])
+    assert len(result3["failing"]) == 1, (
+        f"Splice 6.66x/z=13.13 must still fail, got {result3['failing']}"
+    )
+    assert result3["failing"][0]["lift_str"] == "6.66"
+    assert result3["failing"][0]["z_str"] == "13.13"
+
+    # 4. Table splice | ... | 6.66x | z=13.13 | still fails
+    table_splice = "| Skill | 6.66× | z=13.13 | notes |"
+    result4 = pv.verify_all(table_splice, [])
+    assert len(result4["failing"]) >= 1, (
+        f"Table splice 6.66x/z=13.13 must still fail, got {result4['failing']}"
+    )
+
+    # 5. run_pair_verify with range: answer unchanged, n_removed=0, ranges_skipped >= 1
+    orig_flag = pv.PAIR_VERIFY
+    try:
+        pv.PAIR_VERIFY = True
+        range_ans = "Top skills: 15.12×–15.91×, z=4.66–7.38 across cohort."
+        result_ans, summary = pv.run_pair_verify(range_ans, [], llm=None)
+        assert result_ans == range_ans, (
+            "Answer must be unchanged when only ranges are present"
+        )
+        assert summary["n_removed"] == 0, (
+            f"n_removed must be 0 for range-only answer, got {summary['n_removed']}"
+        )
+        assert summary["ranges_skipped"] >= 1, (
+            f"ranges_skipped must be >= 1, got {summary['ranges_skipped']}"
+        )
+    finally:
+        pv.PAIR_VERIFY = orig_flag
+
+    print("  PASS — inline range skipped (ranges_skipped>=1), table range not extracted, "
+          "splices still fail, run_pair_verify leaves range answer unchanged")
+
+
 # ── Runner ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -619,6 +713,8 @@ if __name__ == "__main__":
         test_sa_sequenced_backstory_hash,            # v62 pilot5:
         test_orch_sequenced_backstory_equals_general_plus_step,  # v62 pilot5:
         test_sequenced_procedure_recorded_in_header,  # v62 pilot5:
+        test_pair_verify_default_on,                 # v63:
+        test_pair_verify_range_skipped,              # v63:
     ]
     failures = []
     for fn in tests:

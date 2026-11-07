@@ -556,6 +556,7 @@ def _write_sa_run_record(
         f"**Model:** {describe_llm_config()}",
         f"**SA_PROCEDURE:** {_SA_PROCEDURE}",  # v62 pilot:
         f"**CAPTURE_FULL_OUTPUT:** {'1' if _CAPTURE_FULL_OUTPUT else '0'}",  # v62 pilot2:
+        f"**PAIR_VERIFY:** {os.environ.get('PAIR_VERIFY', '1')}",  # v63:
         "",
         "## Metrics",
         f"- **Status:** {status}",
