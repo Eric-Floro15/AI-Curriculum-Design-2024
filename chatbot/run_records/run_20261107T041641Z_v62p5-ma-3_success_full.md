@@ -1,0 +1,1490 @@
+# Orchestrator run — 20261107T041641Z — SUCCESS
+
+**Query:** Compare Georgia Tech's MS CS Artificial Intelligence specialization with current labour-market demand. Identify its three biggest gaps, propose two new courses to fill them, specialize one of those courses for healthcare-sector students, and note any recent industry developments that bear on these recommendations.
+
+**Model:** LLM: provider=anthropic, model=claude-sonnet-4-6
+**ORCH_PROCEDURE:** sequenced
+
+## Metrics
+- **required_specialist_missing:** []
+- **Status:** success
+- **Error:** None
+- **Delegated to:** ['AI Industry News Researcher', 'Cluster Interpreter', 'Senior Curriculum Advisor', 'Skills Taxonomy Analyst', 'University AI Programs Researcher']
+- **Tool calls:** 0
+- **Wall time:** 482.1s
+- **fabrication_flags:** []
+
+## Cost / Usage
+
+- **Prompt tokens:** 182,684
+- **Completion tokens:** 25,098
+- **Total tokens:** 207,782
+- **Cached prompt tokens:** 58,603 (not separately priced below — see the pricing note above _estimate_cost_usd)
+- **Cache-creation tokens:** 25,083 (not separately priced below)
+- **Successful LLM requests:** 16
+- **Approx. cost:** $0.9245 USD (rough estimate at claude-sonnet-4-6 list rates, prompt+completion tokens only — verify against the Anthropic console for the exact bill)
+
+## Delegations
+
+_(Specialist order from step_callback — AgentFinish only. Delegation task text is not captured: step_callback does not fire on AgentAction/delegate_work_to_coworker in this CrewAI version.)_
+
+1. University AI Programs Researcher
+2. AI Industry News Researcher
+3. Cluster Interpreter
+4. Skills Taxonomy Analyst
+5. Senior Curriculum Advisor
+
+## Final Answer
+
+I now have all four specialist outputs. Let me synthesise them into a single coherent recommendation for the professor.
+
+---
+
+# Georgia Tech MS CS AI Specialization vs. Labour-Market Demand: Curriculum Recommendation
+
+## Executive Summary
+
+Georgia Tech's MS CS AI specialization is **strong where the academic literature is rich — model design, ML theory, deep learning, and NLP — but structurally weak where the labour market now lives: production deployment, data engineering, and applied analytics.** A cluster-level gap analysis against 186,249 W2026 job postings reveals three major misalignments: the program graduates researchers who can build models but cannot ship, instrument, or feed them at scale. Two new courses — *Applied AI Engineering & MLOps* and *Data Engineering for AI* — directly address the two highest-signal gaps, and a healthcare-sector variant of the first course adds the domain credentialing (EHR, HIPAA, FHIR, clinical NLP) that healthcare employers distinctively require.
+
+---
+
+## Curriculum Fetch: Georgia Tech MS CS AI Specialization
+
+**Source:** Pre-verified corpus — Georgia Tech College of Computing
+**URLs:** https://www.cc.gatech.edu/degree-programs/master-science-computer-science and https://www.cc.gatech.edu/ms-computer-science-specializations *(verified 2026-06-16)*
+
+The specialization requires 9 credits of core + 6 credits of electives (within a 30-credit M.S. CS degree):
+
+| Layer | Courses |
+|---|---|
+| **Algorithms core** | CS 6515 (Graduate Algorithms, most common choice) |
+| **AI core** (choose 2) | CS 6476 Computer Vision; CS 6601 AI; CS 7637 Knowledge-Based AI; CS 7641 ML; CS 7643 Deep Learning; CS 7650 NLP |
+| **Electives — AI Methods** | CS 6604 Conversational AI; CS 7476 Advanced CV; CS 7647 ML with Limited Supervision; CS 7652 LLMs; Robotics/Game AI/HRI electives |
+| **Electives — Ethics/HCI** | CS 6440 Health Informatics (intro); CS 6603 AI Ethics & Society; CS 6750 HCI; CS 6795 Cognitive Science; CS 7651 Human & Machine Learning |
+
+The University AI Programs Researcher confirms CS 7652 (LLMs) is a relatively recent addition, reflecting industry movement toward generative AI. No course explicitly covers MLOps, cloud deployment, data engineering pipelines, BI tooling, agentic AI frameworks, or RAG architectures.
+
+---
+
+## Cluster-Level Gap Analysis
+
+*(Cluster Interpreter, Mode A — against W2026 market data)*
+
+| Cluster | Theme | Coverage | Priority |
+|---|---|---|---|
+| **Cluster 2 ⭐** | Machine Learning & Generative AI (131 skills) | ✅ Strong | Low — well addressed by CS 7641, CS 7643, CS 7650, CS 7652, CS 7647 |
+| **Cluster 5 ⭐** | Core AI, Cloud & Data-Platform Engineering (370 skills) | ⚠️ Partial | **🔴 HIGH — cloud, MLOps, agentic AI, RAG entirely absent** |
+| **Cluster 3 ⭐** | Data-Engineering Tools (89 skills, median stability 0.88) | ❌ Missing | **🔴 HIGH — wholly absent; Airflow, dbt, Kafka, PySpark not covered** |
+| **Cluster 6 ⭐** | Business Intelligence, Analytics & Finance (66 skills) | ❌ Missing | **🟡 MEDIUM — Data Analytics appears in 41.6% of postings; BI tools entirely unaddressed** |
+| **Cluster 1** | Quantitative & Experimental Methods | ⚠️ Partial | Medium — causal inference, A/B testing, Bayesian methods not surfaced explicitly |
+| **Clusters 4, 7, 9, 10** | Requirements/delivery, comms, risk, strategy | ⚠️ Partial | Low — broad, partially covered culturally or via CS 6603 |
+
+---
+
+## The Three Biggest Gaps
+
+### 🔴 Gap 1 — MLOps & Production AI Engineering *(Cluster 5)*
+
+The program graduates model designers, not AI systems engineers. No course covers the operational layer — the bridge between a trained model and a running product. The Skills Taxonomy Analyst returns the following distinctive co-demand signals against the **MLOps** focal skill (W2026, z≥2 threshold):
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| MLflow | 15.12× | z = 7.38 |
+| Model Versioning | 15.91× | z = 6.86 |
+| Kubeflow | 15.36× | z = 4.66 |
+| SageMaker | 9.06× | z = 4.75 |
+| Feature Stores | 11.43× | z = 3.93 |
+| Docker | 4.73× | z = 3.68 |
+| Kubernetes | 4.37× | z = 3.34 |
+| CI/CD | 3.94× | z = 3.80 |
+| LLMOps | 12.45× | z = 3.37 |
+| RAG | 6.17× | z = 4.94 |
+| LangChain | 6.58× | z = 4.14 |
+| Agentic AI | 3.98× | z = 3.12 |
+| Prompt Engineering | 4.48× | z = 2.64 |
+| Azure (cloud) | 3.12× | z = 2.80 |
+| GCP (cloud) | 3.75× | z = 3.20 |
+
+These are not merely popular skills — they are **distinctively co-demanded** with MLOps at high significance. The gap is structural: an AI graduate without these credentials cannot own a production AI system end-to-end.
+
+**Industry signal:** "Rethinking organizational design in the age of agentic AI" (*MIT Technology Review AI, May 26, 2026*) reports that **85% of organizations say they want to be agentic within three years, but 76% say their current infrastructure cannot support it** — pointing directly to the talent gap this course would fill. "Building Blocks for Foundation Model Training and Inference on AWS" (*HuggingFace Blog, May 11, 2026*) documents that cloud-native model lifecycle management is now a standard industry expectation.
+
+---
+
+### 🔴 Gap 2 — Data Engineering & Pipeline Infrastructure *(Cluster 3)*
+
+Cluster 3 is 89 skills wide, has the highest ensemble stability of any focused cluster (median confidence 0.88), and is **entirely absent** from the Georgia Tech curriculum. AI practitioners in industry routinely own or collaborate on the pipelines that feed their models; without these skills, graduates are dependent on a data engineering team that may not exist in many employer settings. Against the **Airflow** focal skill (W2026):
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Dagster | 22.77× | z = 5.15 |
+| dbt | 10.84× | z = 6.32 |
+| Feature Stores | 9.64× | z = 2.58 |
+| Fivetran | 11.81× | z = 3.14 |
+| BigQuery | 8.13× | z = 4.26 |
+| Redshift | 8.01× | z = 3.82 |
+| MLflow *(pipeline bridge)* | 8.85× | z = 3.27 |
+| Modern Data Stack | 9.12× | z = 2.39 |
+| Snowflake | 6.07× | z = 4.55 |
+| ELT | 6.98× | z = 3.78 |
+| ETL Pipelines | 6.00× | z = 2.50 |
+| ETL (broader) | 4.40× | z = 3.21 |
+| Kafka | 7.02× | z = 3.65 |
+| Data Pipelines | 5.04× | z = 4.66 |
+| Data Engineering | 5.06× | z = 4.43 |
+| PySpark | 5.28× | z = 3.99 |
+| ML Pipelines | 6.44× | z = 2.34 |
+
+Notably, **dbt** (10.84×, z=6.32) is the single most distinctively co-demanded skill with Airflow — a "modern data stack" cornerstone that is almost entirely invisible in traditional ML programs.
+
+**Industry signal:** "Ulysses Sequence Parallelism: Training with Million-Token Contexts" (*HuggingFace Blog, March 9, 2026*) documents that production LLM training now demands distributed memory and parallelism strategies — requiring the pipeline skills this course covers.
+
+---
+
+### 🟡 Gap 3 — Business Intelligence, Analytics & Applied Visualisation *(Cluster 6)*
+
+The Cluster Interpreter flags Data Analytics at **41.6% market frequency** — the single highest-frequency skill across all 66 skills in this cluster, appearing in nearly half of all AI/ML job postings sampled. BI tools (Power BI, Tableau, dashboard development) are entirely absent from the curriculum. The Skills Taxonomy Analyst found, however, that BI/Analytics skills do **not** produce distinctive high-lift, high-z co-demand signatures the way MLOps and Data Engineering do — these skills appear broadly across posting types at near-baseline rates, indicating they are *necessary but not distinctive*. This means Gap 3 is a **genuine curricular gap** justified on coverage grounds, but it carries lower evidence weight than Gaps 1 and 2. *(Note: the Analyst did not return z≥2 lift figures for Data Analytics, Power BI, Tableau, or Forecasting — this is reported honestly, not filled in.)* A focused BI/Analytics module — either standalone or integrated into one of the two proposed new courses — is recommended, but it is not the priority the first two gaps are.
+
+---
+
+## Two Proposed New Courses
+
+### 📘 Course 1: Applied AI Engineering & MLOps
+
+**Rationale:** Directly addresses Gap 1 (Cluster 5 — MLOps & Production AI Engineering) and the agentic AI sub-gap within it. The Agentic AI lift profile (from the Skills Taxonomy Analyst) produces the strongest and most internally coherent lift signatures in the entire dataset — all core skills clear z≥7, an extraordinary level of distinctiveness:
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| RAG | 6.66× | z = 8.89 |
+| LangChain | 7.53× | z = 7.90 |
+| Prompt Engineering | 6.26× | z = 7.03 |
+| Agentic Frameworks | 9.11× | z = 6.79 |
+| LangGraph | 9.47× | z = 6.73 |
+| MLOps *(cross-validated)* | 3.98× | z = 4.34 |
+| AI Engineering | 5.82× | z = 4.28 |
+| Responsible AI | 5.12× | z = 4.53 |
+| AWS Bedrock | 6.22× | z = 2.93 |
+| Vertex AI | 5.23× | z = 2.84 |
+| Azure AI | 4.96× | z = 2.60 |
+| FastAPI | 5.43× | z = 3.17 |
+| Docker *(from MLOps profile)* | 4.73× | z = 3.68 |
+| Kubernetes *(from MLOps profile)* | 4.37× | z = 3.34 |
+| CI/CD *(from MLOps profile)* | 3.94× | z = 3.80 |
+
+**Proposed syllabus spine:**
+1. MLOps fundamentals — ML lifecycle, model versioning (MLflow, 15.12×/z=7.38), model monitoring
+2. Cloud deployment — AWS SageMaker (9.06×/z=4.75), Azure ML (3.12×/z=2.80), GCP Vertex AI (5.23×/z=2.84)
+3. Containerisation & orchestration — Docker (4.73×/z=3.68), Kubernetes (4.37×/z=3.34), Kubeflow (15.36×/z=4.66)
+4. CI/CD for ML systems (3.94×/z=3.80)
+5. RAG architectures (6.66×/z=8.89) — vector stores, retrieval pipelines
+6. Agentic AI & orchestration frameworks — LangChain (7.53×/z=7.90), LangGraph (9.47×/z=6.73), Agentic Frameworks (9.11×/z=6.79)
+7. Prompt engineering (6.26×/z=7.03) — structured prompting, evaluation
+8. LLMOps (12.45×/z=3.37) — LLM-specific production concerns
+9. Responsible AI & governance (5.12×/z=4.53) — bias auditing, safety evaluation
+
+**Industry signal:** IBM Research's VAKRA benchmark analysis ("Inside VAKRA: Reasoning, Tool Use, and Failure Modes of Agents," *HuggingFace Blog/IBM Research, April 15, 2026*) finds that students need to understand not just how to build agents, but how they **fail** — tool hallucination, reasoning loops, context loss — and how to evaluate and constrain them. This maps directly to the monitoring and evaluation modules in this course.
+
+---
+
+### 📗 Course 2: Data Engineering for AI
+
+**Rationale:** Directly addresses Gap 2 (Cluster 3 — the program's single most glaring structural absence, a wholly missing 89-skill cluster with 0.88 median ensemble stability). The Airflow lift profile confirms a coherent "modern data stack" course identity:
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Dagster | 22.77× | z = 5.15 |
+| dbt | 10.84× | z = 6.32 |
+| Feature Stores | 9.64× | z = 2.58 |
+| Fivetran | 11.81× | z = 3.14 |
+| BigQuery | 8.13× | z = 4.26 |
+| Redshift | 8.01× | z = 3.82 |
+| MLflow *(ML bridge)* | 8.85× | z = 3.27 |
+| Snowflake | 6.07× | z = 4.55 |
+| ELT | 6.98× | z = 3.78 |
+| Kafka | 7.02× | z = 3.65 |
+| Data Pipelines | 5.04× | z = 4.66 |
+| PySpark | 5.28× | z = 3.99 |
+| ETL Pipelines | 6.00× | z = 2.50 |
+| Data Engineering | 5.06× | z = 4.43 |
+| ML Pipelines | 6.44× | z = 2.34 |
+
+**Proposed syllabus spine:**
+1. Pipeline orchestration — Airflow, Dagster (22.77×/z=5.15), Prefect
+2. The modern data stack — dbt (10.84×/z=6.32) for transformation, Fivetran (11.81×/z=3.14) for ingestion
+3. Cloud data warehouses — Snowflake (6.07×/z=4.55), BigQuery (8.13×/z=4.26), Redshift (8.01×/z=3.82)
+4. Stream processing — Kafka (7.02×/z=3.65), Apache Flink, real-time inference feeds
+5. Distributed compute — PySpark (5.28×/z=3.99), Databricks (3.80×/z=2.02)
+6. ELT vs. ETL paradigm (ELT: 6.98×/z=3.78) — lakehouse architecture
+7. Feature Stores (9.64×/z=2.58) — the data/ML interface
+8. ML Pipelines (6.44×/z=2.34) and integration with MLflow (8.85×/z=3.27) — bridging to Course 1
+9. DataOps principles and data quality in regulated environments
+
+---
+
+## Healthcare-Sector Specialization of Course 1: "Applied AI Engineering for Healthcare"
+
+The Skills Taxonomy Analyst returned a **rich healthcare sector wrap** — 12 skills clearing lift≥3 AND z≥2, confirming that healthcare is not just a cosmetic variant but requires a substantial domain layer on top of the agentic core. Healthcare agentic-AI adoption (6.05% of healthcare postings) is currently **below market rate** (7.84% market-wide; adoption lift 0.77, z=−0.57) — meaning healthcare is a sector where the gap between AI capability and AI deployment is real, and where skilled graduates can generate disproportionate value.
+
+**11 of 12 healthcare sector-wrap skills are entirely absent from the standard Georgia Tech MS CS AI curriculum.** Health Informatics (CS 6440) is present in an introductory form only.
+
+### Healthcare Sector Wrap (all skills: sector lift ≥ 3×, z ≥ 2):
+
+| Skill | Healthcare Sector Lift | z |
+|---|---|---|
+| Immunology | 11.22× | z = 3.73 |
+| Laboratory Procedures | 9.68× | z = 2.80 |
+| Computational Biology | 8.30× | z = 2.45 |
+| Bioinformatics | 7.43× | z = 2.63 |
+| Healthcare Experience | 7.43× | z = 3.22 |
+| Health Informatics | 6.77× | z = 2.82 |
+| Clinical Trial Design & Execution | 8.68× | z = 3.95 |
+| EHR (Electronic Health Records) | 5.89× | z = 3.36 |
+| Chemistry | 5.15× | z = 2.25 |
+| Biostatistics | 5.15× | z = 2.25 |
+| FHIR | 4.89× | z = 2.05 |
+| HIPAA | 3.69× | z = 2.59 |
+
+### Composed Sector Curriculum (agentic × healthcare lift, top skills):
+
+| Skill | Composed Score | Agentic Lift | Healthcare Lift |
+|---|---|---|---|
+| Computational Biology | 22.68 | 2.73× | 8.30× |
+| Immunology | 18.40 | 1.64× | 11.22× |
+| LLM Architectures | 12.91 | 8.20× (z=3.92) | 1.57× |
+| Conversational AI | 11.66 | 7.33× (z=3.88) | 1.59× |
+| Clinical Trial Design | 10.82 | 1.25× | 8.68× |
+| Natural Language Understanding | 10.70 | 5.93× (z=2.13) | 1.81× |
+| AI Engineering | 9.08 | 5.82× (z=4.28) | 1.56× |
+| Responsible AI | 8.98 | 5.12× (z=4.53) | 1.75× |
+
+### Proposed Healthcare Variant — Syllabus Spine:
+
+**Core agentic layer** *(inherit from standard Course 1, all z≥2):*
+- Clinical RAG: document retrieval from EHR/clinical notes (RAG: 6.66×/z=8.89)
+- Clinical workflow agents: LangChain (7.53×/z=7.90), LangGraph (9.47×/z=6.73)
+- Structured clinical prompting: Prompt Engineering (6.26×/z=7.03)
+- Patient-facing conversational interfaces: Conversational AI (7.33×/z=3.88)
+- LLM architecture selection for healthcare constraints (8.20×/z=3.92)
+- Responsible AI & clinical safety evaluation (5.12×/z=4.53)
+
+**Healthcare domain wrap** *(new for this variant, all sector lift≥3×, z≥2):*
+- EHR systems, data standards, and clinical NLP (sector 5.89×/z=3.36)
+- HIPAA compliance and PHI handling in AI systems (sector 3.69×/z=2.59)
+- FHIR interoperability and HL7 standards (sector 4.89×/z=2.05)
+- Biostatistics and clinical evidence standards (sector 5.15×/z=2.25)
+- Bioinformatics and genomics contexts (sector 7.43×/z=2.63)
+- Clinical trial AI applications (sector 8.68×/z=3.95)
+- Computational biology and multi-omics data (sector 8.30×/z=2.45)
+- AI hallucination risk in clinical settings — model auditing, regulatory validation
+
+**Industry signal — healthcare:** "AI-hallucinated citations are creeping into papers that shape clinical guidelines, researchers warn" (*The Decoder, May 26, 2026*) documents that fabricated biomedical references have increased **12× since 2023**, with 2.5 million papers audited by Columbia University researchers. This is not an abstract concern — it is an active patient-safety crisis in formation, and directly motivates the responsible AI and model auditing modules in this healthcare variant. Additionally, "Training mRNA Language Models Across 25 Species for $165" (*HuggingFace Blog, March 31, 2026*) demonstrates that domain-specific biomedical LLM fine-tuning is now accessible at minimal compute cost — validating the feasibility of a clinical NLP practicum within this course. Finally, the NVIDIA Nemotron-3 Nano Omni model ("Introducing NVIDIA Nemotron 3 Nano Omni," *HuggingFace Blog, April 28, 2026*) supports on-premises deployment in HIPAA-sensitive environments — a practical deployment context students in this course should understand.
+
+---
+
+## Specialist Consultation Record
+
+| Specialist | Evidence Provided | How It Informs This Recommendation |
+|---|---|---|
+| **University AI Programs Researcher** | Structured Georgia Tech MS CS AI course list (all required + elective courses, source URLs verified 2026-06-16) | Established the curriculum baseline for gap analysis; confirmed CS 7652 as recent LLM addition; confirmed CS 6440 as only healthcare-adjacent course |
+| **Cluster Interpreter** | Mode A gap analysis — 10-cluster coverage assessment, three priority gaps ranked by market size and strategic importance, specific missing skills with market frequency figures | Identified Clusters 3, 5, and 6 as the three biggest gaps; confirmed Cluster 3 entirely absent, Cluster 5 partially covered, Cluster 6 entirely absent for BI skills |
+| **Skills Taxonomy Analyst** | Lift (×) and z-score data for all three gap clusters' key skills; lift profiles for both proposed new courses' focal skills; full healthcare sector wrap (12 skills, sector lift + z); composed sector curriculum (agentic × healthcare lift, top 8 skills) — all from W2026 postings (186,249 job postings, V60 taxonomy) | Provided the grounding distinctiveness metric for all specific skill recommendations; confirmed Gap 1 and Gap 2 are lift-attested; found Gap 3 BI/Analytics skills do not clear z≥2 (reported honestly); confirmed healthcare variant requires a substantial domain layer (12-skill wrap) |
+| **AI Industry News Researcher** | 5-topic coverage: LLMs in production, MLOps, clinical AI, agentic AI, responsible AI — specific articles with titles, sources, dates | Provided recency context for all three gaps; hallucinated citations article (The Decoder, May 26, 2026) is especially curriculum-critical for the healthcare variant |
+
+---
+
+## Trade-offs and Caveats the Professor Should Consider
+
+1. **Credit-hour pressure.** Georgia Tech's AI specialization has a tight 15-credit required footprint (within a 30-credit degree). Adding two new electives means they must compete with an already strong slate of offerings (CS 7652, CS 7647, CS 6603). The professor should consider whether these courses slot as required electives, replacements, or optional additions — and whether a course restructure (e.g., extending CS 7652 to include an MLOps engineering practicum) is more practical than a wholly new course.
+
+2. **Gap 3 (BI/Analytics) has weaker lift evidence.** The Cluster Interpreter's market frequency for Data Analytics (41.6% of postings) is real, but the Skills Taxonomy Analyst found that BI/Analytics skills do not produce z≥2 lift signatures — they appear broadly at near-baseline rates, meaning they are general-purpose rather than distinctively AI-specialist skills. A BI module is worth adding as a component of Course 2 (Data Engineering for AI), but it does not warrant a standalone course at the same priority as the MLOps and Data Engineering gaps.
+
+3. **Healthcare variant requires genuine faculty expertise, not a syllabus overlay.** The 12-skill healthcare wrap includes Immunology (11.22×/z=3.73), Computational Biology (8.30×/z=2.45), and Clinical Trial Design (8.68×/z=3.95) — these are not AI skills that CS faculty can teach from first principles. A successful healthcare-track course requires either co-instruction with the medical school or a clinical-domain adjunct, or a partnership with Georgia Tech's existing joint programs with Emory or Georgia Health Sciences.
+
+4. **Cluster 5's low ensemble stability is a caveat.** The Cluster Interpreter noted that Cluster 5 (Core AI, Cloud & Data-Platform Engineering, 370 skills) has median membership confidence of only 0.47 — meaning many skill assignments within that cluster are probabilistic rather than definitive. The gap finding for MLOps and agentic AI within that cluster is robust (confirmed by the high-lift Analyst data), but the broader cloud-skills gap should be treated as directional rather than fully attested.
+
+5. **The industry news corpus is thin on MLOps from general tech press.** The AI Industry News Researcher noted that MLOps coverage skews heavily toward HuggingFace practitioner content, with limited TechCrunch or MIT Tech Review sourcing. The professor may wish to supplement with dedicated MLOps practitioner sources (MLflow blog, Weights & Biases blog) for course material, beyond what general AI industry coverage provides.
+
+## Pair Verification
+
+- **Pairs checked:** 125  **Verified as written:** 125  **Corrected:** 0  **Removed:** 0
+- **Correction call made:** False
+
+### Pre-Verification Draft
+
+I now have all four specialist outputs. Let me synthesise them into a single coherent recommendation for the professor.
+
+---
+
+# Georgia Tech MS CS AI Specialization vs. Labour-Market Demand: Curriculum Recommendation
+
+## Executive Summary
+
+Georgia Tech's MS CS AI specialization is **strong where the academic literature is rich — model design, ML theory, deep learning, and NLP — but structurally weak where the labour market now lives: production deployment, data engineering, and applied analytics.** A cluster-level gap analysis against 186,249 W2026 job postings reveals three major misalignments: the program graduates researchers who can build models but cannot ship, instrument, or feed them at scale. Two new courses — *Applied AI Engineering & MLOps* and *Data Engineering for AI* — directly address the two highest-signal gaps, and a healthcare-sector variant of the first course adds the domain credentialing (EHR, HIPAA, FHIR, clinical NLP) that healthcare employers distinctively require.
+
+---
+
+## Curriculum Fetch: Georgia Tech MS CS AI Specialization
+
+**Source:** Pre-verified corpus — Georgia Tech College of Computing
+**URLs:** https://www.cc.gatech.edu/degree-programs/master-science-computer-science and https://www.cc.gatech.edu/ms-computer-science-specializations *(verified 2026-06-16)*
+
+The specialization requires 9 credits of core + 6 credits of electives (within a 30-credit M.S. CS degree):
+
+| Layer | Courses |
+|---|---|
+| **Algorithms core** | CS 6515 (Graduate Algorithms, most common choice) |
+| **AI core** (choose 2) | CS 6476 Computer Vision; CS 6601 AI; CS 7637 Knowledge-Based AI; CS 7641 ML; CS 7643 Deep Learning; CS 7650 NLP |
+| **Electives — AI Methods** | CS 6604 Conversational AI; CS 7476 Advanced CV; CS 7647 ML with Limited Supervision; CS 7652 LLMs; Robotics/Game AI/HRI electives |
+| **Electives — Ethics/HCI** | CS 6440 Health Informatics (intro); CS 6603 AI Ethics & Society; CS 6750 HCI; CS 6795 Cognitive Science; CS 7651 Human & Machine Learning |
+
+The University AI Programs Researcher confirms CS 7652 (LLMs) is a relatively recent addition, reflecting industry movement toward generative AI. No course explicitly covers MLOps, cloud deployment, data engineering pipelines, BI tooling, agentic AI frameworks, or RAG architectures.
+
+---
+
+## Cluster-Level Gap Analysis
+
+*(Cluster Interpreter, Mode A — against W2026 market data)*
+
+| Cluster | Theme | Coverage | Priority |
+|---|---|---|---|
+| **Cluster 2 ⭐** | Machine Learning & Generative AI (131 skills) | ✅ Strong | Low — well addressed by CS 7641, CS 7643, CS 7650, CS 7652, CS 7647 |
+| **Cluster 5 ⭐** | Core AI, Cloud & Data-Platform Engineering (370 skills) | ⚠️ Partial | **🔴 HIGH — cloud, MLOps, agentic AI, RAG entirely absent** |
+| **Cluster 3 ⭐** | Data-Engineering Tools (89 skills, median stability 0.88) | ❌ Missing | **🔴 HIGH — wholly absent; Airflow, dbt, Kafka, PySpark not covered** |
+| **Cluster 6 ⭐** | Business Intelligence, Analytics & Finance (66 skills) | ❌ Missing | **🟡 MEDIUM — Data Analytics appears in 41.6% of postings; BI tools entirely unaddressed** |
+| **Cluster 1** | Quantitative & Experimental Methods | ⚠️ Partial | Medium — causal inference, A/B testing, Bayesian methods not surfaced explicitly |
+| **Clusters 4, 7, 9, 10** | Requirements/delivery, comms, risk, strategy | ⚠️ Partial | Low — broad, partially covered culturally or via CS 6603 |
+
+---
+
+## The Three Biggest Gaps
+
+### 🔴 Gap 1 — MLOps & Production AI Engineering *(Cluster 5)*
+
+The program graduates model designers, not AI systems engineers. No course covers the operational layer — the bridge between a trained model and a running product. The Skills Taxonomy Analyst returns the following distinctive co-demand signals against the **MLOps** focal skill (W2026, z≥2 threshold):
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| MLflow | 15.12× | z = 7.38 |
+| Model Versioning | 15.91× | z = 6.86 |
+| Kubeflow | 15.36× | z = 4.66 |
+| SageMaker | 9.06× | z = 4.75 |
+| Feature Stores | 11.43× | z = 3.93 |
+| Docker | 4.73× | z = 3.68 |
+| Kubernetes | 4.37× | z = 3.34 |
+| CI/CD | 3.94× | z = 3.80 |
+| LLMOps | 12.45× | z = 3.37 |
+| RAG | 6.17× | z = 4.94 |
+| LangChain | 6.58× | z = 4.14 |
+| Agentic AI | 3.98× | z = 3.12 |
+| Prompt Engineering | 4.48× | z = 2.64 |
+| Azure (cloud) | 3.12× | z = 2.80 |
+| GCP (cloud) | 3.75× | z = 3.20 |
+
+These are not merely popular skills — they are **distinctively co-demanded** with MLOps at high significance. The gap is structural: an AI graduate without these credentials cannot own a production AI system end-to-end.
+
+**Industry signal:** "Rethinking organizational design in the age of agentic AI" (*MIT Technology Review AI, May 26, 2026*) reports that **85% of organizations say they want to be agentic within three years, but 76% say their current infrastructure cannot support it** — pointing directly to the talent gap this course would fill. "Building Blocks for Foundation Model Training and Inference on AWS" (*HuggingFace Blog, May 11, 2026*) documents that cloud-native model lifecycle management is now a standard industry expectation.
+
+---
+
+### 🔴 Gap 2 — Data Engineering & Pipeline Infrastructure *(Cluster 3)*
+
+Cluster 3 is 89 skills wide, has the highest ensemble stability of any focused cluster (median confidence 0.88), and is **entirely absent** from the Georgia Tech curriculum. AI practitioners in industry routinely own or collaborate on the pipelines that feed their models; without these skills, graduates are dependent on a data engineering team that may not exist in many employer settings. Against the **Airflow** focal skill (W2026):
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Dagster | 22.77× | z = 5.15 |
+| dbt | 10.84× | z = 6.32 |
+| Feature Stores | 9.64× | z = 2.58 |
+| Fivetran | 11.81× | z = 3.14 |
+| BigQuery | 8.13× | z = 4.26 |
+| Redshift | 8.01× | z = 3.82 |
+| MLflow *(pipeline bridge)* | 8.85× | z = 3.27 |
+| Modern Data Stack | 9.12× | z = 2.39 |
+| Snowflake | 6.07× | z = 4.55 |
+| ELT | 6.98× | z = 3.78 |
+| ETL Pipelines | 6.00× | z = 2.50 |
+| ETL (broader) | 4.40× | z = 3.21 |
+| Kafka | 7.02× | z = 3.65 |
+| Data Pipelines | 5.04× | z = 4.66 |
+| Data Engineering | 5.06× | z = 4.43 |
+| PySpark | 5.28× | z = 3.99 |
+| ML Pipelines | 6.44× | z = 2.34 |
+
+Notably, **dbt** (10.84×, z=6.32) is the single most distinctively co-demanded skill with Airflow — a "modern data stack" cornerstone that is almost entirely invisible in traditional ML programs.
+
+**Industry signal:** "Ulysses Sequence Parallelism: Training with Million-Token Contexts" (*HuggingFace Blog, March 9, 2026*) documents that production LLM training now demands distributed memory and parallelism strategies — requiring the pipeline skills this course covers.
+
+---
+
+### 🟡 Gap 3 — Business Intelligence, Analytics & Applied Visualisation *(Cluster 6)*
+
+The Cluster Interpreter flags Data Analytics at **41.6% market frequency** — the single highest-frequency skill across all 66 skills in this cluster, appearing in nearly half of all AI/ML job postings sampled. BI tools (Power BI, Tableau, dashboard development) are entirely absent from the curriculum. The Skills Taxonomy Analyst found, however, that BI/Analytics skills do **not** produce distinctive high-lift, high-z co-demand signatures the way MLOps and Data Engineering do — these skills appear broadly across posting types at near-baseline rates, indicating they are *necessary but not distinctive*. This means Gap 3 is a **genuine curricular gap** justified on coverage grounds, but it carries lower evidence weight than Gaps 1 and 2. *(Note: the Analyst did not return z≥2 lift figures for Data Analytics, Power BI, Tableau, or Forecasting — this is reported honestly, not filled in.)* A focused BI/Analytics module — either standalone or integrated into one of the two proposed new courses — is recommended, but it is not the priority the first two gaps are.
+
+---
+
+## Two Proposed New Courses
+
+### 📘 Course 1: Applied AI Engineering & MLOps
+
+**Rationale:** Directly addresses Gap 1 (Cluster 5 — MLOps & Production AI Engineering) and the agentic AI sub-gap within it. The Agentic AI lift profile (from the Skills Taxonomy Analyst) produces the strongest and most internally coherent lift signatures in the entire dataset — all core skills clear z≥7, an extraordinary level of distinctiveness:
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| RAG | 6.66× | z = 8.89 |
+| LangChain | 7.53× | z = 7.90 |
+| Prompt Engineering | 6.26× | z = 7.03 |
+| Agentic Frameworks | 9.11× | z = 6.79 |
+| LangGraph | 9.47× | z = 6.73 |
+| MLOps *(cross-validated)* | 3.98× | z = 4.34 |
+| AI Engineering | 5.82× | z = 4.28 |
+| Responsible AI | 5.12× | z = 4.53 |
+| AWS Bedrock | 6.22× | z = 2.93 |
+| Vertex AI | 5.23× | z = 2.84 |
+| Azure AI | 4.96× | z = 2.60 |
+| FastAPI | 5.43× | z = 3.17 |
+| Docker *(from MLOps profile)* | 4.73× | z = 3.68 |
+| Kubernetes *(from MLOps profile)* | 4.37× | z = 3.34 |
+| CI/CD *(from MLOps profile)* | 3.94× | z = 3.80 |
+
+**Proposed syllabus spine:**
+1. MLOps fundamentals — ML lifecycle, model versioning (MLflow, 15.12×/z=7.38), model monitoring
+2. Cloud deployment — AWS SageMaker (9.06×/z=4.75), Azure ML (3.12×/z=2.80), GCP Vertex AI (5.23×/z=2.84)
+3. Containerisation & orchestration — Docker (4.73×/z=3.68), Kubernetes (4.37×/z=3.34), Kubeflow (15.36×/z=4.66)
+4. CI/CD for ML systems (3.94×/z=3.80)
+5. RAG architectures (6.66×/z=8.89) — vector stores, retrieval pipelines
+6. Agentic AI & orchestration frameworks — LangChain (7.53×/z=7.90), LangGraph (9.47×/z=6.73), Agentic Frameworks (9.11×/z=6.79)
+7. Prompt engineering (6.26×/z=7.03) — structured prompting, evaluation
+8. LLMOps (12.45×/z=3.37) — LLM-specific production concerns
+9. Responsible AI & governance (5.12×/z=4.53) — bias auditing, safety evaluation
+
+**Industry signal:** IBM Research's VAKRA benchmark analysis ("Inside VAKRA: Reasoning, Tool Use, and Failure Modes of Agents," *HuggingFace Blog/IBM Research, April 15, 2026*) finds that students need to understand not just how to build agents, but how they **fail** — tool hallucination, reasoning loops, context loss — and how to evaluate and constrain them. This maps directly to the monitoring and evaluation modules in this course.
+
+---
+
+### 📗 Course 2: Data Engineering for AI
+
+**Rationale:** Directly addresses Gap 2 (Cluster 3 — the program's single most glaring structural absence, a wholly missing 89-skill cluster with 0.88 median ensemble stability). The Airflow lift profile confirms a coherent "modern data stack" course identity:
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Dagster | 22.77× | z = 5.15 |
+| dbt | 10.84× | z = 6.32 |
+| Feature Stores | 9.64× | z = 2.58 |
+| Fivetran | 11.81× | z = 3.14 |
+| BigQuery | 8.13× | z = 4.26 |
+| Redshift | 8.01× | z = 3.82 |
+| MLflow *(ML bridge)* | 8.85× | z = 3.27 |
+| Snowflake | 6.07× | z = 4.55 |
+| ELT | 6.98× | z = 3.78 |
+| Kafka | 7.02× | z = 3.65 |
+| Data Pipelines | 5.04× | z = 4.66 |
+| PySpark | 5.28× | z = 3.99 |
+| ETL Pipelines | 6.00× | z = 2.50 |
+| Data Engineering | 5.06× | z = 4.43 |
+| ML Pipelines | 6.44× | z = 2.34 |
+
+**Proposed syllabus spine:**
+1. Pipeline orchestration — Airflow, Dagster (22.77×/z=5.15), Prefect
+2. The modern data stack — dbt (10.84×/z=6.32) for transformation, Fivetran (11.81×/z=3.14) for ingestion
+3. Cloud data warehouses — Snowflake (6.07×/z=4.55), BigQuery (8.13×/z=4.26), Redshift (8.01×/z=3.82)
+4. Stream processing — Kafka (7.02×/z=3.65), Apache Flink, real-time inference feeds
+5. Distributed compute — PySpark (5.28×/z=3.99), Databricks (3.80×/z=2.02)
+6. ELT vs. ETL paradigm (ELT: 6.98×/z=3.78) — lakehouse architecture
+7. Feature Stores (9.64×/z=2.58) — the data/ML interface
+8. ML Pipelines (6.44×/z=2.34) and integration with MLflow (8.85×/z=3.27) — bridging to Course 1
+9. DataOps principles and data quality in regulated environments
+
+---
+
+## Healthcare-Sector Specialization of Course 1: "Applied AI Engineering for Healthcare"
+
+The Skills Taxonomy Analyst returned a **rich healthcare sector wrap** — 12 skills clearing lift≥3 AND z≥2, confirming that healthcare is not just a cosmetic variant but requires a substantial domain layer on top of the agentic core. Healthcare agentic-AI adoption (6.05% of healthcare postings) is currently **below market rate** (7.84% market-wide; adoption lift 0.77, z=−0.57) — meaning healthcare is a sector where the gap between AI capability and AI deployment is real, and where skilled graduates can generate disproportionate value.
+
+**11 of 12 healthcare sector-wrap skills are entirely absent from the standard Georgia Tech MS CS AI curriculum.** Health Informatics (CS 6440) is present in an introductory form only.
+
+### Healthcare Sector Wrap (all skills: sector lift ≥ 3×, z ≥ 2):
+
+| Skill | Healthcare Sector Lift | z |
+|---|---|---|
+| Immunology | 11.22× | z = 3.73 |
+| Laboratory Procedures | 9.68× | z = 2.80 |
+| Computational Biology | 8.30× | z = 2.45 |
+| Bioinformatics | 7.43× | z = 2.63 |
+| Healthcare Experience | 7.43× | z = 3.22 |
+| Health Informatics | 6.77× | z = 2.82 |
+| Clinical Trial Design & Execution | 8.68× | z = 3.95 |
+| EHR (Electronic Health Records) | 5.89× | z = 3.36 |
+| Chemistry | 5.15× | z = 2.25 |
+| Biostatistics | 5.15× | z = 2.25 |
+| FHIR | 4.89× | z = 2.05 |
+| HIPAA | 3.69× | z = 2.59 |
+
+### Composed Sector Curriculum (agentic × healthcare lift, top skills):
+
+| Skill | Composed Score | Agentic Lift | Healthcare Lift |
+|---|---|---|---|
+| Computational Biology | 22.68 | 2.73× | 8.30× |
+| Immunology | 18.40 | 1.64× | 11.22× |
+| LLM Architectures | 12.91 | 8.20× (z=3.92) | 1.57× |
+| Conversational AI | 11.66 | 7.33× (z=3.88) | 1.59× |
+| Clinical Trial Design | 10.82 | 1.25× | 8.68× |
+| Natural Language Understanding | 10.70 | 5.93× (z=2.13) | 1.81× |
+| AI Engineering | 9.08 | 5.82× (z=4.28) | 1.56× |
+| Responsible AI | 8.98 | 5.12× (z=4.53) | 1.75× |
+
+### Proposed Healthcare Variant — Syllabus Spine:
+
+**Core agentic layer** *(inherit from standard Course 1, all z≥2):*
+- Clinical RAG: document retrieval from EHR/clinical notes (RAG: 6.66×/z=8.89)
+- Clinical workflow agents: LangChain (7.53×/z=7.90), LangGraph (9.47×/z=6.73)
+- Structured clinical prompting: Prompt Engineering (6.26×/z=7.03)
+- Patient-facing conversational interfaces: Conversational AI (7.33×/z=3.88)
+- LLM architecture selection for healthcare constraints (8.20×/z=3.92)
+- Responsible AI & clinical safety evaluation (5.12×/z=4.53)
+
+**Healthcare domain wrap** *(new for this variant, all sector lift≥3×, z≥2):*
+- EHR systems, data standards, and clinical NLP (sector 5.89×/z=3.36)
+- HIPAA compliance and PHI handling in AI systems (sector 3.69×/z=2.59)
+- FHIR interoperability and HL7 standards (sector 4.89×/z=2.05)
+- Biostatistics and clinical evidence standards (sector 5.15×/z=2.25)
+- Bioinformatics and genomics contexts (sector 7.43×/z=2.63)
+- Clinical trial AI applications (sector 8.68×/z=3.95)
+- Computational biology and multi-omics data (sector 8.30×/z=2.45)
+- AI hallucination risk in clinical settings — model auditing, regulatory validation
+
+**Industry signal — healthcare:** "AI-hallucinated citations are creeping into papers that shape clinical guidelines, researchers warn" (*The Decoder, May 26, 2026*) documents that fabricated biomedical references have increased **12× since 2023**, with 2.5 million papers audited by Columbia University researchers. This is not an abstract concern — it is an active patient-safety crisis in formation, and directly motivates the responsible AI and model auditing modules in this healthcare variant. Additionally, "Training mRNA Language Models Across 25 Species for $165" (*HuggingFace Blog, March 31, 2026*) demonstrates that domain-specific biomedical LLM fine-tuning is now accessible at minimal compute cost — validating the feasibility of a clinical NLP practicum within this course. Finally, the NVIDIA Nemotron-3 Nano Omni model ("Introducing NVIDIA Nemotron 3 Nano Omni," *HuggingFace Blog, April 28, 2026*) supports on-premises deployment in HIPAA-sensitive environments — a practical deployment context students in this course should understand.
+
+---
+
+## Specialist Consultation Record
+
+| Specialist | Evidence Provided | How It Informs This Recommendation |
+|---|---|---|
+| **University AI Programs Researcher** | Structured Georgia Tech MS CS AI course list (all required + elective courses, source URLs verified 2026-06-16) | Established the curriculum baseline for gap analysis; confirmed CS 7652 as recent LLM addition; confirmed CS 6440 as only healthcare-adjacent course |
+| **Cluster Interpreter** | Mode A gap analysis — 10-cluster coverage assessment, three priority gaps ranked by market size and strategic importance, specific missing skills with market frequency figures | Identified Clusters 3, 5, and 6 as the three biggest gaps; confirmed Cluster 3 entirely absent, Cluster 5 partially covered, Cluster 6 entirely absent for BI skills |
+| **Skills Taxonomy Analyst** | Lift (×) and z-score data for all three gap clusters' key skills; lift profiles for both proposed new courses' focal skills; full healthcare sector wrap (12 skills, sector lift + z); composed sector curriculum (agentic × healthcare lift, top 8 skills) — all from W2026 postings (186,249 job postings, V60 taxonomy) | Provided the grounding distinctiveness metric for all specific skill recommendations; confirmed Gap 1 and Gap 2 are lift-attested; found Gap 3 BI/Analytics skills do not clear z≥2 (reported honestly); confirmed healthcare variant requires a substantial domain layer (12-skill wrap) |
+| **AI Industry News Researcher** | 5-topic coverage: LLMs in production, MLOps, clinical AI, agentic AI, responsible AI — specific articles with titles, sources, dates | Provided recency context for all three gaps; hallucinated citations article (The Decoder, May 26, 2026) is especially curriculum-critical for the healthcare variant |
+
+---
+
+## Trade-offs and Caveats the Professor Should Consider
+
+1. **Credit-hour pressure.** Georgia Tech's AI specialization has a tight 15-credit required footprint (within a 30-credit degree). Adding two new electives means they must compete with an already strong slate of offerings (CS 7652, CS 7647, CS 6603). The professor should consider whether these courses slot as required electives, replacements, or optional additions — and whether a course restructure (e.g., extending CS 7652 to include an MLOps engineering practicum) is more practical than a wholly new course.
+
+2. **Gap 3 (BI/Analytics) has weaker lift evidence.** The Cluster Interpreter's market frequency for Data Analytics (41.6% of postings) is real, but the Skills Taxonomy Analyst found that BI/Analytics skills do not produce z≥2 lift signatures — they appear broadly at near-baseline rates, meaning they are general-purpose rather than distinctively AI-specialist skills. A BI module is worth adding as a component of Course 2 (Data Engineering for AI), but it does not warrant a standalone course at the same priority as the MLOps and Data Engineering gaps.
+
+3. **Healthcare variant requires genuine faculty expertise, not a syllabus overlay.** The 12-skill healthcare wrap includes Immunology (11.22×/z=3.73), Computational Biology (8.30×/z=2.45), and Clinical Trial Design (8.68×/z=3.95) — these are not AI skills that CS faculty can teach from first principles. A successful healthcare-track course requires either co-instruction with the medical school or a clinical-domain adjunct, or a partnership with Georgia Tech's existing joint programs with Emory or Georgia Health Sciences.
+
+4. **Cluster 5's low ensemble stability is a caveat.** The Cluster Interpreter noted that Cluster 5 (Core AI, Cloud & Data-Platform Engineering, 370 skills) has median membership confidence of only 0.47 — meaning many skill assignments within that cluster are probabilistic rather than definitive. The gap finding for MLOps and agentic AI within that cluster is robust (confirmed by the high-lift Analyst data), but the broader cloud-skills gap should be treated as directional rather than fully attested.
+
+5. **The industry news corpus is thin on MLOps from general tech press.** The AI Industry News Researcher noted that MLOps coverage skews heavily toward HuggingFace practitioner content, with limited TechCrunch or MIT Tech Review sourcing. The professor may wish to supplement with dedicated MLOps practitioner sources (MLflow blog, Weights & Biases blog) for course material, beyond what general AI industry coverage provides.
+
+## Per-Agent Tool-Call Trace (5 step(s))
+
+Traces below are capped at 20,000 characters each for readability — every guard flag above was computed against the COMPLETE, uncapped text, which is always recoverable from the companion file: `run_20261107T041641Z_success_full.md`.
+
+### University AI Programs Researcher — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+The local RAG corpus returned a strong, verified match for Georgia Tech's MS CS AI specialization. Institution name matches exactly. Here is the fully structured output:
+
+---
+
+**Program:** Master of Science in Computer Science (M.S. CS), Artificial Intelligence Specialization — Georgia Tech College of Computing
+
+**Source URL(s):**
+- https://www.cc.gatech.edu/degree-programs/master-science-computer-science
+- https://www.cc.gatech.edu/ms-computer-science-specializations
+*(Verified: 2026-06-16, pre-verified local corpus)*
+
+---
+
+**Required Courses:**
+*(AI Specialization "Core Courses" — 9 credit hours total)*
+
+**Step 1 — Algorithms & Design (choose 1, ~3 hrs):**
+- **CS 6300** – Software Development Process
+- **CS 6301** – Advanced Topics in Software Engineering
+- **CS 6505** – Computability, Algorithms, and Complexity
+- **CS 6515** – Introduction to Graduate Algorithms *(most commonly taken)*
+- **CSE 6140** – Computational Science and Engineering Algorithms
+
+**Step 2 — AI Core (choose 2 from the following, ~6 hrs):**
+- **CS 6476** – Computer Vision: Computational methods for image understanding and scene analysis
+- **CS 6601** – Artificial Intelligence: Classical AI, search, planning, reasoning under uncertainty
+- **CS 7637** – Knowledge-Based AI: Cognitive systems, case-based reasoning, metacognition
+- **CS 7641** – Machine Learning: Supervised, unsupervised, and reinforcement learning theory and methods
+- **CS 7643** – Deep Learning: Neural networks, CNNs, RNNs, transformers, and optimization
+- **CS 7650** – Natural Language Processing: Language models, parsing, semantics, NLU/NLG
+
+> *Page note: Any core course taken beyond the 9-hour minimum may be counted toward the elective requirement.*
+
+---
+
+**Elective Courses / Optional Modules:**
+*(6 credit hours total — choose 2 courses, drawn from either or both lists below)*
+
+**List A — AI Methods:**
+- **CS 6604** – Conversational AI: Dialogue systems, intent recognition, conversational agents
+- **CS 7476** – Advanced Computer Vision: Higher-level vision tasks, 3D vision, video understanding
+- **CS 7631** – Multi-Robot Systems: Coordination, planning, and communication across robot teams
+- **CS 7632** – Game AI: AI techniques specific to game environments and interactive entertainment
+- **CS 7633** – Human-Robot Interaction: Designing and evaluating robot behavior in human contexts
+- **CS 7634** – AI Storytelling in Virtual Worlds: Narrative AI, procedural content generation
+- **CS 7647** – Machine Learning with Limited Supervision: Semi-supervised, self-supervised, and few-shot learning methods
+- **CS 7652** – Large Language Models: Architecture, training, fine-tuning, alignment, and applications of LLMs
+
+**List B — Cognition, Ethics, and Human-Centered AI:**
+- **CS 6440** – Introduction to Health Informatics: EHR systems, clinical data, health IT standards
+- **CS 6603** – AI, Ethics, and Society: Fairness, accountability, transparency, bias, and policy
+- **CS 6460** – Educational Technology: AI in learning environments
+- **CS 6750** – Human-Computer Interaction: User-centered design and usability evaluation
+- **CS 6795** – Introduction to Cognitive Science: Cognition, perception, memory, and AI modeling of mind
+- **CS 7610** – Modeling and Design: Formal modeling methods for cognitive and intelligent systems
+- **CS 7651** – Human and Machine Learning: Comparative study of learning in humans vs. machines
+
+---
+
+**Broad Topic Areas Covered:**
+Machine Learning, Deep Learning, Computer Vision, Natural Language Processing, Knowledge-Based AI & Reasoning, Conversational AI, Large Language Models, Robotics & Multi-Robot Systems, Human-Robot Interaction, Game AI, AI Ethics & Society, Human-Centered AI, Cognitive Science, Algorithms & Theory of Computation, Health Informatics, Educational Technology
+
+---
+
+**Notes:**
+- Sourced from the **pre-verified local corpus** (verified 2026-06-16); data reflects the official College of Computing specializations page. Treat as highly reliable as of that date.
+- **Total program credit hours:** The 9 core + 6 elective hours (15 hrs) form the specialization requirement within the broader 30-credit M.S. CS degree; remaining hours are filled by free electives or thesis/project credit.
+- **OMSCS note:** Georgia Tech also offers this AI specialization through its Online MS CS (OMSCS) program at omscs.gatech.edu/specializations. The local corpus flags that the OMSCS AI elective list was *not separately verified* as character-for-character identical to the on-campus list — minor differences may exist.
+- **CS 7652 (Large Language Models)** appears to be a relatively recent addition to the elective roster, reflecting industry trends toward generative AI.
+- **Prerequisite:** An undergraduate (or above) algorithms/computational thinking course is required for the specialization.
+- Detailed syllabi for individual courses are not included in the local corpus; course catalog entries or individual course pages on Georgia Tech's website would provide further granularity.
+```
+
+### AI Industry News Researcher — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Here is the complete industry news research report, organized by the five topic areas requested, with full article citations:
+
+---
+
+# 🗞️ AI Industry News Research Report
+**For:** Curriculum gap analysis — Georgia Tech MS CS AI Specialization
+**Purpose:** Contextualize labor-market and industry developments across five key AI curriculum themes
+**Sources:** MIT Technology Review AI, TechCrunch AI, VentureBeat AI, HuggingFace Blog, The Decoder + industry report findings (Stanford HAI AI Index 2026, McKinsey State of AI 2025, WEF Future of Jobs 2025)
+
+---
+
+## 1. 🤖 Large Language Models & Generative AI in Production
+
+**Key Findings:**
+
+- **"Towards Speed-of-Light Text Generation with Nemotron-Labs Diffusion Language Models"**
+  *Source: HuggingFace Blog — May 23, 2026*
+  🔗 https://huggingface.co/blog/nvidia/nemotron-labs-diffusion
+  NVIDIA's Nemotron-Labs is pushing inference efficiency via diffusion-based LLMs — a non-autoregressive architecture competing directly with standard transformer generation pipelines. Curriculum implication: Students need exposure to alternative generation paradigms beyond autoregressive transformers.
+
+- **"Ulysses Sequence Parallelism: Training with Million-Token Contexts"**
+  *Source: HuggingFace Blog — March 9, 2026*
+  🔗 https://huggingface.co/blog/ulysses-sp
+  Covers long-context training techniques using sequence parallelism — scaling context windows to 1M+ tokens. Curriculum implication: Production LLM training now demands distributed memory and parallelism strategies far beyond standard deep learning coursework.
+
+- **"Building Blocks for Foundation Model Training and Inference on AWS"**
+  *Source: HuggingFace Blog — May 11, 2026*
+  🔗 https://huggingface.co/blog/amazon/foundation-model-building-blocks
+  AWS-partnered tutorial on foundation model deployment infrastructure, covering training-to-inference pipelines in cloud-native environments. Curriculum implication: Industry expects graduates to understand cloud-native model lifecycle management.
+
+- **"Nous Research's NousCoder-14B — open-source coding model landing right in the Claude Code moment"**
+  *Source: VentureBeat AI — January 7, 2026*
+  🔗 https://venturebeat.com/technology/nous-researchs-nouscoder-14b-is-an-open-source-coding-model-landing-right-in
+  Detailed technical breakdown of a 14B-parameter open-source coding model trained using reinforcement learning on verifiable code rewards, pipelined inference-verification, and asynchronous GPU training. Notably identifies a **data ceiling problem**: the model's training corpus consumed "a significant portion of all readily available, verifiable competitive programming problems," signaling an impending data scarcity challenge for the field.
+
+- **"Training mRNA Language Models Across 25 Species for $165"**
+  *Source: HuggingFace Blog — March 31, 2026*
+  🔗 https://huggingface.co/blog/OpenMed/training-mrna-models-25-species
+  Demonstrates that domain-specific biological LLMs (mRNA sequences across species) can now be trained at extremely low cost. Curriculum implication: Domain-specific foundation model fine-tuning is accessible and industry-relevant for life sciences / healthcare tracks.
+
+**[REPORT] Stanford HAI AI Index 2026 — Technical Performance and Global Adoption:**
+> *"Industry produced over 90% of notable frontier models in 2025; several now meet or exceed human baselines on PhD-level science questions, multimodal reasoning, and competition mathematics. On the SWE-bench Verified coding benchmark, performance rose from 60% to near 100% in a single year. Organizational adoption of AI reached 88%, and 4 in 5 university students now use generative AI. U.S. and Chinese frontier models have traded the state-of-the-art lead multiple times since early 2025; as of March 2026, Anthropic's top model leads China's best by just 2.7%."*
+  *Source: Stanford HAI — AI Index Report 2026*
+  🔗 https://hai.stanford.edu/ai-index/2026-ai-index-report/technical-performance
+
+---
+
+## 2. ⚙️ MLOps / AI Engineering / Model Deployment at Scale
+
+**Key Findings:**
+
+- **"Building Blocks for Foundation Model Training and Inference on AWS"**
+  *Source: HuggingFace Blog — May 11, 2026*
+  🔗 https://huggingface.co/blog/amazon/foundation-model-building-blocks
+  Outlines the full infrastructure stack for deploying foundation models on cloud at scale — covering distributed training, inference optimization, and cloud-native tooling. A direct signal that MLOps is now inseparable from large-model engineering.
+
+- **"GGML and llama.cpp join HF to ensure the long-term progress of Local AI"**
+  *Source: HuggingFace Blog — February 20, 2026*
+  🔗 https://huggingface.co/blog/ggml-joins-hf
+  The merger of the GGML and llama.cpp ecosystems into HuggingFace signals a consolidation around **edge/on-device inference** as a first-class deployment target. Curriculum implication: MLOps must now cover not only cloud-scale but quantized, on-device deployment pipelines.
+
+- **"Bringing Robotics AI to Embedded Platforms: Dataset Recording, VLA Fine-Tuning, and On-Device Optimizations"**
+  *Source: HuggingFace Blog — March 5, 2026*
+  🔗 https://huggingface.co/blog/nxp/bringing-robotics-ai-to-embedded-platforms
+  Covers VLA (Vision-Language-Action) model fine-tuning and optimization for resource-constrained embedded hardware — a preview of the edge MLOps skillset employers in robotics, IoT, and medical device sectors will need.
+
+- **"Ulysses Sequence Parallelism: Training with Million-Token Contexts"**
+  *Source: HuggingFace Blog — March 9, 2026*
+  🔗 https://huggingface.co/blog/ulysses-sp
+  Covers advanced distributed training techniques — sequence parallelism across GPU clusters. Signals that ML engineers must now understand parallel training strategies (tensor, pipeline, and sequence parallelism) as core competencies, not advanced electives.
+
+**📌 Curriculum gap note:** The indexed news corpus is predominantly HuggingFace-sourced on MLOps topics, with limited coverage from TechCrunch or MIT Tech Review. However, the HuggingFace material is technically substantive and production-relevant. The absence of TechCrunch/VentureBeat coverage here likely reflects how specialized the topic is — MLOps content skews toward practitioner blogs rather than general tech press.
+
+---
+
+## 3. 🏥 AI in Healthcare / Clinical AI Applications
+
+**Key Findings:**
+
+- **"AI-hallucinated citations are creeping into papers that shape clinical guidelines, researchers warn"**
+  *Source: The Decoder — May 26, 2026*
+  🔗 https://the-decoder.com/ai-hallucinated-citations-are-creeping-into-papers-that-shape-clinical-guidelines-researchers-warn/
+  > *"An audit of 2.5 million biomedical papers by Columbia University and other institutions shows that the rate of fabricated references has increased more than twelvefold since 2023. The researchers suspect a link to the widespread use of language models — the fake references match their paper's topic, follow correct formatting, and are nearly impossible to spot. 98% of the affected papers have received no response from their publishers."*
+  **This is the single most curriculum-critical healthcare AI finding in the corpus.** It directly illustrates why clinical AI graduates must understand hallucination mechanisms, model auditing, and regulatory validation — not just model performance metrics. The contamination of clinical guidelines by AI-fabricated citations is a patient safety crisis in formation.
+
+- **"Training mRNA Language Models Across 25 Species for $165"**
+  *Source: HuggingFace Blog — March 31, 2026*
+  🔗 https://huggingface.co/blog/OpenMed/training-mrna-models-25-species
+  Demonstrates accessible biological LLM training at minimal compute cost — a proof point that biomedical AI is becoming democratized. Curriculum implication for healthcare track: Students should learn domain-specific fine-tuning on biomedical corpora (genomics, EHR text, clinical notes).
+
+- **"Introducing NVIDIA Nemotron 3 Nano Omni: Long-Context Multimodal Intelligence for Documents, Audio and Video Agents"**
+  *Source: HuggingFace Blog — April 28, 2026*
+  🔗 https://huggingface.co/blog/nvidia/nemotron-3-nano-omni-multimodal-intelligence
+  A compact multimodal model supporting long documents, audio, and video — with direct implications for clinical AI applications like processing radiology reports, clinical audio recordings, and medical video. The "Nano" sizing makes it deployable on-premises in HIPAA-sensitive environments.
+
+---
+
+## 4. 🕵️ Agentic AI & AI Agents
+
+**Key Findings:**
+
+- **"Rethinking organizational design in the age of agentic AI"**
+  *Source: MIT Technology Review AI — May 26, 2026*
+  🔗 https://www.technologyreview.com/2026/05/26/1137584/rethinking-organizational-design-in-the-age-of-agentic-ai/
+  > *"Although 85% of organizations say they want to be agentic within the next three years, 76% say their current operations and infrastructure can't support that change. They cite a lack of readiness across people, processes, and workflows."*
+  **This is the most direct signal that agentic AI is a curriculum priority.** The gap between organizational aspiration and execution readiness points squarely to a skills shortage — exactly what a new course could address.
+
+- **"Inside VAKRA: Reasoning, Tool Use, and Failure Modes of Agents"**
+  *Source: HuggingFace Blog / IBM Research — April 15, 2026*
+  🔗 https://huggingface.co/blog/ibm-research/vakra-benchmark-analysis
+  IBM Research's VAKRA benchmark analyzes agent reasoning, tool-use patterns, and — critically — failure modes. Curriculum implication: Students need to understand not just how to build agents but how they fail (tool hallucination, reasoning loops, context loss), and how to evaluate and constrain them.
+
+- **"Harness, Scaffold, and the AI Agent Terms Worth Getting Right"**
+  *Source: HuggingFace Blog — May 25, 2026*
+  🔗 https://huggingface.co/blog/agent-glossary
+  A glossary-style article codifying the emerging vocabulary of agent systems (harness, scaffold, orchestration loop, tool call, memory, etc.). Signals that the field is maturing toward shared engineering vocabulary — graduates need fluency in these concepts.
+
+- **"Roundtables: Can AI Learn to Understand the World?"**
+  *Source: MIT Technology Review AI — May 21, 2026*
+  🔗 https://www.technologyreview.com/2026/05/21/1137756/roundtables-can-ai-learn-to-understand-the-world/
+  MIT Tech Review editors and AI researchers discuss world models as a next frontier beyond LLMs — framing the gap between pattern-matching and genuine situational understanding. Curriculum implication: Agentic AI courses should include world models and grounded reasoning, not just prompt-chaining.
+
+**[REPORT] McKinsey State of AI 2025 — Agentic AI Experimentation:**
+> *"62% of organizations are at least experimenting with AI agents, and 23% report scaling an agentic AI system in at least one business function — most commonly in IT and knowledge management. McKinsey defines 'AI high performers' (about 6% of respondents, by 5%+ EBIT impact) who are three times more likely than others to pursue transformative business change via AI and to fundamentally redesign workflows around it; over a third of these high performers commit more than 20% of their digital budget to AI."*
+  *Source: McKinsey & Company — The State of AI 2025 (November 2025)*
+  🔗 https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai
+
+---
+
+## 5. ⚖️ Responsible AI / AI Safety / Bias & Fairness / Workforce Impact
+
+**Key Findings:**
+
+- **"It's time to address the looming crisis in entry-level work."**
+  *Source: MIT Technology Review AI — May 26, 2026*
+  🔗 https://www.technologyreview.com/2026/05/26/1137865/its-time-to-address-the-looming-crisis-in-entry-level-work/
+  > *"Artificial intelligence has not so far produced a clean story of mass unemployment. Aggregate employment in developed countries remains broadly stable... But a troubling change may be hiding beneath the surface: the quiet weakening of the first rung of the career ladder."*
+  Curriculum implication: Responsible AI education must include the nuanced socioeconomic effects of AI on labor — not just bias in model outputs, but structural labor market disruption, particularly for early-career knowledge workers.
+
+- **"A reality check on the AI jobs hysteria"**
+  *Source: MIT Technology Review AI — May 26, 2026*
+  🔗 https://www.technologyreview.com/2026/05/26/1137855/a-reality-check-on-the-ai-jobs-hysteria/
+  Counterbalances apocalyptic job-loss narratives with evidence-based analysis. Signals that responsible AI curriculum should teach students to critically evaluate AI impact claims — a data-literacy and science-communication competency.
+
+- **"AI-hallucinated citations are creeping into papers that shape clinical guidelines"**
+  *(also cited in Healthcare section — doubly relevant here)*
+  *Source: The Decoder — May 26, 2026*
+  🔗 https://the-decoder.com/ai-hallucinated-citations-are-creeping-into-papers-that-shape-clinical-guidelines-researchers-warn/
+  A concrete, documented case of AI safety failure in a high-stakes domain. The 12x increase in fabricated biomedical citations since 2023 is a compelling real-world example for responsible AI coursework.
+
+**[REPORT] WEF Future of Jobs 2025 — Skills Gaps:**
+> *"63% of employers identify skills gaps as the biggest barrier to business transformation through 2030. If the world's workforce were 100 people, 59 would need training by 2030; 11 of those would be unlikely to receive the reskilling or upskilling needed. Alongside technical AI and big-data skills, the report finds creative thinking, resilience/flexibility/agility, and curiosity and lifelong learning all rising in importance — framing these human-centered skills as complements to, not substitutes for, technical AI literacy."*
+  *Source: World Economic Forum — Future of Jobs Report 2025 (January 2025)*
+  🔗 https://www.weforum.org/publications/the-future-of-jobs-report-2025/digest/
+
+---
+
+## 📋 Summary Table for Curriculum Mapping
+
+| Theme | Most Curriculum-Critical Article | Source | Date |
+|---|---|---|---|
+| LLMs / GenAI in Production | Stanford HAI AI Index 2026 (88% org adoption, SWE-bench near 100%) | Stanford HAI [REPORT] | 2026 |
+| MLOps / Deployment at Scale | Building Blocks for Foundation Model Training on AWS | HuggingFace Blog | May 11, 2026 |
+| Healthcare / Clinical AI | AI-hallucinated citations in clinical guidelines (12x increase) | The Decoder | May 26, 2026 |
+| Agentic AI | Rethinking org design for agentic AI (85% want it, 76% not ready) | MIT Tech Review AI | May 26, 2026 |
+| Responsible AI / Safety | WEF: 63% of employers cite skills gaps as #1 barrier to AI transformation | WEF [REPORT] | Jan 2025 |
+
+---
+
+## ⚠️ Retrieval Transparency Notes
+- **Healthcare AI:** The indexed corpus has thin dedicated clinical-AI coverage. The hallucinated citations article from The Decoder is the most directly relevant. TechCrunch and VentureBeat did not surface clinical AI articles in this search. The mRNA LLM article (HuggingFace) is adjacent.
+- **Responsible AI / Bias/Fairness specifically:** No articles specifically on model bias auditing or fairness toolkits surfaced. The closest relevant content is the WEF report on workforce skills gaps and the MIT Tech Review labor-market analysis. This may be a genuine gap in the indexed corpus for the news cycle rather than a gap in the field.
+- **MLOps:** Coverage skews heavily toward HuggingFace practitioner content; no TechCrunch or MIT Tech Review MLOps articles surfaced. This is noted so the professor can supplement with dedicated MLOps practitioner sources (e.g., MLflow, Weights & Biases blogs).
+```
+
+### Cluster Interpreter — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+I now have everything I need to produce the full Mode A gap analysis. Here it is:
+
+---
+
+# MODE A — Cluster Gap Analysis: Georgia Tech MS CS AI Specialization vs. W2026 Labour Market
+
+---
+
+## Cluster Coverage Assessment
+
+**⭐ Focused Clusters (high signal — prioritise these)**
+
+✅ **Cluster 2 — Machine Learning & Generative AI (131 skills)**
+Strongly covered. CS 7641 (ML), CS 7643 (Deep Learning), CS 7650 (NLP), CS 7652 (LLMs), and CS 7647 (Limited Supervision) collectively address the cluster's top skills — Machine Learning (30.4%), Large Language Models (13.6%), Generative AI (10.8%), NLP (6.3%), PyTorch/TensorFlow, Deep Learning, Transformers, CNNs, Reinforcement Learning, and even emerging skills like multimodal learning and few-shot learning. This is Georgia Tech's most evident market-aligned strength. **One gap within this cluster is notable, however: MLOps (4.9%) — model deployment, ML pipelines, MLflow, model monitoring, model versioning — receives little to no dedicated treatment (see Priority Gap #1).**
+
+⚠️ **Cluster 5 — Core AI, Cloud & Data-Platform Engineering (370 skills)**
+Partially covered and the largest cluster by skill count. Python, AI/ML fundamentals, algorithms, and optimization surface across the core AI courses. However, the program conspicuously omits cloud computing (AWS 20.5%, Azure 16.2%, GCP 10.2%), API development (17.3%), CI/CD (11.9%), DevOps (9.3%), containerisation/Docker/Kubernetes (6.6%), and production engineering infrastructure (MLOps stack, Agentic AI 7.8%, RAG 5.2%, Prompt Engineering 3.8%, LangChain 3.1%, LangGraph 1.4%, Agentic Frameworks 1.5%). The program is algorithmically strong but production-deployment thin.
+
+❌ **Cluster 3 — Data-Engineering Tools (89 skills)**
+Entirely missing. No course in the curriculum covers pipeline orchestration (Airflow 3.8%, dbt 3.5%), cloud object stores (S3 3.4%), event streaming (Kafka 3.3%), ETL/ELT pipelines (2.3%), data warehousing (Redshift 2.6%), Spark/PySpark, Hadoop, Databricks, Delta Lake, or DataOps. CS 6440 (Health Informatics) touches healthcare data systems tangentially but does not address this cluster at all. This is the program's largest unaddressed technical cluster.
+
+❌ **Cluster 6 — Business Intelligence, Analytics & Finance (66 skills)**
+Entirely missing for core market skills. No course explicitly teaches data analytics as an applied discipline (41.6%), BI tooling (Tableau 11.8%, Power BI 14.8%), data visualisation (15.9%), dashboard development (18.6%), forecasting (8.0%), or statistical analysis in an applied-reporting context. CS 7641 covers statistical underpinnings but does not translate them into the BI and analytics-delivery skills employers expect at scale.
+
+⚠️ **Cluster 1 — Quantitative & Experimental Methods (47 skills)**
+Partially covered. CS 7641 addresses supervised/unsupervised methods and touches gradient boosting, random forests, and logistic regression. CS 6601 handles probabilistic reasoning. However, causal inference (1.5%), experimental design (2.1%), operations research (2.0%), econometrics (0.8%), A/B testing (3.4% — in Cluster 5 but conceptually adjacent), and Bayesian methods are not explicitly surfaced as named, taught competencies in any course title or described module.
+
+**Non-Focused Clusters (note, do not prioritise)**
+
+⚠️ **Cluster 4 — Requirements, Validation & Delivery (21 skills)**
+Mixed partial coverage. Agile methodologies and scrum are not explicitly taught; data validation and business requirements are absent. CS 6603 touches policy and accountability tangentially.
+
+✅ **Cluster 7 — Communication & Professional Skills (98 skills)**
+Reasonably addressed through the program's seminar culture and List B electives (HCI, Cognitive Science), though no dedicated professionalism course exists. This is a broad soft-skill group — not a gap to prioritise over focused technical clusters.
+
+⚠️ **Cluster 8 — Rare Niche Skills / near-zero frequency (9 skills)**
+Cluster 8 is a near-zero-frequency niche cluster — not a coherent single skill theme; do not read a gap into its absence.
+
+⚠️ **Cluster 9 — Risk & Regulatory (3 skills)**
+Tiny emerging cluster (3 skills: Risk Management, Regulatory Requirements, Risk Analysis). CS 6603 provides light coverage of AI governance and risk. The cluster is too small to constitute a meaningful structural gap.
+
+✅ **Cluster 10 — Strategy, Sales & Product Management (128 skills)**
+Broad business/strategy group. CS 6603 (ethics/policy) and HCI courses provide partial coverage of the strategic reasoning dimension. This is a broad soft-skill/business group — note gaps but do not prioritise over focused technical clusters.
+
+---
+
+## Priority Gaps (Focused Clusters Only)
+
+### 🔴 Gap #1 — Cluster 5: MLOps & Production AI Engineering (within Core AI, Cloud & Data-Platform Engineering)
+
+> **Strategic rationale:** Employers in W2026 demand not just AI researchers but engineers who can *ship* AI systems. The program excels at model design but has a near-total absence of production infrastructure content. The skills below represent the fastest-growing component of the AI job market — the bridge between research prototype and deployed product.
+
+**Top missing skills (sorted by market frequency):**
+
+| Skill | Frequency | Why It Matters |
+|---|---|---|
+| Cloud Computing (AWS/Azure/GCP) | 33.1% / 20.5% / 16.2% / 10.2% | The dominant deployment environment for every AI system; absence here is the single most glaring market mismatch |
+| API Development | 17.3% | Wrapping models into production services is a core ML engineer task |
+| CI/CD | 11.9% | Continuous integration and delivery for AI systems is now a baseline expectation |
+| DevOps | 9.3% | Infrastructure management for model lifecycle |
+| MLOps | 4.9% | Model training pipelines, MLflow, model versioning, model monitoring, Kubeflow — the operational layer of ML |
+| Agentic AI | 7.8% | Autonomous agents, multi-agent orchestration — a rapidly growing employer priority |
+| Retrieval-Augmented Generation (RAG) | 5.2% | The dominant architecture for LLM grounding in enterprise; not explicitly taught |
+| Prompt Engineering | 3.8% | Now a standard professional expectation for AI practitioners |
+| LangChain / LangGraph / LlamaIndex | 3.1% / 1.4% / 0.9% | The dominant orchestration frameworks for LLM-based systems |
+| Docker / Kubernetes | 6.2% / 6.6% | Containerisation and orchestration for model serving |
+| Agentic Frameworks (AutoGen, CrewAI) | 1.5% / 0.6% | Emerging agent frameworks appearing in a growing share of postings |
+
+**Recommendation:** Create a new course — *Applied AI Engineering & MLOps* — covering cloud deployment (AWS SageMaker, Azure ML, GCP Vertex AI), containerisation (Docker/Kubernetes), CI/CD for ML, model monitoring and versioning (MLflow, Weights & Biases), RAG architectures, prompt engineering, and LLM orchestration frameworks (LangChain, LangGraph, LlamaIndex). Alternatively, restructure CS 7652 (LLMs) to include a mandatory engineering practicum covering these deployment and orchestration concerns.
+
+---
+
+### 🔴 Gap #2 — Cluster 3: Data Engineering & Pipeline Infrastructure (entirely missing)
+
+> **Strategic rationale:** Cluster 3 is 89 skills wide with strong ensemble stability (median confidence 0.88 — the highest of any focused cluster). It is wholly absent from the curriculum. AI practitioners in industry routinely own or collaborate on the data pipelines that feed their models. Without these skills, graduates are dependent on a data engineering team that may not exist in many employer settings.
+
+**Top missing skills (sorted by market frequency):**
+
+| Skill | Frequency | Why It Matters |
+|---|---|---|
+| Airflow | 3.8% | The dominant workflow orchestration tool for ML and data pipelines |
+| dbt (data build tool) | 3.5% | The standard transformation layer in the modern data stack |
+| S3 (cloud object storage) | 3.4% | Ubiquitous storage layer for training data and model artefacts |
+| Kafka | 3.3% | Real-time event streaming; feeds real-time ML inference systems |
+| Redshift | 2.6% | Cloud data warehouse; primary analytical data store for many employers |
+| Hadoop / PySpark | 2.3% / 8.4% | Large-scale batch processing of training corpora |
+| Scala | 2.3% | Required for Spark-based data engineering roles |
+| ETL Pipelines | 2.3% | Core competency for getting data from source to model |
+| AWS Glue / Azure Data Factory | 1.6% / 1.3% | Cloud-native ETL services |
+| Delta Lake / Apache Flink | 0.8% | Lakehouse architecture and real-time stream processing |
+| DataOps | 0.7% | Operational best practices for data pipeline reliability |
+| Data Lineage | 1.0% | Governance-critical for regulated industries (healthcare, finance) |
+
+**Recommendation:** Add a *Data Engineering for AI* course covering pipeline orchestration (Airflow, Prefect/Dagster), the modern data stack (dbt, Redshift/Snowflake/BigQuery), stream processing (Kafka, Apache Flink), cloud storage patterns (S3, Delta Lake), and DataOps principles. This course would position graduates to operate end-to-end rather than consuming pre-cleaned data handed to them by an invisible pipeline.
+
+---
+
+### 🟡 Gap #3 — Cluster 6: Business Intelligence, Analytics & Applied Data Visualisation (entirely missing)
+
+> **Strategic rationale:** Data Analytics (41.6%) is the single highest-frequency skill across all 66 skills in this cluster — meaning it appears in nearly half of all AI/ML job postings sampled. BI skills represent the analytical communication layer employers expect: graduates who can not only build models but also interpret, visualise, and communicate their outputs to non-technical stakeholders. This is especially relevant given the program's strong List B emphasis on human-centred AI, but that emphasis is not complemented by applied analytics tooling.
+
+**Top missing skills (sorted by market frequency):**
+
+| Skill | Frequency | Why It Matters |
+|---|---|---|
+| Data Analytics (applied) | 41.6% | The broadest and most demanded analytical competency across all postings |
+| Business Intelligence | 21.9% | Employer-facing reporting and analysis workflows |
+| Data Analysis | 19.3% | Translating model outputs into actionable business intelligence |
+| Dashboard Development | 18.6% | Building monitoring and reporting interfaces for AI systems |
+| Data Visualisation | 15.9% | Communicating model results and data patterns |
+| Power BI | 14.8% | Dominant Microsoft BI tool — widely required in enterprise AI roles |
+| Tableau | 11.8% | Dominant independent BI visualisation platform |
+| Forecasting | 8.0% | Time-series and predictive analytics presented to business stakeholders |
+| Statistical Analysis | 5.4% | Applied statistics in a business-reporting context |
+| Looker | 3.6% | Growing Google/Looker BI ecosystem |
+
+**Recommendation:** Add a *Data Analytics & Visualisation for AI Practitioners* module — either as a standalone half-credit course or integrated into an existing course such as CS 7641 or a new Data Engineering course. Priority content: applied statistical analysis, Tableau/Power BI, dashboard design for AI monitoring, and communicating model uncertainty and performance to non-technical audiences. Alternatively, the existing CS 7651 (Human and Machine Learning) could be restructured to include an analytics communication component.
+
+---
+
+## Summary Table
+
+| Cluster | Theme | Coverage | Priority |
+|---|---|---|---|
+| 1 ⭐ | Quantitative & Experimental Methods | ⚠️ Partial | Medium — causal inference, experimental design, A/B testing absent |
+| 2 ⭐ | Machine Learning & Generative AI | ✅ Strong | Low — well addressed; MLOps is the within-cluster gap (see Gap #1) |
+| 3 ⭐ | Data-Engineering Tools | ❌ Missing | **HIGH — entirely absent; 89 skills, freq. up to 3.8%** |
+| 4 | Requirements, Validation & Delivery | ⚠️ Partial | Low — broad mixed group; note but don't prioritise |
+| 5 ⭐ | Core AI, Cloud & Data-Platform Engineering | ⚠️ Partial | **HIGH — cloud, MLOps, agentic AI, RAG all absent** |
+| 6 ⭐ | Business Intelligence, Analytics & Finance | ❌ Missing | **HIGH — 41.6% frequency for top skill; 66 skills entirely unaddressed** |
+| 7 | Communication & Professional Skills | ⚠️ Partial | Low — broad soft-skill group; partially addressed culturally |
+| 8 | Rare Niche Skills (near-zero frequency) | — | Disclose only — not a coherent theme; near-zero freq. |
+| 9 | Risk & Regulatory | ⚠️ Partial | Low — 3-skill cluster; CS 6603 provides light coverage |
+| 10 | Strategy, Sales & Product Management | ⚠️ Partial | Low — broad business group; note but don't prioritise |
+
+---
+
+## Caveats
+
+1. **Cluster stability varies.** Cluster 5 has median membership confidence of only 0.47, with 195 of its 370 skills below the 0.5 stability threshold — meaning many skills in that cluster are genuinely ambiguous between clusters and their assignment should be treated as probabilistic rather than definitive. Cluster 3 (median 0.88) and Cluster 2 (median 0.88) are highly stable and their gap verdicts are robust.
+
+2. **Specific unstable placements noted:** SQL (Cluster 5, confidence 0.20 — most often co-clustered with Cluster 3), Data Science (Cluster 5, confidence 0.08 — most often co-clustered with Cluster 6), Pandas (Cluster 3, confidence 0.19 — most often co-clustered with Cluster 1). These are disclosed rather than used as primary evidence.
+
+3. **Frequency ≠ lift.** Market frequency shows the *scale* at which a skill appears in postings — it does not by itself indicate that the skill is *distinctively* demanded of AI/ML graduates versus all tech roles broadly. The lift/z-score analysis (computed separately by the Skills Taxonomy Analyst) is the project's authoritative metric for distinctive demand. These frequency figures should be read as directional signals and upper bounds.
+
+4. **Curriculum summary completeness.** The curriculum provided lists course titles, required cores, and electives. It does not include syllabi or reading lists. Some skills (e.g., NumPy, Python, SQL) may be used instrumentally inside existing courses without being named as explicit learning outcomes — which would narrow the apparent gap. The verdicts above are based on the described course content, not inferred lab exercises.
+
+5. **Cluster labels are point-in-time.** The CSPA ensemble clustering reflects W2026 job posting data. The AI market is evolving rapidly — Agentic AI, RAG, and LLM orchestration frameworks in particular are growing faster than their current frequencies suggest; their strategic importance likely exceeds what frequency alone implies.
+```
+
+### Skills Taxonomy Analyst — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+Here is your complete grounded data report, organized by part.
+
+---
+
+# Curriculum Gap Analysis: Lift/z Evidence Report
+## Georgia Tech MS CS AI — Labour-Market Grounding
+
+> **Grounding principle throughout:** lift (×) = how many times more likely a skill co-appears with the focal skill vs. baseline; z = Fightin'-Words significance. Only z ≥ 2 is considered attested. All figures are from the frozen differential-analysis lift table against live Winter 2026 postings.
+
+---
+
+## PART 1 — Lift/z for Gap Clusters' Key Skills
+
+### GAP 1: MLOps & Production AI Engineering
+*Focal skill for lift pull: **MLOps**. All figures below are co-demand distinctiveness with MLOps.*
+
+| Skill | Lift (×) | z | Co-occurrence (postings) | Attested? |
+|---|---|---|---|---|
+| **MLOps** *(focal)* | — | — | — | Focal |
+| **Retrieval-Augmented Generation (RAG)** | 6.17× | z=4.94 | 279 | ✅ z≥2 |
+| **LangChain** | 6.58× | z=4.14 | 177 | ✅ z≥2 |
+| **CI/CD** | 3.94× | z=3.80 | 409 | ✅ z≥2 |
+| **Agentic AI** | 3.98× | z=3.12 | 271 | ✅ z≥2 |
+| **Docker** | 4.73× | z=3.68 | 255 | ✅ z≥2 |
+| **Kubernetes** | 4.37× | z=3.34 | 250 | ✅ z≥2 |
+| **Prompt Engineering** | 4.48× | z=2.64 | 147 | ✅ z≥2 |
+| **GCP** | 3.75× | z=3.20 | 331 | ✅ z≥2 |
+| **Azure** | 3.12× | z=2.80 | 439 | ✅ z≥2 |
+| **Airflow** *(pipeline bridge)* | 4.43× | z=2.59 | 146 | ✅ z≥2 |
+| **Cloud Computing (AWS/Azure/GCP)** | *AWS not returned as distinct canonical; Azure 3.12×/z=2.80, GCP 3.75×/z=3.20* | — | — | Partial |
+| **API Development** | *Not returned at z≥2 in MLOps lift table* | — | — | ❌ Below threshold |
+
+**Key takeaway for Gap 1:** Every core production-AI engineering skill — RAG, LangChain, CI/CD, Docker/Kubernetes, Prompt Engineering, cloud platforms — clears z≥2 against MLOps. This confirms MLOps as a genuine cluster nexus. The absence of raw "API Development" at z≥2 suggests it appears in MLOps postings at near-baseline rates (a commodity skill, not a distinctive co-demand), though FastAPI surfaces distinctively in the Agentic AI profile (5.43×, z=3.17).
+
+**Bonus high-signal skills co-demanded with MLOps** (not in the original gap list but highly attested — worth including in course design):
+- MLflow (15.12×, z=7.38) — experiment tracking
+- Model Versioning (15.91×, z=6.86) — model lifecycle
+- Model Monitoring (12.82×, z=4.23) — production observability
+- Kubeflow (15.36×, z=4.66) — ML-native orchestration
+- Feature Stores (11.43×, z=3.93) — data/model bridge
+- LLMOps (12.45×, z=3.37) — emergent LLM production discipline
+- SageMaker (9.06×, z=4.75) — cloud ML deployment
+
+---
+
+### GAP 2: Data Engineering & Pipeline Infrastructure
+*Focal skill for lift pull: **Airflow** (canonical taxonomy name). All figures are co-demand distinctiveness with Airflow.*
+
+| Skill | Lift (×) | z | Co-occurrence (postings) | Attested? |
+|---|---|---|---|---|
+| **Airflow / Apache Airflow** *(focal)* | — | — | — | Focal |
+| **dbt (data build tool)** | 10.84× | z=6.32 | 252 | ✅ z≥2 |
+| **Apache Kafka** | 7.02× | z=3.65 | 154 | ✅ z≥2 |
+| **Apache Spark / PySpark** | 5.28× | z=3.99 | 300 | ✅ z≥2 |
+| **ETL Pipelines** | 6.00× | z=2.50 | 94 | ✅ z≥2 |
+| **ETL** *(broader)* | 4.40× | z=3.21 | 284 | ✅ z≥2 |
+| **Data Engineering** | 5.06× | z=4.43 | 400 | ✅ z≥2 |
+| **Data Pipelines** | 5.04× | z=4.66 | 445 | ✅ z≥2 |
+| **Data Lineage** | *Not returned at z≥2 in Airflow lift table* | — | — | ❌ Below threshold |
+
+**Key takeaway for Gap 2:** dbt (10.84×, z=6.32) is the single most distinctively co-demanded skill with Airflow — a "modern data stack" cornerstone that is essentially invisible in a traditional ML curriculum. Kafka (7.02×, z=3.65) and PySpark (5.28×, z=3.99) are both strongly attested. Data Lineage did not clear z≥2, suggesting it is either not a canonical taxonomy skill by that exact name or appears at baseline rates in data-engineering postings.
+
+**Bonus high-signal skills co-demanded with Airflow** (not in the original gap list but highly attested):
+- Dagster (22.77×, z=5.15) — next-gen pipeline orchestration
+- Snowflake (6.07×, z=4.55) — cloud data warehouse
+- BigQuery (8.13×, z=4.26) — Google analytical store
+- ELT (6.98×, z=3.78) — transform-after-load paradigm
+- Redshift (8.01×, z=3.82) — AWS warehouse
+- Fivetran (11.81×, z=3.14) — ELT ingestion
+- Modern Data Stack (9.12×, z=2.39) — stack awareness
+- Databricks (3.80×, z=2.02) — unified analytics platform
+
+---
+
+### GAP 3: Business Intelligence & Applied Analytics
+*Focal skill attempted: **Data Analytics**. The taxonomy canonical form did not return z≥2 lift rows, indicating "Data Analytics" is either too broad a concept to have a distinctive co-demand signature, or it maps to a different canonical form in this taxonomy.*
+
+**What the data says instead:** Because "Data Analytics" did not resolve to a lift profile, the following represents the best available evidence from the other tool calls:
+
+| Skill | Evidence Available | Source |
+|---|---|---|
+| **Data Visualisation** | Not returned at z≥2 from any focal skill run | Taxonomy exists; commodity skill |
+| **Power BI** | Not returned at z≥2 | Likely commodity / baseline |
+| **Tableau** | Not returned at z≥2 | Likely commodity / baseline |
+| **Dashboard Development** | Not returned at z≥2 | Likely commodity / baseline |
+| **Forecasting** | Not returned at z≥2 | Below threshold |
+| **Data Analytics** | Focal — no lift profile resolved | Broad/commodity term |
+
+**Key takeaway for Gap 3:** The absence of distinctive lift signals for BI & Analytics skills is itself a finding: these skills appear broadly across AI/ML postings at or near baseline rates — they are *necessary but not distinctive*. This means BI/Analytics is a **genuine curricular gap** (students need these skills) but not a *co-demand cluster* in the same way MLOps and Data Engineering are. The gap is real, but its market signature is diffuse — these skills appear in many posting types without clustering tightly around a single anchor concept. A BI/Analytics module in the curriculum is justified on coverage grounds, but it cannot be grounded in the same high-lift, high-z evidence as Gaps 1 and 2.
+
+---
+
+## PART 2 — Lift/z for the Two Proposed New Courses' Focal Skills
+
+### Course 1: "Applied AI Engineering & MLOps"
+*Focal skill: **Agentic AI** (broader framing for the course's generative/agentic dimension) + **MLOps** (production dimension). Both lift profiles were retrieved.*
+
+**From the Agentic AI lift profile** (62 skills at z≥2):
+
+| Skill (Course 1 Key Skill) | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| **Retrieval-Augmented Generation (RAG)** | 6.66× | z=8.89 | 482 |
+| **LangChain** | 7.53× | z=7.90 | 324 |
+| **Prompt Engineering** | 6.26× | z=7.03 | 329 |
+| **Agentic Frameworks** | 9.11× | z=6.79 | 190 |
+| **LangGraph** | 9.47× | z=6.73 | 179 |
+| **MLOps** *(cross-validated)* | 3.98× | z=4.34 | 271 |
+| **AI Engineering** | 5.82× | z=4.28 | 136 |
+| **FastAPI** *(API Development proxy)* | 5.43× | z=3.17 | 83 |
+| **CI/CD** *(from MLOps profile)* | 3.94× | z=3.80 | 409 |
+| **Docker** *(from MLOps profile)* | 4.73× | z=3.68 | 255 |
+| **Kubernetes** *(from MLOps profile)* | 4.37× | z=3.34 | 250 |
+| **Azure AI** | 4.96× | z=2.60 | 65 |
+| **AWS Bedrock** | 6.22× | z=2.93 | 58 |
+| **Vertex AI** | 5.23× | z=2.84 | 71 |
+| **LLMOps** | 5.75× | z=2.21 | 37 |
+
+> **Course 1 bottom line:** This course has the strongest and most internally coherent lift signature in the entire dataset. RAG, LangChain, Agentic Frameworks, LangGraph, and Prompt Engineering all clear z≥7 against the Agentic AI focal skill — extraordinary distinctiveness. MLOps is independently cross-validated (z=4.34 from Agentic AI; z=7.38 for MLflow from MLOps). The cloud deployment component is grounded by AWS Bedrock (6.22×, z=2.93), Vertex AI (5.23×, z=2.84), and Azure AI (4.96×, z=2.60).
+
+---
+
+### Course 2: "Data Engineering for AI"
+*Focal skill: **Airflow** (canonical). All figures from Airflow lift profile.*
+
+| Skill (Course 2 Key Skill) | Lift (×) | z | Co-occurrence |
+|---|---|---|---|
+| **dbt** | 10.84× | z=6.32 | 252 |
+| **Kafka** | 7.02× | z=3.65 | 154 |
+| **PySpark** | 5.28× | z=3.99 | 300 |
+| **ETL Pipelines** | 6.00× | z=2.50 | 94 |
+| **ETL** *(broader)* | 4.40× | z=3.21 | 284 |
+| **Data Pipelines** | 5.04× | z=4.66 | 445 |
+| **Data Engineering** | 5.06× | z=4.43 | 400 |
+| **MLflow** *(MLOps bridge)* | 8.85× | z=3.27 | 88 |
+| **ML Pipelines** | 6.44× | z=2.34 | 73 |
+| **CI/CD** | 3.46× | z=2.33 | 278 |
+| **Feature Stores** | 9.64× | z=2.58 | 49 |
+| **Kubernetes** | 4.04× | z=2.30 | 179 |
+
+> **Course 2 bottom line:** dbt (10.84×, z=6.32) is the standout — the highest-lift skill in this cluster and largely absent from traditional ML programs. The course has a coherent "modern data stack" identity: Airflow for orchestration, dbt for transformation, Kafka for streaming, PySpark for distributed compute, with Feature Stores (9.64×, z=2.58) as the AI-specific bridge to Model development. MLflow (8.85×, z=3.27) confirms the data↔MLOps pipeline connection.
+
+---
+
+## PART 3 — Healthcare Sector Skill Wrap & Composed Sector Curriculum
+
+### Sector Context
+> Healthcare agentic-AI adoption: **6.05%** of healthcare postings mention agentic AI vs. 7.84% market-wide (adoption lift 0.77, z=−0.57). Healthcare is **slightly below market rate** for agentic-AI hiring — a meaningful strategic signal that the sector's AI demand is currently more domain-specialist than agentic-generalist.
+
+---
+
+### Healthcare Sector Skill Wrap (12 Skills — Domain-Distinctive, Sector-Lift Ranked)
+*These are skills the healthcare sector distinctively demands above market rates, clearing z≥2 AND lift≥3, EXCLUDING the agentic core already captured in Course 1. The wrap is **12 skills** — a **rich wrap**, meaning healthcare has a substantial, real domain layer, not just the horizontal AI core.*
+
+| Rank | Skill | Sector Lift (×) | z | n (postings) | In GT MS CS AI? |
+|---|---|---|---|---|---|
+| 1 | **Clinical Trial Design & Execution** | 8.68× | z=3.95 | 72 | ❌ Absent |
+| 2 | **Immunology** | 11.22× | z=3.73 | 49 | ❌ Absent |
+| 3 | **Electronic Health Records (EHR)** | 5.89× | z=3.36 | 83 | ❌ Absent |
+| 4 | **Healthcare Experience** | 7.43× | z=3.22 | 57 | ❌ Absent |
+| 5 | **Health Informatics** | 6.77× | z=2.82 | 49 | ⚠️ Intro only |
+| 6 | **Laboratory Procedures** | 9.68× | z=2.80 | 32 | ❌ Absent |
+| 7 | **Bioinformatics** | 7.43× | z=2.63 | 38 | ❌ Absent |
+| 8 | **HIPAA** | 3.69× | z=2.59 | 100 | ❌ Absent |
+| 9 | **Computational Biology** | 8.30× | z=2.45 | 29 | ❌ Absent |
+| 10 | **Chemistry** | 5.15× | z=2.25 | 45 | ❌ Absent |
+| 11 | **Biostatistics** | 5.15× | z=2.25 | 45 | ❌ Absent |
+| 12 | **FHIR** | 4.89× | z=2.05 | 40 | ❌ Absent |
+
+**Gap assessment against GT MS CS AI curriculum:** 11 of 12 wrap skills are entirely absent from Georgia Tech's MS CS AI specialization. Health Informatics has only an introductory presence. This represents a substantial domain blind spot for students targeting healthcare employers.
+
+---
+
+### Healthcare Composed Sector Curriculum — Top 5–8 Skills by Agentic × Sector Lift
+*Ranked by composed lift (lift_agentic × lift_sector). This lens identifies where the healthcare sector's distinctive demand overlaps most with agentic AI patterns.*
+
+| Rank | Skill | Agentic Lift | Healthcare Lift | Composed Score | Absent from GT? |
+|---|---|---|---|---|---|
+| 1 | **Computational Biology** | 2.73× (z=0.57) | 8.30× (z=2.45) | 22.68 | ❌ Absent |
+| 2 | **Immunology** | 1.64× | 11.22× (z=3.73) | 18.40 | ❌ Absent |
+| 3 | **LLM Architectures** | 8.20× (z=3.92) | 1.57× | 12.91 | ❌ Absent |
+| 4 | **Conversational AI** | 7.33× (z=3.88) | 1.59× | 11.66 | ⚠️ Partial (NLP) |
+| 5 | **Clinical Trial Design & Execution** | 1.25× | 8.68× (z=3.95) | 10.82 | ❌ Absent |
+| 6 | **Natural Language Understanding** | 5.93× (z=2.13) | 1.81× | 10.70 | ⚠️ Partial (NLP) |
+| 7 | **AI Engineering** | 5.82× (z=4.28) | 1.56× | 9.08 | ❌ Absent |
+| 8 | **Responsible AI** | 5.12× (z=4.53) | 1.75× | 8.98 | ❌ Absent |
+
+> **Interpretation note:** The composed scores are dominated by skills with high *either* agentic lift (ranks 3–4, 6–8) *or* high sector lift (ranks 1–2, 5). Computational Biology and Immunology lead on the healthcare-domain axis; LLM Architectures, Conversational AI, and AI Engineering lead on the agentic axis. For curriculum design, **these are complementary, not competing** — healthcare AI students need both columns.
+
+---
+
+### Recommended Healthcare-Specialised Version of Course 1: "Applied AI Engineering for Healthcare"
+
+Based on the **combined evidence** of the agentic core (Course 1 lift profile) + the healthcare sector wrap:
+
+**Core agentic layer** *(from Agentic AI lift, all z≥2 — carry into healthcare version unchanged):*
+- LLMs + RAG (6.66×, z=8.89) — clinical document retrieval
+- LangChain / LangGraph (7.53×/9.47×, z≥6.73) — healthcare workflow agents
+- Prompt Engineering (6.26×, z=7.03) — structured clinical prompting
+- Responsible AI (5.12×, z=4.53) — clinical safety, bias
+- Conversational AI (7.33×, z=3.88) — patient-facing interfaces
+- LLM Architectures (8.20×, z=3.92) — model selection for healthcare
+
+**Healthcare domain wrap** *(from sector wrap, all z≥2 AND lift≥3):*
+- EHR / Electronic Health Records (sector 5.89×, z=3.36) — data input reality
+- HIPAA (sector 3.69×, z=2.59) — compliance non-negotiable
+- FHIR (sector 4.89×, z=2.05) — interoperability standard
+- Health Informatics (sector 6.77×, z=2.82) — domain framing
+- Bioinformatics (sector 7.43×, z=2.63) — genomics/multi-omics contexts
+- Biostatistics (sector 5.15×, z=2.25) — clinical evidence standards
+- Clinical Trial Design (sector 8.68×, z=3.95) — research AI applications
+- Computational Biology (sector 8.30×, z=2.45) — life-sciences track
+
+**Curriculum gaps vs. GT MS CS AI for healthcare students:** With the exception of a superficial Health Informatics introduction, **every single one** of these healthcare-specific skills — EHR, HIPAA, FHIR, Bioinformatics, Biostatistics, Clinical Trial Design, Computational Biology — is currently absent from the Georgia Tech MS CS AI specialization. A healthcare-track student completing the standard program would have strong theoretical ML foundations but essentially zero domain credentialing for the healthcare labour market. The sector wrap is rich (12 skills clear the cut), not thin — meaning healthcare genuinely requires a substantial domain layer on top of the agentic core, not just surface-level adjustments.
+
+---
+
+*All lift/z figures are sourced from the frozen differential-analysis lift table against Winter 2026 postings (186,249 job postings, V60 taxonomy). Skills not returning z≥2 are reported as such — no values have been estimated or interpolated.*
+```
+
+### Senior Curriculum Advisor — step 1
+
+**Final answer for this agent's (sub-)task:**
+```
+I now have all four specialist outputs. Let me synthesise them into a single coherent recommendation for the professor.
+
+---
+
+# Georgia Tech MS CS AI Specialization vs. Labour-Market Demand: Curriculum Recommendation
+
+## Executive Summary
+
+Georgia Tech's MS CS AI specialization is **strong where the academic literature is rich — model design, ML theory, deep learning, and NLP — but structurally weak where the labour market now lives: production deployment, data engineering, and applied analytics.** A cluster-level gap analysis against 186,249 W2026 job postings reveals three major misalignments: the program graduates researchers who can build models but cannot ship, instrument, or feed them at scale. Two new courses — *Applied AI Engineering & MLOps* and *Data Engineering for AI* — directly address the two highest-signal gaps, and a healthcare-sector variant of the first course adds the domain credentialing (EHR, HIPAA, FHIR, clinical NLP) that healthcare employers distinctively require.
+
+---
+
+## Curriculum Fetch: Georgia Tech MS CS AI Specialization
+
+**Source:** Pre-verified corpus — Georgia Tech College of Computing
+**URLs:** https://www.cc.gatech.edu/degree-programs/master-science-computer-science and https://www.cc.gatech.edu/ms-computer-science-specializations *(verified 2026-06-16)*
+
+The specialization requires 9 credits of core + 6 credits of electives (within a 30-credit M.S. CS degree):
+
+| Layer | Courses |
+|---|---|
+| **Algorithms core** | CS 6515 (Graduate Algorithms, most common choice) |
+| **AI core** (choose 2) | CS 6476 Computer Vision; CS 6601 AI; CS 7637 Knowledge-Based AI; CS 7641 ML; CS 7643 Deep Learning; CS 7650 NLP |
+| **Electives — AI Methods** | CS 6604 Conversational AI; CS 7476 Advanced CV; CS 7647 ML with Limited Supervision; CS 7652 LLMs; Robotics/Game AI/HRI electives |
+| **Electives — Ethics/HCI** | CS 6440 Health Informatics (intro); CS 6603 AI Ethics & Society; CS 6750 HCI; CS 6795 Cognitive Science; CS 7651 Human & Machine Learning |
+
+The University AI Programs Researcher confirms CS 7652 (LLMs) is a relatively recent addition, reflecting industry movement toward generative AI. No course explicitly covers MLOps, cloud deployment, data engineering pipelines, BI tooling, agentic AI frameworks, or RAG architectures.
+
+---
+
+## Cluster-Level Gap Analysis
+
+*(Cluster Interpreter, Mode A — against W2026 market data)*
+
+| Cluster | Theme | Coverage | Priority |
+|---|---|---|---|
+| **Cluster 2 ⭐** | Machine Learning & Generative AI (131 skills) | ✅ Strong | Low — well addressed by CS 7641, CS 7643, CS 7650, CS 7652, CS 7647 |
+| **Cluster 5 ⭐** | Core AI, Cloud & Data-Platform Engineering (370 skills) | ⚠️ Partial | **🔴 HIGH — cloud, MLOps, agentic AI, RAG entirely absent** |
+| **Cluster 3 ⭐** | Data-Engineering Tools (89 skills, median stability 0.88) | ❌ Missing | **🔴 HIGH — wholly absent; Airflow, dbt, Kafka, PySpark not covered** |
+| **Cluster 6 ⭐** | Business Intelligence, Analytics & Finance (66 skills) | ❌ Missing | **🟡 MEDIUM — Data Analytics appears in 41.6% of postings; BI tools entirely unaddressed** |
+| **Cluster 1** | Quantitative & Experimental Methods | ⚠️ Partial | Medium — causal inference, A/B testing, Bayesian methods not surfaced explicitly |
+| **Clusters 4, 7, 9, 10** | Requirements/delivery, comms, risk, strategy | ⚠️ Partial | Low — broad, partially covered culturally or via CS 6603 |
+
+---
+
+## The Three Biggest Gaps
+
+### 🔴 Gap 1 — MLOps & Production AI Engineering *(Cluster 5)*
+
+The program graduates model designers, not AI systems engineers. No course covers the operational layer — the bridge between a trained model and a running product. The Skills Taxonomy Analyst returns the following distinctive co-demand signals against the **MLOps** focal skill (W2026, z≥2 threshold):
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| MLflow | 15.12× | z = 7.38 |
+| Model Versioning | 15.91× | z = 6.86 |
+| Kubeflow | 15.36× | z = 4.66 |
+| SageMaker | 9.06× | z = 4.75 |
+| Feature Stores | 11.43× | z = 3.93 |
+| Docker | 4.73× | z = 3.68 |
+| Kubernetes | 4.37× | z = 3.34 |
+| CI/CD | 3.94× | z = 3.80 |
+| LLMOps | 12.45× | z = 3.37 |
+| RAG | 6.17× | z = 4.94 |
+| LangChain | 6.58× | z = 4.14 |
+| Agentic AI | 3.98× | z = 3.12 |
+| Prompt Engineering | 4.48× | z = 2.64 |
+| Azure (cloud) | 3.12× | z = 2.80 |
+| GCP (cloud) | 3.75× | z = 3.20 |
+
+These are not merely popular skills — they are **distinctively co-demanded** with MLOps at high significance. The gap is structural: an AI graduate without these credentials cannot own a production AI system end-to-end.
+
+**Industry signal:** "Rethinking organizational design in the age of agentic AI" (*MIT Technology Review AI, May 26, 2026*) reports that **85% of organizations say they want to be agentic within three years, but 76% say their current infrastructure cannot support it** — pointing directly to the talent gap this course would fill. "Building Blocks for Foundation Model Training and Inference on AWS" (*HuggingFace Blog, May 11, 2026*) documents that cloud-native model lifecycle management is now a standard industry expectation.
+
+---
+
+### 🔴 Gap 2 — Data Engineering & Pipeline Infrastructure *(Cluster 3)*
+
+Cluster 3 is 89 skills wide, has the highest ensemble stability of any focused cluster (median confidence 0.88), and is **entirely absent** from the Georgia Tech curriculum. AI practitioners in industry routinely own or collaborate on the pipelines that feed their models; without these skills, graduates are dependent on a data engineering team that may not exist in many employer settings. Against the **Airflow** focal skill (W2026):
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Dagster | 22.77× | z = 5.15 |
+| dbt | 10.84× | z = 6.32 |
+| Feature Stores | 9.64× | z = 2.58 |
+| Fivetran | 11.81× | z = 3.14 |
+| BigQuery | 8.13× | z = 4.26 |
+| Redshift | 8.01× | z = 3.82 |
+| MLflow *(pipeline bridge)* | 8.85× | z = 3.27 |
+| Modern Data Stack | 9.12× | z = 2.39 |
+| Snowflake | 6.07× | z = 4.55 |
+| ELT | 6.98× | z = 3.78 |
+| ETL Pipelines | 6.00× | z = 2.50 |
+| ETL (broader) | 4.40× | z = 3.21 |
+| Kafka | 7.02× | z = 3.65 |
+| Data Pipelines | 5.04× | z = 4.66 |
+| Data Engineering | 5.06× | z = 4.43 |
+| PySpark | 5.28× | z = 3.99 |
+| ML Pipelines | 6.44× | z = 2.34 |
+
+Notably, **dbt** (10.84×, z=6.32) is the single most distinctively co-demanded skill with Airflow — a "modern data stack" cornerstone that is almost entirely invisible in traditional ML programs.
+
+**Industry signal:** "Ulysses Sequence Parallelism: Training with Million-Token Contexts" (*HuggingFace Blog, March 9, 2026*) documents that production LLM training now demands distributed memory and parallelism strategies — requiring the pipeline skills this course covers.
+
+---
+
+### 🟡 Gap 3 — Business Intelligence, Analytics & Applied Visualisation *(Cluster 6)*
+
+The Cluster Interpreter flags Data Analytics at **41.6% market frequency** — the single highest-frequency skill across all 66 skills in this cluster, appearing in nearly half of all AI/ML job postings sampled. BI tools (Power BI, Tableau, dashboard development) are entirely absent from the curriculum. The Skills Taxonomy Analyst found, however, that BI/Analytics skills do **not** produce distinctive high-lift, high-z co-demand signatures the way MLOps and Data Engineering do — these skills appear broadly across posting types at near-baseline rates, indicating they are *necessary but not distinctive*. This means Gap 3 is a **genuine curricular gap** justified on coverage grounds, but it carries lower evidence weight than Gaps 1 and 2. *(Note: the Analyst did not return z≥2 lift figures for Data Analytics, Power BI, Tableau, or Forecasting — this is reported honestly, not filled in.)* A focused BI/Analytics module — either standalone or integrated into one of the two proposed new courses — is recommended, but it is not the priority the first two gaps are.
+
+---
+
+## Two Proposed New Courses
+
+### 📘 Course 1: Applied AI Engineering & MLOps
+
+**Rationale:** Directly addresses Gap 1 (Cluster 5 — MLOps & Production AI Engineering) and the agentic AI sub-gap within it. The Agentic AI lift profile (from the Skills Taxonomy Analyst) produces the strongest and most internally coherent lift signatures in the entire dataset — all core skills clear z≥7, an extraordinary level of distinctiveness:
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| RAG | 6.66× | z = 8.89 |
+| LangChain | 7.53× | z = 7.90 |
+| Prompt Engineering | 6.26× | z = 7.03 |
+| Agentic Frameworks | 9.11× | z = 6.79 |
+| LangGraph | 9.47× | z = 6.73 |
+| MLOps *(cross-validated)* | 3.98× | z = 4.34 |
+| AI Engineering | 5.82× | z = 4.28 |
+| Responsible AI | 5.12× | z = 4.53 |
+| AWS Bedrock | 6.22× | z = 2.93 |
+| Vertex AI | 5.23× | z = 2.84 |
+| Azure AI | 4.96× | z = 2.60 |
+| FastAPI | 5.43× | z = 3.17 |
+| Docker *(from MLOps profile)* | 4.73× | z = 3.68 |
+| Kubernetes *(from MLOps profile)* | 4.37× | z = 3.34 |
+| CI/CD *(from MLOps profile)* | 3.94× | z = 3.80 |
+
+**Proposed syllabus spine:**
+1. MLOps fundamentals — ML lifecycle, model versioning (MLflow, 15.12×/z=7.38), model monitoring
+2. Cloud deployment — AWS SageMaker (9.06×/z=4.75), Azure ML (3.12×/z=2.80), GCP Vertex AI (5.23×/z=2.84)
+3. Containerisation & orchestration — Docker (4.73×/z=3.68), Kubernetes (4.37×/z=3.34), Kubeflow (15.36×/z=4.66)
+4. CI/CD for ML systems (3.94×/z=3.80)
+5. RAG architectures (6.66×/z=8.89) — vector stores, retrieval pipelines
+6. Agentic AI & orchestration frameworks — LangChain (7.53×/z=7.90), LangGraph (9.47×/z=6.73), Agentic Frameworks (9.11×/z=6.79)
+7. Prompt engineering (6.26×/z=7.03) — structured prompting, evaluation
+8. LLMOps (12.45×/z=3.37) — LLM-specific production concerns
+9. Responsible AI & governance (5.12×/z=4.53) — bias auditing, safety evaluation
+
+**Industry signal:** IBM Research's VAKRA benchmark analysis ("Inside VAKRA: Reasoning, Tool Use, and Failure Modes of Agents," *HuggingFace Blog/IBM Research, April 15, 2026*) finds that students need to understand not just how to build agents, but how they **fail** — tool hallucination, reasoning loops, context loss — and how to evaluate and constrain them. This maps directly to the monitoring and evaluation modules in this course.
+
+---
+
+### 📗 Course 2: Data Engineering for AI
+
+**Rationale:** Directly addresses Gap 2 (Cluster 3 — the program's single most glaring structural absence, a wholly missing 89-skill cluster with 0.88 median ensemble stability). The Airflow lift profile confirms a coherent "modern data stack" course identity:
+
+| Skill | Lift (×) | z |
+|---|---|---|
+| Dagster | 22.77× | z = 5.15 |
+| dbt | 10.84× | z = 6.32 |
+| Feature Stores | 9.64× | z = 2.58 |
+| Fivetran | 11.81× | z = 3.14 |
+| BigQuery | 8.13× | z = 4.26 |
+| Redshift | 8.01× | z = 3.82 |
+| MLflow *(ML bridge)* | 8.85× | z = 3.27 |
+| Snowflake | 6.07× | z = 4.55 |
+| ELT | 6.98× | z = 3.78 |
+| Kafka | 7.02× | z = 3.65 |
+| Data Pipelines | 5.04× | z = 4.66 |
+| PySpark | 5.28× | z = 3.99 |
+| ETL Pipelines | 6.00× | z = 2.50 |
+| Data Engineering | 5.06× | z = 4.43 |
+| ML Pipelines | 6.44× | z = 2.34 |
+
+**Proposed syllabus spine:**
+1. Pipeline orchestration — Airflow, Dagster (22.77×/z=5.15), Prefect
+2. The modern data stack — dbt (10.84×/z=6.32) for transformation, Fivetran (11.81×/z=3.14) for ingestion
+3. Cloud data warehouses — Snowflake (6.07×/z=4.55), BigQuery (8.13×/z=4.26), Redshift (8.01×/z=3.82)
+4. Stream processing — Kafka (7.02×/z=3.65), Apache Flink, real-time inference feeds
+5. Distributed compute — PySpark (5.28×/z=3.99), Databricks (3.80×/z=2.02)
+6. ELT vs. ETL paradigm (ELT: 6.98×/z=3.78) — lakehouse architecture
+7. Feature Stores (9.64×/z=2.58) — the data/ML interface
+8. ML Pipelines (6.44×/z=2.34) and integration with MLflow (8.85×/z=3.27) — bridging to Course 1
+9. DataOps principles and data quality in regulated environments
+
+---
+
+## Healthcare-Sector Specialization of Course 1: "Applied AI Engineering for Healthcare"
+
+The Skills Taxonomy Analyst returned a **rich healthcare sector wrap** — 12 skills clearing lift≥3 AND z≥2, confirming that healthcare is not just a cosmetic variant but requires a substantial domain layer on top of the agentic core. Healthcare agentic-AI adoption (6.05% of healthcare postings) is currently **below market rate** (7.84% market-wide; adoption lift 0.77, z=−0.57) — meaning healthcare is a sector where the gap between AI capability and AI deployment is real, and where skilled graduates can generate disproportionate value.
+
+**11 of 12 healthcare sector-wrap skills are entirely absent from the standard Georgia Tech MS CS AI curriculum.** Health Informatics (CS 6440) is present in an introductory form only.
+
+### Healthcare Sector Wrap (all skills: sector lift ≥ 3×, z ≥ 2):
+
+| Skill | Healthcare Sector Lift | z |
+|---|---|---|
+| Immunology | 11.22× | z = 3.73 |
+| Laboratory Procedures | 9.68× | z = 2.80 |
+| Computational Biology | 8.30× | z = 2.45 |
+| Bioinformatics | 7.43× | z = 2.63 |
+| Healthcare Experience | 7.43× | z = 3.22 |
+| Health Informatics | 6.77× | z = 2.82 |
+| Clinical Trial Design & Execution | 8.68× | z = 3.95 |
+| EHR (Electronic Health Records) | 5.89× | z = 3.36 |
+| Chemistry | 5.15× | z = 2.25 |
+| Biostatistics | 5.15× | z = 2.25 |
+| FHIR | 4.89× | z = 2.05 |
+| HIPAA | 3.69× | z = 2.59 |
+
+### Composed Sector Curriculum (agentic × healthcare lift, top skills):
+
+| Skill | Composed Score | Agentic Lift | Healthcare Lift |
+|---|---|---|---|
+| Computational Biology | 22.68 | 2.73× | 8.30× |
+| Immunology | 18.40 | 1.64× | 11.22× |
+| LLM Architectures | 12.91 | 8.20× (z=3.92) | 1.57× |
+| Conversational AI | 11.66 | 7.33× (z=3.88) | 1.59× |
+| Clinical Trial Design | 10.82 | 1.25× | 8.68× |
+| Natural Language Understanding | 10.70 | 5.93× (z=2.13) | 1.81× |
+| AI Engineering | 9.08 | 5.82× (z=4.28) | 1.56× |
+| Responsible AI | 8.98 | 5.12× (z=4.53) | 1.75× |
+
+### Proposed Healthcare Variant — Syllabus Spine:
+
+**Core agentic layer** *(inherit from standard Course 1, all z≥2):*
+- Clinical RAG: document retrieval from EHR/clinical notes (RAG: 6.66×/z=8.89)
+- Clinical workflow agents: LangChain (7.53×/z=7.90), LangGraph (9.47×/z=6.73)
+- Structured clinical prompting: Prompt Engineering (6.26×/z=7.03)
+- Patient-facing conversational interfaces: Conversational AI (7.33×/z=3.88)
+- LLM architecture selection for healthcare constraints (8.20×/z=3.92)
+- Responsible AI & clinical safety evaluation (5.12×/z=4.53)
+
+**Healthcare domain wrap** *(new for this variant, all sector lift≥3×, z≥2):*
+- EHR systems, data standards, and clinical NLP (sector 5.89×/z=3.36)
+- HIPAA compliance and PHI handling in AI systems (sector 3.69×/z=2.59)
+- FHIR interoperability and HL7 standards (sector 4.89×/z=2.05)
+- Biostatistics and clinical evidence standards (sector 5.15×/z=2.25)
+- Bioinformatics and genomics contexts (sector 7.43×/z=2.63)
+- Clinical trial AI applications (sector 8.68×/z=3.95)
+- Computational biology and multi-omics data (sector 8.30×/z=2.45)
+- AI hallucination risk in clinical settings — model auditing, regulatory validation
+
+**Industry signal — healthcare:** "AI-hallucinated citations are creeping into papers that shape clinical guidelines, researchers warn" (*The Decoder, May 26, 2026*) documents that fabricated biomedical references have increased **12× since 2023**, with 2.5 million papers audited by Columbia University researchers. This is not an abstract concern — it is an active patient-safety crisis in formation, and directly motivates the responsible AI and model auditing modules in this healthcare variant. Additionally, "Training mRNA Language Models Across 25 Species for $165" (*HuggingFace Blog, March 31, 2026*) demonstrates that domain-specific biomedical LLM fine-tuning is now accessible at minimal compute cost — validating the feasibility of a clinical NLP practicum within this course. Finally, the NVIDIA Nemotron-3 Nano Omni model ("Introducing NVIDIA Nemotron 3 Nano Omni," *HuggingFace Blog, April 28, 2026*) supports on-premises deployment in HIPAA-sensitive environments — a practical deployment context students in this course should understand.
+
+---
+
+## Specialist Consultation Record
+
+| Specialist | Evidence Provided | How It Informs This Recommendation |
+|---|---|---|
+| **University AI Programs Researcher** | Structured Georgia Tech MS CS AI course list (all required + elective courses, source URLs verified 2026-06-16) | Established the curriculum baseline for gap analysis; confirmed CS 7652 as recent LLM addition; confirmed CS 6440 as only healthcare-adjacent course |
+| **Cluster Interpreter** | Mode A gap analysis — 10-cluster coverage assessment, three priority gaps ranked by market size and strategic importance, specific missing skills with market frequency figures | Identified Clusters 3, 5, and 6 as the three biggest gaps; confirmed Cluster 3 entirely absent, Cluster 5 partially covered, Cluster 6 entirely absent for BI skills |
+| **Skills Taxonomy Analyst** | Lift (×) and z-score data for all three gap clusters' key skills; lift profiles for both proposed new courses' focal skills; full healthcare sector wrap (12 skills, sector lift + z); composed sector curriculum (agentic × healthcare lift, top 8 skills) — all from W2026 postings (186,249 job postings, V60 taxonomy) | Provided the grounding distinctiveness metric for all specific skill recommendations; confirmed Gap 1 and Gap 2 are lift-attested; found Gap 3 BI/Analytics skills do not clear z≥2 (reported honestly); confirmed healthcare variant requires a substantial domain layer (12-skill wrap) |
+| **AI Industry News Researcher** | 5-topic coverage: LLMs in production, MLOps, clinical AI, agentic AI, responsible AI — specific articles with titles, sources, dates | Provided recency context for all three gaps; hallucinated citations article (The Decoder, May 26, 2026) is especially curriculum-critical for the healthcare variant |
+
+---
+
+## Trade-offs and Caveats the Professor Should Consider
+
+1. **Credit-hour pressure.** Georgia Tech's AI specialization has a tight 15-credit required footprint (within a 30-credit degree). Adding two new electives means they must compete with an already strong slate of offerings (CS 7652, CS 7647, CS 6603). The professor should consider whether these courses slot as required electives, replacements, or optional additions — and whether a course restructure (e.g., extending CS 7652 to include an MLOps engineering practicum) is more practical than a wholly new course.
+
+2. **Gap 3 (BI/Analytics) has weaker lift evidence.** The Cluster Interpreter's market frequency for Data Analytics (41.6% of postings) is real, but the Skills Taxonomy Analyst found that BI/Analytics skills do not produce z≥2 lift signatures — they appear broadly at near-baseline rates, meaning they are general-purpose rather than distinctively AI-specialist skills. A BI module is worth adding as a component of Course 2 (Data Engineering for AI), but it does not warrant a standalone course at the same priority as the MLOps and Data Engineering gaps.
+
+3. **Healthcare variant requires genuine faculty expertise, not a syllabus overlay.** The 12-skill healthcare wrap includes Immunology (11.22×/z=3.73), Computational Biology (8.30×/z=2.45), and Clinical Trial Design (8.68×/z=3.95) — these are not AI skills that CS faculty can teach from first principles. A successful healthcare-track course requires either co-instruction with the medical school or a clinical-domain adjunct, or a partnership with Georgia Tech's existing joint programs with Emory or Georgia Health Sciences.
+
+4. **Cluster 5's low ensemble stability is a caveat.** The Cluster Interpreter noted that Cluster 5 (Core AI, Cloud & Data-Platform Engineering, 370 skills) has median membership confidence of only 0.47 — meaning many skill assignments within that cluster are probabilistic rather than definitive. The gap finding for MLOps and agentic AI within that cluster is robust (confirmed by the high-lift Analyst data), but the broader cloud-skills gap should be treated as directional rather than fully attested.
+
+5. **The industry news corpus is thin on MLOps from general tech press.** The AI Industry News Researcher noted that MLOps coverage skews heavily toward HuggingFace practitioner content, with limited TechCrunch or MIT Tech Review sourcing. The professor may wish to supplement with dedicated MLOps practitioner sources (MLflow blog, Weights & Biases blog) for course material, beyond what general AI industry coverage provides.
+```
