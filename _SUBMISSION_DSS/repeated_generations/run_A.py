@@ -44,7 +44,7 @@ QUERY = (
 
 
 def _extract_final_answer(record_text: str) -> str | None:
-    """Extract Final Answer section (stops at ## Pair Verification or EOF)."""
+    """Extract Final Answer section (stops at ## Pair Verification, ## Per-Agent Tool-Call Trace, or EOF)."""
     idx = record_text.find("## Final Answer")
     if idx < 0:
         idx = record_text.find("## Partial Answer")
@@ -52,9 +52,10 @@ def _extract_final_answer(record_text: str) -> str | None:
         return None
     after = record_text[idx + len("## Final Answer"):]
     end = len(after)
-    pv = after.find("\n## Pair Verification")
-    if pv >= 0:
-        end = pv
+    for marker in ("\n## Pair Verification", "\n## Per-Agent Tool-Call Trace"):
+        m = after.find(marker)
+        if m >= 0:
+            end = min(end, m)
     return after[:end].strip()
 
 

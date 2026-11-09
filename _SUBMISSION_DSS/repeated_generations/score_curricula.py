@@ -62,8 +62,25 @@ def _pct(k, n):
     return f"{k}/{n} ({100*k/n:.1f}%)" if n else "0/0 (n/a)"
 
 
+def _extract_answer_text(text: str) -> str:
+    """If text is a run record, return just the Final Answer section.
+    Stops at the first of ## Pair Verification or ## Per-Agent Tool-Call Trace.
+    For plain curriculum .txt files (no ## Final Answer header), returns as-is."""
+    idx = text.find("## Final Answer")
+    if idx < 0:
+        return text
+    after = text[idx + len("## Final Answer"):]
+    end = len(after)
+    for marker in ("\n## Pair Verification", "\n## Per-Agent Tool-Call Trace"):
+        m = after.find(marker)
+        if m >= 0:
+            end = min(end, m)
+    return after[:end].strip()
+
+
 def score_file(path: Path) -> dict:
-    text   = path.read_text(encoding="utf-8")
+    text   = path.read_text(encoding="utf-8", errors="replace")
+    text   = _extract_answer_text(text)
     skills = extract_skills(text, vocab)
     result = score_curriculum(skills, load_attested_skills(TABLE_W2026, FOCAL, Z_MIN), courses)
     n      = len(skills)
