@@ -1,0 +1,11 @@
+{
+  "label": "v63rg-B-dry",
+  "condition": "B_bare_no_data",
+  "dry": true,
+  "model": "gpt-oss:120b",
+  "provider": "ollama-cloud",
+  "wall_s": 32.1,
+  "approx_input_tokens": 142,
+  "approx_output_tokens": 5254,
+  "approx_cost_usd": 0.079
+}
