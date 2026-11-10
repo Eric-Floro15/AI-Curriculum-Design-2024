@@ -29,6 +29,8 @@ pattern proven to keep Llama 3.1 8B + Haiku 4.5 honest on the Analyst.
 import os
 import sys
 
+_BREADTH_CAPS = os.environ.get("BREADTH_CAPS", "0") == "1"  # v64 breadth:
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CHATBOT_DIR = os.path.dirname(_HERE)
 if _CHATBOT_DIR not in sys.path:
@@ -260,7 +262,8 @@ def make_university_programs_agent() -> Agent:
         # Sonnet 4.6 hit 138 web_searches on this agent without this cap
         # (2026-05-26 incident, see CLAUDE.md setup log). DO NOT REMOVE —
         # per CLAUDE.md this cap stays even after adding program_rag_tool.
-        max_iter=6,
+        # v64 breadth: raised to 14 when BREADTH_CAPS=1 (web-search cap unchanged).
+        max_iter=14 if _BREADTH_CAPS else 6,  # v64 breadth:
         # 2026-09-04 hardening: lowered from CrewAI's default (2). Full
         # rationale in agents/analyst.py's max_retry_limit comment; the
         # LLM-call-level retry/fail-fast decision now lives in

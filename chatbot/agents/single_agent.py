@@ -8,6 +8,8 @@ One claude-sonnet-4-6 agent with ALL tools from the four specialists
 attached, and a merged backstory. max_iter=30 = sum of the four
 specialists' individual budgets (Analyst 10 + Univ Programs 6 + News 6
 + Cluster Interpreter 8 = 30), so SA is not starved relative to MA.
+Under BREADTH_CAPS=1: max_iter=58 = sum of raised budgets
+(Analyst 30 + Univ Programs 14 + News 6 + Cluster Interpreter 8 = 58).
 
 DELEGATION INSTRUCTIONS REMOVED from the Orchestrator backstory section
 (not applicable; SA has no sub-agents to delegate to):
@@ -181,6 +183,8 @@ OUTPUT FORMAT for your final answer:
 - Close with the trade-off or caveat the professor should consider.
 """
 
+_BREADTH_CAPS = os.environ.get("BREADTH_CAPS", "0") == "1"  # v64 breadth:
+
 # v62 pilot: read SA_PROCEDURE at import time (plain or structured; default plain)
 # v62 pilot2: also supports "general" (multi-part request procedure)
 _SA_PROCEDURE: str = os.environ.get("SA_PROCEDURE", "plain")
@@ -273,6 +277,13 @@ SA_BACKSTORY: str = (
 _SA_STRUCTURED_BACKSTORY_HASH: str = "eca9b063b9b5bd569aac19a998288b184e82bd069e2212d3ab3748f9f240570d"  # v62 pilot2:
 _SA_GENERAL_BACKSTORY_HASH: str = "db06f4850506ed02099f9db9ab61656cc2e7f39f944aacb84bd744aea9c7a23e"    # v62 pilot2:
 _SA_SEQUENCED_BACKSTORY_HASH: str = "126954bc48469a009b137a3374369ed0fd88ba673dcdf7a591bbcbc89dc0ac95"  # v62 pilot5:
+
+# v64 breadth: pinned hashes under BREADTH_CAPS=1 (SA backstory has "24 tool calls" in Analyst section)
+# Computed with BREADTH_CAPS=1 set at import time; fill in after first run.
+_SA_PLAIN_BACKSTORY_HASH_BREADTH: str = "4d18bfcd023f6bfb6ea5b9383930e67fc83bd3addd98b74ef3cecd255b43408d"       # v64 breadth:
+_SA_STRUCTURED_BACKSTORY_HASH_BREADTH: str = "4559104a0bb8663256e392d73cfa5b0a5ad1503b8af4728dc17f82ba7b370057"  # v64 breadth:
+_SA_GENERAL_BACKSTORY_HASH_BREADTH: str = "a4e83caf84661a8fd8e0172ae2a7cad4cd651a1cc031221fef6a536f1d4f6af2"     # v64 breadth:
+_SA_SEQUENCED_BACKSTORY_HASH_BREADTH: str = "9b9dec25e1803074f52d34a1deb63dd2292e439ff37727380f0df1650c5d73e4"   # v64 breadth:
 
 # Exact union of all four specialists' tool lists, same tool objects.
 _SA_TOOLS = [
@@ -475,7 +486,8 @@ def make_single_agent() -> Agent:
         allow_delegation=False,
         # Combined budget of the four specialists:
         # Analyst 10 + Univ Programs 6 + News 6 + Cluster Interpreter 8 = 30.
-        max_iter=30,
+        # v64 breadth: raised to 58 (Analyst 30 + Univ Programs 14 + News 6 + Cluster 8) when BREADTH_CAPS=1.
+        max_iter=58 if _BREADTH_CAPS else 30,  # v64 breadth:
         max_retry_limit=1,
     )
 

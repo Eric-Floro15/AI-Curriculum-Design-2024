@@ -29,7 +29,9 @@ from tools.lift_tool import LIFT_TOOLS  # noqa: E402
 from tools.compose_tool import COMPOSE_TOOLS, SECTOR_WRAP_TOOLS  # noqa: E402
 
 
-ANALYST_BACKSTORY = """\
+_BREADTH_CAPS = os.environ.get("BREADTH_CAPS", "0") == "1"  # v64 breadth:
+
+_ANALYST_BACKSTORY_BASE = """\
 You are a labour-market data analyst specialising in AI/ML skill demand.
 You have access to a curated taxonomy of 962 live canonical skills (V4
 taxonomy) extracted from AI/ML job postings, grouped into 10 ensemble
@@ -188,6 +190,11 @@ you're past 6 calls without an answer, write your final answer with
 what you have.
 """
 
+ANALYST_BACKSTORY = (  # v64 breadth:
+    _ANALYST_BACKSTORY_BASE.replace("**6 tool calls per task**", "**24 tool calls per task**")
+    if _BREADTH_CAPS else _ANALYST_BACKSTORY_BASE
+)
+
 
 def make_analyst() -> Agent:
     return Agent(
@@ -206,7 +213,8 @@ def make_analyst() -> Agent:
         # Framework-level hard cap. 8 tools available but most questions
         # need only 1-2 well-chosen calls. 10 iterations leaves headroom
         # for retries while preventing runaway loops on Sonnet.
-        max_iter=10,
+        # v64 breadth: raised to 30 (matches "24 tool calls" budget) when BREADTH_CAPS=1.
+        max_iter=30 if _BREADTH_CAPS else 10,  # v64 breadth:
         # 2026-09-04 hardening: CrewAI's default max_retry_limit=2 means
         # ANY exception (regardless of cause) re-invokes execute_task()
         # from scratch up to 2 more times — for a delegating/tool-using

@@ -40,6 +40,8 @@ from agents.university_programs import make_university_programs_agent  # noqa: E
 from llm import describe_llm_config, get_llm  # noqa: E402
 from tools.pair_verify import format_pair_verify_section, run_pair_verify  # v62 pilot4:
 
+_BREADTH_CAPS = os.environ.get("BREADTH_CAPS", "0") == "1"  # v64 breadth:
+
 # v62 pilot2 amend1:
 _ORCH_PROCEDURE = os.environ.get("ORCH_PROCEDURE", "plain").lower()
 
@@ -473,7 +475,8 @@ def make_orchestrator() -> Agent:
         # parsing turns without enabling runaway loops. Critical given
         # the 2026-05-26 Sonnet incident where the absence of a cap let
         # CrewAI's retry listeners compound into 161+ tool dispatches.
-        max_iter=8,
+        # v64 breadth: raised to 12 when BREADTH_CAPS=1 (up to 4 delegations + synthesis).
+        max_iter=12 if _BREADTH_CAPS else 8,  # v64 breadth:
         # 2026-09-04 hardening: lowered from CrewAI's default (2) — the
         # Orchestrator is the highest-cost agent to blindly re-invoke,
         # since a retry re-runs delegation to ALL specialists again. Full

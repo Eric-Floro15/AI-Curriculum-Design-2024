@@ -49,6 +49,10 @@ from agents.single_agent import (  # noqa: E402
     _SA_GENERAL_PROCEDURE_TEXT,     # v62 pilot5:
     _SA_SEQUENCED_STEP_TEXT,        # v62 pilot5:
     _SA_PROCEDURE,                  # v62 pilot5:
+    _SA_PLAIN_BACKSTORY_HASH_BREADTH,       # v64 breadth:
+    _SA_STRUCTURED_BACKSTORY_HASH_BREADTH,  # v64 breadth:
+    _SA_GENERAL_BACKSTORY_HASH_BREADTH,     # v64 breadth:
+    _SA_SEQUENCED_BACKSTORY_HASH_BREADTH,   # v64 breadth:
 )
 from agents.orchestrator import (  # noqa: E402
     _detect_content_attribution_flags,
@@ -109,17 +113,19 @@ def test_tool_set_union():
 
 def test_ma_unchanged():
     crew, orchestrator = build_crew()
+    _breadth = os.environ.get("BREADTH_CAPS", "0") == "1"  # v64 breadth:
+    expected_max_iter = 12 if _breadth else 8               # v64 breadth:
 
     assert len(crew.agents) == 5, (
         f"MA crew agent count changed: {len(crew.agents)} (expected 5). "
         "build_crew() must not have been altered."
     )
-    assert orchestrator.max_iter == 8, (
-        f"MA orchestrator max_iter changed: {orchestrator.max_iter} (expected 8). "
+    assert orchestrator.max_iter == expected_max_iter, (
+        f"MA orchestrator max_iter changed: {orchestrator.max_iter} (expected {expected_max_iter}). "
         "make_orchestrator() must not have been altered."
     )
     print(
-        f"  PASS — MA crew still has 5 agents and orchestrator max_iter=8"
+        f"  PASS — MA crew still has 5 agents and orchestrator max_iter={expected_max_iter}"
     )
 
 
@@ -238,6 +244,9 @@ def test_plain_backstory_unchanged():  # v62 pilot:
     _SA_PLAIN_BACKSTORY_HASH — update the hash in single_agent.py to match.
     """
     import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") == "1":  # v64 breadth:
+        print("  SKIP — BREADTH_CAPS=1; plain backstory test is for BREADTH_CAPS=0 arm")
+        return
     sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
     if sa_procedure not in ("plain", ""):
         print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; plain test skipped")
@@ -258,6 +267,9 @@ def test_structured_backstory_hash():  # v62 pilot2:
     to paste into single_agent.py and skips the assertion.
     """
     import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") == "1":  # v64 breadth:
+        print("  SKIP — BREADTH_CAPS=1; structured backstory test is for BREADTH_CAPS=0 arm")
+        return
     sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
     if sa_procedure != "structured":
         print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; structured test skipped")
@@ -281,6 +293,9 @@ def test_general_backstory_hash():  # v62 pilot2:
     to paste into single_agent.py and skips the assertion.
     """
     import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") == "1":  # v64 breadth:
+        print("  SKIP — BREADTH_CAPS=1; general backstory test is for BREADTH_CAPS=0 arm")
+        return
     sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
     if sa_procedure != "general":
         print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; general test skipped")
@@ -325,6 +340,9 @@ def test_sa_sequenced_backstory_equals_general_plus_step():  # v62 pilot5:
     Plain, structured, and general must stay byte-identical to their pinned values.
     """
     import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") == "1":  # v64 breadth:
+        print("  SKIP — BREADTH_CAPS=1; sequenced structural test is for BREADTH_CAPS=0 arm")
+        return
     sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
     if sa_procedure not in ("sequenced", "plain", ""):
         print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; run with SA_PROCEDURE=sequenced to exercise this test")
@@ -372,6 +390,9 @@ def test_sa_sequenced_backstory_equals_general_plus_step():  # v62 pilot5:
 def test_sa_sequenced_backstory_hash():  # v62 pilot5:
     """When SA_PROCEDURE=sequenced, SA_BACKSTORY must match the pinned sequenced hash."""
     import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") == "1":  # v64 breadth:
+        print("  SKIP — BREADTH_CAPS=1; sequenced backstory test is for BREADTH_CAPS=0 arm")
+        return
     sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
     if sa_procedure != "sequenced":
         print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; sequenced test skipped")
@@ -690,6 +711,109 @@ def test_pair_verify_range_skipped():  # v63:
           "splices still fail, run_pair_verify leaves range answer unchanged")
 
 
+# ── Tests 20–23: v64 breadth: SA backstory hash pins under BREADTH_CAPS=1 ────
+
+def test_plain_backstory_unchanged_breadth():  # v64 breadth:
+    """When BREADTH_CAPS=1 and SA_PROCEDURE=plain, SA_BACKSTORY must match the
+    BREADTH_CAPS=1 plain hash. If _SA_PLAIN_BACKSTORY_HASH_BREADTH is empty
+    (not yet pinned), prints the actual hash to paste into single_agent.py.
+    """
+    import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") != "1":
+        print("  SKIP — BREADTH_CAPS=0; breadth plain test requires BREADTH_CAPS=1")
+        return
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure not in ("plain", ""):
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; plain test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    if not _SA_PLAIN_BACKSTORY_HASH_BREADTH:
+        print(f"  HASH (not yet pinned) — paste into _SA_PLAIN_BACKSTORY_HASH_BREADTH: {actual_hash}")
+        return
+    assert actual_hash == _SA_PLAIN_BACKSTORY_HASH_BREADTH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=plain, BREADTH_CAPS=1):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_PLAIN_BACKSTORY_HASH_BREADTH}\n"
+        "Update _SA_PLAIN_BACKSTORY_HASH_BREADTH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY (BREADTH_CAPS=1, plain) hash matches pinned value (len={len(SA_BACKSTORY)})")
+
+
+def test_structured_backstory_hash_breadth():  # v64 breadth:
+    """When BREADTH_CAPS=1 and SA_PROCEDURE=structured, SA_BACKSTORY must match
+    the BREADTH_CAPS=1 structured hash.
+    """
+    import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") != "1":
+        print("  SKIP — BREADTH_CAPS=0; breadth structured test requires BREADTH_CAPS=1")
+        return
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "structured":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; structured test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    if not _SA_STRUCTURED_BACKSTORY_HASH_BREADTH:
+        print(f"  HASH (not yet pinned) — paste into _SA_STRUCTURED_BACKSTORY_HASH_BREADTH: {actual_hash}")
+        return
+    assert actual_hash == _SA_STRUCTURED_BACKSTORY_HASH_BREADTH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=structured, BREADTH_CAPS=1):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_STRUCTURED_BACKSTORY_HASH_BREADTH}\n"
+        "Update _SA_STRUCTURED_BACKSTORY_HASH_BREADTH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY (BREADTH_CAPS=1, structured) hash matches pinned value (len={len(SA_BACKSTORY)})")
+
+
+def test_general_backstory_hash_breadth():  # v64 breadth:
+    """When BREADTH_CAPS=1 and SA_PROCEDURE=general, SA_BACKSTORY must match
+    the BREADTH_CAPS=1 general hash.
+    """
+    import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") != "1":
+        print("  SKIP — BREADTH_CAPS=0; breadth general test requires BREADTH_CAPS=1")
+        return
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "general":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; general test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    if not _SA_GENERAL_BACKSTORY_HASH_BREADTH:
+        print(f"  HASH (not yet pinned) — paste into _SA_GENERAL_BACKSTORY_HASH_BREADTH: {actual_hash}")
+        return
+    assert actual_hash == _SA_GENERAL_BACKSTORY_HASH_BREADTH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=general, BREADTH_CAPS=1):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_GENERAL_BACKSTORY_HASH_BREADTH}\n"
+        "Update _SA_GENERAL_BACKSTORY_HASH_BREADTH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY (BREADTH_CAPS=1, general) hash matches pinned value (len={len(SA_BACKSTORY)})")
+
+
+def test_sa_sequenced_backstory_hash_breadth():  # v64 breadth:
+    """When BREADTH_CAPS=1 and SA_PROCEDURE=sequenced, SA_BACKSTORY must match
+    the BREADTH_CAPS=1 sequenced hash.
+    """
+    import os as _os
+    if _os.environ.get("BREADTH_CAPS", "0") != "1":
+        print("  SKIP — BREADTH_CAPS=0; breadth sequenced test requires BREADTH_CAPS=1")
+        return
+    sa_procedure = _os.environ.get("SA_PROCEDURE", "plain")
+    if sa_procedure != "sequenced":
+        print(f"  SKIP — SA_PROCEDURE={sa_procedure!r}; sequenced test skipped")
+        return
+    actual_hash = hashlib.sha256(SA_BACKSTORY.encode()).hexdigest()
+    if not _SA_SEQUENCED_BACKSTORY_HASH_BREADTH:
+        print(f"  HASH (not yet pinned) — paste into _SA_SEQUENCED_BACKSTORY_HASH_BREADTH: {actual_hash}")
+        return
+    assert actual_hash == _SA_SEQUENCED_BACKSTORY_HASH_BREADTH, (
+        f"SA_BACKSTORY hash mismatch (SA_PROCEDURE=sequenced, BREADTH_CAPS=1):\n"
+        f"  got    : {actual_hash}\n"
+        f"  pinned : {_SA_SEQUENCED_BACKSTORY_HASH_BREADTH}\n"
+        "Update _SA_SEQUENCED_BACKSTORY_HASH_BREADTH in single_agent.py if you intentionally changed SA_BACKSTORY."
+    )
+    print(f"  PASS — SA_BACKSTORY (BREADTH_CAPS=1, sequenced) hash matches pinned value (len={len(SA_BACKSTORY)})")
+
+
 # ── Runner ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -715,6 +839,10 @@ if __name__ == "__main__":
         test_sequenced_procedure_recorded_in_header,  # v62 pilot5:
         test_pair_verify_default_on,                 # v63:
         test_pair_verify_range_skipped,              # v63:
+        test_plain_backstory_unchanged_breadth,      # v64 breadth:
+        test_structured_backstory_hash_breadth,      # v64 breadth:
+        test_general_backstory_hash_breadth,         # v64 breadth:
+        test_sa_sequenced_backstory_hash_breadth,    # v64 breadth:
     ]
     failures = []
     for fn in tests:
