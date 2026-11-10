@@ -1,0 +1,12 @@
+{
+  "label": "v63rg-C-3",
+  "condition": "C_bare_with_table",
+  "dry": false,
+  "model": "claude-sonnet-4-6",
+  "provider": "anthropic",
+  "wall_s": 126.4,
+  "approx_input_tokens": 764,
+  "approx_output_tokens": 5378,
+  "approx_cost_usd": 0.083,
+  "n_agentic_rows_given": 62
+}

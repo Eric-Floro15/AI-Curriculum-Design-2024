@@ -1,0 +1,162 @@
+# Recommendation: Give Agentic AI Its Own Dedicated Course
+
+**Executive Summary:** The convergence of market demand, peer-program benchmarking, and industry developments makes a compelling, multi-dimensional case: agentic AI is not a sub-topic of machine learning — it is a structurally distinct skill domain with 62 significantly co-demanded skills (all z ≥ 2), a coherent LLM-engineering and orchestration stack that is essentially uncorrelated with the BI/analyst tools in a traditional ML course, and deepening enterprise urgency that cannot be served by a single module. Queen's University (Smith) has already carved out a dedicated standalone course on this topic; most traditional CS programs have not, leaving a first-mover opportunity. The recommendation is unambiguous: **build a dedicated course now**, structured around four evidence-grounded blocks, and leave BI/analyst content out of scope entirely.
+
+---
+
+## 1. Market Evidence: Lift and Statistical Significance (from the Skills Taxonomy Analyst)
+
+The lift/z analysis over 186,249 job postings (Fall 2022 – Winter 2026, 962 canonical skills) returned **62 skills clearing z ≥ 2** in co-demand with agentic AI — an unusually large and dense coherent neighbourhood, confirming this is a full-course domain, not a module.
+
+### Core LLM Stack (z ≥ 6 — the highest-signal tier)
+These skills are the non-negotiable foundation of a dedicated course:
+
+| Skill | Lift | z-score | Posting co-occurrences |
+|---|---|---|---|
+| Large Language Models | 4.76× | z = 9.39 | 899 |
+| Retrieval-Augmented Generation (RAG) | 6.66× | z = 8.89 | 482 |
+| LangChain | 7.53× | z = 7.90 | 324 |
+| Prompt Engineering | 6.26× | z = 7.03 | 329 |
+| Agentic Frameworks | 9.11× | z = 6.79 | 190 |
+| LangGraph | 9.47× | z = 6.73 | 179 |
+| Generative AI | 3.97× | z = 6.45 | 596 |
+| Vector Databases | 6.85× | z = 6.29 | 233 |
+| AI/ML Solutions | 4.51× | z = 6.27 | 443 |
+| Orchestration Tools | 4.09× | z = 6.08 | 499 |
+
+> **What lift means here:** LangGraph at 9.47× means it appears in agentic AI job postings at nearly 10× the rate you would expect from its baseline frequency across all postings — it is essentially exclusive to this job type. This is the strongest possible signal that it belongs in a dedicated course, not squeezed into a module.
+
+### Multi-Agent Frameworks and Model Providers (z 4–6)
+
+| Skill | Lift | z-score | Posting co-occurrences |
+|---|---|---|---|
+| Multi-Agent Systems | 10.31× | z = 5.08 | 93 |
+| CrewAI | 10.23× | z = 4.95 | 89 |
+| OpenAI API/Ecosystem | 5.29× | z = 4.84 | 202 |
+| AutoGen | 9.87× | z = 4.66 | 82 |
+| Responsible AI | 5.12× | z = 4.53 | 187 |
+| LlamaIndex | 7.75× | z = 4.44 | 99 |
+| Claude / Anthropic | 4.94× / 6.83× | z = 4.42 / 4.21 | 188 / 105 |
+| MLOps | 3.98× | z = 4.34 | 271 |
+| AI Engineering | 5.82× | z = 4.28 | 136 |
+| Pinecone | 7.78× | z = 4.15 | 86 |
+
+> **Notable:** Multi-Agent Systems (10.31×), CrewAI (10.23×), and AutoGen (9.87×) all exceed a lift of 9.8× — the highest lifts in the entire table — confirming that multi-agent orchestration is the most distinctively agentic skill set, even if posting volumes are still building. These are the skills that cannot appear in any other course.
+
+### Infrastructure, Evaluation, and Production (z 2–4)
+
+| Skill | Lift | z-score |
+|---|---|---|
+| LLM Architectures | 8.20× | z = 3.92 |
+| AI Agent Systems Architecture | 9.02× | z = 3.73 |
+| Observability | 3.31× | z = 3.51 |
+| Semantic Search | 6.03× | z = 2.94 |
+| AWS Bedrock | 6.22× | z = 2.93 |
+| Vertex AI | 5.23× | z = 2.84 |
+| LLM-as-a-Judge | 7.26× | z = 2.74 |
+| Workflow Automation | 3.70× | z = 2.65 |
+| MLflow | 4.24× | z = 2.61 |
+| Azure AI Services | 6.17× | z = 2.54 |
+| Knowledge Graphs | 5.71× | z = 2.37 |
+| Model Evaluation | 3.78× | z = 2.26 |
+| LLMOps | 5.75× | z = 2.21 |
+| Reinforcement Learning | 3.55× | z = 2.13 |
+| PEFT | 6.08× | z = 2.11 |
+| Information Retrieval | 3.42× | z = 2.01 |
+
+---
+
+## 2. What Agentic AI Is NOT Associated With (The Pruning Signal)
+
+This is the clearest argument for a *dedicated* course rather than an *expanded* ML module. The lift analysis returned 62 distinctively co-demanded skills — and **not one standard analyst/BI tool appears among them**:
+
+| Skill | Cluster | Present in Agentic Lift Table (z ≥ 2)? |
+|---|---|---|
+| Data Visualization | BI, Analytics & Finance (Cluster 6) | ❌ Absent |
+| Power BI | BI, Analytics & Finance (Cluster 6) | ❌ Absent |
+| Tableau | BI, Analytics & Finance (Cluster 6) | ❌ Absent |
+| SQL / SQL Databases | Data Engineering (Cluster 3) | ❌ Absent (zero lift rows at z ≥ 2) |
+| BI Tools (generic) | BI, Analytics & Finance (Cluster 6) | ❌ Absent |
+| Excel / Spreadsheet Tools | BI, Analytics & Finance (Cluster 6) | ❌ Absent |
+
+Employers writing agentic AI job postings do not co-mention SQL, Tableau, Power BI, or Excel. These tools live in a structurally separate labour-market cluster (Cluster 6: Business Intelligence, Analytics & Finance). **If you were considering whether to fold agentic AI into an existing ML/data-science course that also covers analyst tools, this data says don't — the audiences are distinct.** An agentic AI course does not serve the analyst/BI track, and that track's skills would dilute the signal.
+
+---
+
+## 3. Peer-Program Benchmarking (from the University AI Programs Researcher)
+
+| Institution | Program | Dedicated Agentic AI Course? | Course Name | Format |
+|---|---|---|---|---|
+| **Queen's University (Smith)** | MMAI | ✅ YES — standalone required | *Reinforcement Learning and Agentic AI* | Required course in fixed 13-course + capstone sequence |
+| **Georgia Tech** | MS CS AI Specialization | ⚠️ PARTIAL — distributed electives | *Multi-Robot Systems; Game AI; LLMs* | Optional electives only; no unified agentic AI framing |
+| **Stanford** | MS CS AI Specialization | ❌ NOT CONFIRMED | *(CS221 planning; robotics courses)* | Classical AI + robotics framing; no modern agentic workflows |
+
+**Source:** Queen's MMAI verified at smith.queensu.ca/grad_studies/mmai/program/index.php (corpus verification date: 2026-06-16). Georgia Tech and Stanford verified at their respective CC/CS program pages (corpus verification date: 2026-06-16).
+
+**Key peer-program takeaways:**
+- **Queen's MMAI** — the most practitioner-oriented business-track AI program in the verified corpus — has already made this a **standalone required course**, pairing RL fundamentals with agentic AI system design including human-in-the-loop oversight. This is the program design closest to the market signal.
+- **Georgia Tech and Stanford** still cover agent-related content through robotics and classical AI planning lenses — a pre-LLM framing. Their coverage is distributed across electives, not unified into a modern agentic AI course.
+- The pattern is clear: **management/practitioner-track programs are ahead of traditional CS programs** on this structural move. If the professor's program targets applied AI practitioners (as most professional Master's programs do), the peer-program case strongly favours a dedicated course.
+
+> **Caveat from the University AI Programs Researcher:** Web search returned no additional results this run; peer comparisons are limited to the pre-verified local corpus (Queen's, Georgia Tech, Stanford). Carnegie Mellon, MIT, Berkeley, NYU, and Toronto were not retrieved this session. For a fuller scan, check CMU's MCDS/MSML program and Berkeley's MIDS directly.
+
+---
+
+## 4. Recent Industry Developments That Should Shape the Course (from the AI Industry News Researcher)
+
+### A. Framework and Infrastructure: MCP as a Standards Layer
+The **Model Context Protocol (MCP)** is emerging as the lingua franca for connecting agents to external services — analogous to HTTP for web development. VentureBeat AI reports that tools like **Goose** (open-source) integrate with MCP to let agents access "databases, search engines, file systems, and third-party APIs" ("Claude Code costs up to $200 a month. Goose does the same thing for free," *VentureBeat AI*, Jan 19, 2026). Salesforce's platform head describes MCP becoming a client standard across enterprise platforms ("Salesforce rolls out new Slackbot AI agent," *VentureBeat AI*, Jan 13, 2026). **MCP is not a minor library — it warrants a dedicated week in the course.**
+
+### B. Field Maturity: Vocabulary Codification
+HuggingFace published a dedicated agent glossary ("Harness, Scaffold, and the AI Agent Terms Worth Getting Right," *HuggingFace Blog*, May 25, 2026) standardizing terms like *harness*, *scaffold*, and orchestration patterns. This is a marker of a maturing discipline — the kind of definitional scaffolding that belongs in Week 1 of a standalone course.
+
+### C. Enterprise Adoption — Large but Execution-Lagged
+The **McKinsey State of AI 2025** (1,993 respondents, 105 nations, Nov 2025) finds:
+- **62% of organizations are at least experimenting with AI agents**, but only **23% report scaling one** in a business function
+- **88% report regular AI use** in at least one function
+- Only **39% attribute any EBIT impact to AI**, with most below 5%
+
+MIT Tech Review's synthesis ("Rethinking organizational design in the age of agentic AI," *MIT Technology Review AI*, May 26, 2026) adds: **85% of organizations want to be "agentic" within three years, but 76% say their current operations cannot support that change.** This ambition-execution gap is a curriculum topic in itself — students need to understand not just how to build agents, but how to assess organizational readiness and redesign workflows.
+
+### D. Safety and Evaluation: Open Research Problems
+This is what distinguishes a graduate course from a bootcamp:
+- **IBM Research + UC Berkeley** jointly published the **MAST framework** for categorizing enterprise agent failures via IT-Bench ("IBM and UC Berkeley Diagnose Why Enterprise Agents Fail Using IT-Bench and MAST," *HuggingFace Blog*, Feb 18, 2026)
+- IBM Research's **VAKRA benchmark** dissects how agents reason, use tools, and fail across multi-step problems ("Inside VAKRA: Reasoning, Tool Use, and Failure Modes of Agents," *HuggingFace Blog*, Apr 15, 2026)
+- **LLM-as-a-Judge** (lift 7.26×, z = 2.74 from the Analyst) appears explicitly in the market data as a co-demanded skill — confirming employers expect graduates to know agentic evaluation methodology
+- The **Berkeley Function-Calling Leaderboard** now ranks models on tool-calling correctness, an evaluative framework students should understand (*VentureBeat AI*, Jan 19, 2026)
+- Autonomous agents operating via MCP across file systems, APIs, and databases introduce new cybersecurity attack surfaces ("AI and the Future of Cybersecurity: Why Openness Matters," *HuggingFace Blog*, Apr 21, 2026)
+
+---
+
+## 5. Concrete Course Design Recommendation
+
+Based on all three specialist inputs, here is the evidence-grounded structure for a standalone **Agentic AI Systems** course:
+
+| Block | Topics | Key Evidence |
+|---|---|---|
+| **Block 1: Foundations** (~3 weeks) | LLMs, Transformer architectures, Generative AI, NLP, Prompt Engineering; MCP standards layer; field vocabulary (harness, scaffold, ReAct) | LLMs (4.76×, z=9.39); Prompt Engineering (6.26×, z=7.03); MCP (*VentureBeat*, Jan 2026); HuggingFace glossary (May 2026) |
+| **Block 2: Memory and Retrieval** (~2–3 weeks) | RAG architecture; Vector Databases (Pinecone, Weaviate, FAISS); Semantic Search; Knowledge Graphs; Information Retrieval | RAG (6.66×, z=8.89); Vector DBs (6.85×, z=6.29); Semantic Search (6.03×, z=2.94); Knowledge Graphs (5.71×, z=2.37) |
+| **Block 3: Orchestration and Multi-Agent Systems** (~3–4 weeks) | LangChain, LangGraph, LlamaIndex, CrewAI, AutoGen; Tool use and tool-calling; Agentic planning (ReAct, CoT, Tree-of-Thought); Multi-agent coordination patterns; Human-in-the-loop design | LangChain (7.53×, z=7.90); LangGraph (9.47×, z=6.73); Multi-Agent Systems (10.31×, z=5.08); CrewAI (10.23×, z=4.95); AutoGen (9.87×, z=4.66); Queen's MMAI course pairs HITL explicitly |
+| **Block 4: Production, Evaluation, and Responsible AI** (~3 weeks) | LLMOps, MLflow, Observability; LLM-as-a-Judge; VAKRA, MAST, IT-Bench frameworks; AWS Bedrock, Vertex AI, Azure AI deployment; PEFT/fine-tuning; Responsible AI and cybersecurity | LLMOps (5.75×, z=2.21); LLM-as-a-Judge (7.26×, z=2.74); Responsible AI (5.12×, z=4.53); VAKRA (*HuggingFace*, Apr 2026); MAST (*HuggingFace*, Feb 2026); McKinsey 85%/76% gap (Nov 2025) |
+
+---
+
+## Trade-Off and Caveats the Professor Should Consider
+
+1. **Framework volatility is real.** LangGraph, CrewAI, and AutoGen have extraordinary lift (9.47×–10.31×) but are still early-stage by posting volume (82–179 co-occurrences). The frameworks will evolve; the conceptual layer (agentic planning, ReAct, tool-use patterns, state management) is the durable content. Design the course so frameworks are vehicles for teaching orchestration principles, not the end in themselves.
+
+2. **Responsible AI is non-optional and embedded, not elective.** Responsible AI appears at lift 5.12×, z = 4.53 — directly inside the agentic AI skill neighbourhood, not in a separate ethics elective. Employers bundle governance expectations with agentic engineering roles. Build it into Block 4, not into a standalone elective.
+
+3. **RL in scope or out?** Queen's MMAI pairs reinforcement learning with agentic AI in one course. The market data shows Reinforcement Learning at lift 3.55×, z = 2.13 — attested but at the lower end of significance. If your program already has an RL course, a brief module on RLHF and reward-driven agent behaviour is sufficient; RL from scratch does not need to be a major thread here.
+
+4. **The peer-program comparison is limited.** Only Queen's, Georgia Tech, and Stanford were available in the verified corpus this run. CMU, MIT, Berkeley, NYU, and Toronto were not retrieved. The professor should supplement this benchmarking directly before presenting to a program committee.
+
+5. **Market timing is favourable but not infinitely patient.** LangGraph is already at 1.4% of Winter 2026 postings; AutoGen and CrewAI at ~0.6% with 9.8–10.2× lift. This is the moment to build the course before it becomes table stakes — but curriculum approval cycles mean the course should be designed with the structural durability of principles over framework specifics.
+
+---
+
+| Specialist | Evidence Provided | How It Informs the Recommendation |
+|---|---|---|
+| **Skills Taxonomy Analyst** | Lift and z-scores for 62 co-demanded skills; BI/analyst skills confirmed absent at z ≥ 2 | Grounds the course structure in what's distinctively demanded; confirms agentic AI is structurally separate from the BI/analyst track |
+| **University AI Programs Researcher** | Structured peer-program comparison: Queen's (standalone required course), Georgia Tech (electives), Stanford (classical framing) with URLs | Shows Queen's has already made the structural move; confirms the trend favours standalone treatment in practitioner-oriented programs |
+| **AI Industry News Researcher** | 10 cited articles/reports (MCP, McKinsey adoption data, MAST/VAKRA benchmarks, enterprise deployment platforms) with sources and dates | Validates market urgency, shapes course topics (MCP, evaluation frameworks, organizational readiness), and provides committee-ready citations |
