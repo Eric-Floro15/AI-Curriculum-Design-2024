@@ -406,7 +406,7 @@ def _run_sa_preflight() -> bool:  # v62 pilot:
         ok = False
 
     # ── check 6: pair_verify.py frozen SHA-256 (v62 pilot5) ───────────────────
-    _PV_FROZEN_HASH = "c0c66fa02a51b512ce52ec1f82e0f7fe07a56117b29f503acea064ea1672e2fb"
+    _PV_FROZEN_HASH = "1fa7b025d67fcccff4619f7f3c51d798daa6e6156ba20aa1afcfc68f60b3decd"  # v64 breadth:
     try:
         import hashlib as _hl
         _pv_path = os.path.join(_CHATBOT_DIR, "tools", "pair_verify.py")
