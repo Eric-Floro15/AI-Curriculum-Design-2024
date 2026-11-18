@@ -30,3 +30,20 @@ chatbot/.chainlit/
 # contain student names and IDs; never committed or deposited.
 INDEED-WEBSCRAPING-ASSIGNMENT/
 AGGREGATED-SUBMISSIONS/
+
+# Raw posting data — never commit (scraped job descriptions)
+AGGREGATED-SUBMISSIONS*/
+UNIQUE-JOB-POSTINGS-DATA/
+**/postings_clean.csv
+**/preprocessed_jobs_data.csv
+
+# Large derived binaries (deposit via Zenodo, not git)
+**/jd_embeddings.json
+**/skill_presence_matrix.csv
+**/*_rowmap.npy
+
+# Caches / OS metadata
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+**/__MACOSX/
