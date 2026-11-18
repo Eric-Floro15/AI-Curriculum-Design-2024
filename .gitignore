@@ -39,6 +39,7 @@ UNIQUE-JOB-POSTINGS-DATA/
 
 # Large derived binaries (deposit via Zenodo, not git)
 **/jd_embeddings.json
+**/jd_embeddings.npy
 **/skill_presence_matrix.csv
 **/*_rowmap.npy
 
